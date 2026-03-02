@@ -94,20 +94,17 @@ export function startRenderLoop(
       }
 
       if (offCtx) {
-        // Temporarily override renderState dimensions for the renderer
-        const origW = renderState.width;
-        const origH = renderState.height;
-        renderState.width = scaledW;
-        renderState.height = scaledH;
+        // Apply scale transform so the renderer draws in the original
+        // coordinate space but the GPU rasterizes fewer pixels.
+        offCtx.setTransform(scale, 0, 0, scale, 0, 0);
 
         renderFrame(offCtx, world, renderState, assets, now);
 
-        // Restore original dimensions
-        renderState.width = origW;
-        renderState.height = origH;
+        // Reset transform for next frame
+        offCtx.setTransform(1, 0, 0, 1, 0, 0);
 
         // Upscale to visible canvas
-        ctx.drawImage(offCanvas, 0, 0, origW, origH);
+        ctx.drawImage(offCanvas, 0, 0, renderState.width, renderState.height);
       }
     } else {
       renderFrame(ctx, world, renderState, assets, now);
