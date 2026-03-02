@@ -59,6 +59,12 @@ export function startRenderLoop(
   let running = true;
   let lastFrameTime = 0;
 
+  // Offscreen canvas for resolution scaling (lazily created)
+  let offCanvas: HTMLCanvasElement | null = null;
+  let offCtx: CanvasRenderingContext2D | null = null;
+  let offW = 0;
+  let offH = 0;
+
   const loop = (timestamp: number) => {
     if (!running) return;
     rafId = requestAnimationFrame(loop);
@@ -69,7 +75,43 @@ export function startRenderLoop(
     lastFrameTime = timestamp - (elapsed % minFrameInterval);
 
     const now = Date.now();
-    renderFrame(ctx, world, renderState, assets, now);
+    const scale = renderState.qualitySettings.resolutionScale;
+
+    if (scale < 1.0) {
+      // Render at reduced resolution then upscale
+      const scaledW = Math.round(renderState.width * scale);
+      const scaledH = Math.round(renderState.height * scale);
+
+      // Lazily create / resize offscreen canvas
+      if (!offCanvas || offW !== scaledW || offH !== scaledH) {
+        offCanvas = document.createElement("canvas");
+        offCanvas.width = scaledW;
+        offCanvas.height = scaledH;
+        offCtx = offCanvas.getContext("2d", { alpha: false });
+        if (offCtx) offCtx.imageSmoothingEnabled = false;
+        offW = scaledW;
+        offH = scaledH;
+      }
+
+      if (offCtx) {
+        // Temporarily override renderState dimensions for the renderer
+        const origW = renderState.width;
+        const origH = renderState.height;
+        renderState.width = scaledW;
+        renderState.height = scaledH;
+
+        renderFrame(offCtx, world, renderState, assets, now);
+
+        // Restore original dimensions
+        renderState.width = origW;
+        renderState.height = origH;
+
+        // Upscale to visible canvas
+        ctx.drawImage(offCanvas, 0, 0, origW, origH);
+      }
+    } else {
+      renderFrame(ctx, world, renderState, assets, now);
+    }
   };
 
   // Kick off

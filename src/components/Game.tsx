@@ -7821,6 +7821,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                                 frameTick: 0,
                                 timeScale: DEFAULT_TIME_SCALE,
                                 maxDeltaMs: MAX_DELTA_MS,
+                                fpsCapMs: 0,
                               }
                             }
                             actualFps={currentFps}
