@@ -8,10 +8,8 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
-    "preview": "vite preview"
-	"start": "electron electron-main.js"
-}
-
+    "preview": "vite preview",
+    "start": "electron electron-main.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

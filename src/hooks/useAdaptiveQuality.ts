@@ -13,6 +13,7 @@ export interface QualitySettings {
   explosionParticles: number;
   backgroundEffects: boolean;
   autoAdjust: boolean;
+  resolutionScale: number;
   // Granular effect toggles (Phase 1)
   chaosGlowEnabled: boolean;
   animatedDashesEnabled: boolean;
@@ -39,6 +40,7 @@ const QUALITY_PRESETS: Record<QualityLevel, Omit<QualitySettings, 'level' | 'aut
     screenShakeMultiplier: 0.25,
     explosionParticles: 3,
     backgroundEffects: false,
+    resolutionScale: 0.75,
     chaosGlowEnabled: false,
     animatedDashesEnabled: false,
     shieldArcsEnabled: false,
@@ -52,6 +54,7 @@ const QUALITY_PRESETS: Record<QualityLevel, Omit<QualitySettings, 'level' | 'aut
     screenShakeMultiplier: 0.75,
     explosionParticles: 8,
     backgroundEffects: true,
+    resolutionScale: 1.0,
     chaosGlowEnabled: false,
     animatedDashesEnabled: true,
     shieldArcsEnabled: false,
@@ -65,6 +68,7 @@ const QUALITY_PRESETS: Record<QualityLevel, Omit<QualitySettings, 'level' | 'aut
     screenShakeMultiplier: 1.0,
     explosionParticles: 15,
     backgroundEffects: true,
+    resolutionScale: 1.0,
     chaosGlowEnabled: true,
     animatedDashesEnabled: true,
     shieldArcsEnabled: true,
