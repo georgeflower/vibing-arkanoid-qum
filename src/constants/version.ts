@@ -90,7 +90,7 @@ export const CHANGELOG = [
       "Static gradients cached for power-up backgrounds, ball surfaces, and other reused visual elements",
       "Background animation driven by frame timestamp directly — removed backgroundPhase React state updates from the render loop",
       "Entity object pooling expanded — PowerUps, Bullets, Bombs, Enemies, and BonusLetters use cached active arrays to prevent per-frame allocations",
-      "Production telemetry system added — silently tracks performance and collision metrics in the cloud",
+      
     ],
   },
   {

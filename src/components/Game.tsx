@@ -46,7 +46,7 @@ import { CCDPerformanceTracker } from "@/utils/rollingStats";
 import { debugLogger } from "@/utils/debugLogger";
 import { particlePool } from "@/utils/particlePool";
 
-import { telemetryCollector, ENABLE_TELEMETRY } from "@/utils/telemetry";
+
 // ═══════════════════════════════════════════════════════════════
 import { Maximize2, Minimize2, Home, X } from "lucide-react";
 import { QualityIndicator } from "./QualityIndicator";
@@ -1196,17 +1196,6 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     }
   }, [gameState, tutorialActive]);
 
-  // Telemetry: start session when game begins, end on game over/won
-  useEffect(() => {
-    if (ENABLE_TELEMETRY) {
-      if (gameState === "playing") {
-        // Only start if no active session (avoid re-starting on pause/resume)
-        telemetryCollector.startSession(settings.difficulty, settings.gameMode || "campaign");
-      } else if (gameState === "gameOver" || gameState === "won") {
-        telemetryCollector.endSession(score, level);
-      }
-    }
-  }, [gameState]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Boss power-up effect handlers
   const handleBossStunner = useCallback(() => {
@@ -4153,27 +4142,6 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         }
       }
 
-      // ========== Telemetry Sampling (every ~5s = 300 frames) ==========
-      if (ENABLE_TELEMETRY && frameCountRef.current % 300 === 0 && frameCountRef.current > 0) {
-        const totalParticles = particlePool.getStats().active;
-        telemetryCollector.recordSnapshot({
-          level,
-          avgFps: fps,
-          minFps: fps,
-          qualityLevel: quality,
-          ballCount: balls.length,
-          brickCount: bricks.reduce((c, b) => c + (b.visible ? 1 : 0), 0),
-          enemyCount: enemies.length,
-          particleCount: totalParticles,
-          explosionCount: explosions.length,
-          ccdTotalMs: (ccdPerformanceRef.current?.totalUs || 0) / 1000,
-          ccdSubsteps: ccdPerformanceRef.current?.substepsUsed || 0,
-          ccdCollisions: ccdPerformanceRef.current?.collisionCount || 0,
-          toiIterations: ccdPerformanceRef.current?.toiIterationsUsed || 0,
-          bossActive: boss !== null || resurrectedBosses.length > 0,
-          bossType: boss?.type || null,
-        });
-      }
     }
 
     // FPS is already being updated once per second at line 3065, no need to duplicate here

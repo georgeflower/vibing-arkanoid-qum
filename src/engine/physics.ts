@@ -9,7 +9,7 @@
 import { world } from "@/engine/state";
 import { processBallWithCCD } from "@/utils/gameCCD";
 import { PHYSICS_CONFIG, ENABLE_DEBUG_FEATURES } from "@/constants/game";
-import { ENABLE_TELEMETRY, telemetryCollector } from "@/utils/telemetry";
+
 import {
   isMegaBoss,
   type MegaBoss,
@@ -606,10 +606,6 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
 
       if (!isDuplicate) {
         processedObjects.set(objectKey, event.t);
-        if (ENABLE_TELEMETRY) {
-          const tType = event.objectType === "paddleCorner" ? "paddle" : event.objectType;
-          telemetryCollector.recordCollision(tType as "wall" | "brick" | "paddle" | "boss" | "enemy");
-        }
       }
 
       switch (event.objectType) {
