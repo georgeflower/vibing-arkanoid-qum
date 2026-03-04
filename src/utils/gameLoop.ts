@@ -1,6 +1,6 @@
 /**
  * Simplified game loop utility for frame counting and pause/resume management
- * 
+ *
  * Features:
  * - Frame tick counter for deterministic cooldowns
  * - FPS tracking
@@ -39,15 +39,15 @@ export class FixedStepGameLoop {
   constructor(config?: Partial<GameLoopConfig>) {
     this.config = {
       maxDeltaMs: 250,
-      timeScale: 0.9,
+      timeScale: 1,
       fpsCapMs: 1000 / 120,
-      ...config
+      ...config,
     };
 
     this.state = {
       lastTime: performance.now(),
       isPaused: false,
-      fps: 60
+      fps: 120,
     };
   }
 
@@ -56,11 +56,11 @@ export class FixedStepGameLoop {
    */
   start() {
     if (this.animationFrameId !== null) return;
-    
+
     this.state.lastTime = performance.now();
     this.fpsLastTime = this.state.lastTime;
     this.frameCount = 0;
-    
+
     this.loop(this.state.lastTime);
   }
 
@@ -90,7 +90,7 @@ export class FixedStepGameLoop {
     // Update FPS counter
     this.frameCount++;
     if (currentTime - this.fpsLastTime >= 1000) {
-      this.state.fps = Math.round(this.frameCount * 1000 / (currentTime - this.fpsLastTime));
+      this.state.fps = Math.round((this.frameCount * 1000) / (currentTime - this.fpsLastTime));
       this.frameCount = 0;
       this.fpsLastTime = currentTime;
     }
@@ -158,7 +158,7 @@ export class FixedStepGameLoop {
       frameTick: this.frameTick,
       timeScale: this.config.timeScale,
       maxDeltaMs: this.config.maxDeltaMs,
-      fpsCapMs: this.config.fpsCapMs
+      fpsCapMs: this.config.fpsCapMs,
     };
   }
 
