@@ -38,7 +38,7 @@ export const usePowerUps = (
   }, []);
   const fireballTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const createPowerUp = useCallback((brick: Brick, isBossMinion: boolean = false, forceBossPowerUp: boolean = false): PowerUp | PowerUp[] | null => {
+  const createPowerUp = useCallback((brick: Brick, isBossMinion: boolean = false, forceBossPowerUp: boolean = false, timeScale: number = 1.0): PowerUp | PowerUp[] | null => {
     const isEnemyDrop = brick.id < 0; // Enemies use fakeBricks with id: -1
     
     // Boss minions: 50% chance to drop power-up (or forced drop)
@@ -69,7 +69,7 @@ export const usePowerUps = (
         width: POWERUP_SIZE,
         height: POWERUP_SIZE,
         type,
-        speed: POWERUP_FALL_SPEED,
+        speed: POWERUP_FALL_SPEED * timeScale,
         active: true,
       });
     }
@@ -93,7 +93,7 @@ export const usePowerUps = (
         width: POWERUP_SIZE,
         height: POWERUP_SIZE,
         type,
-        speed: POWERUP_FALL_SPEED,
+        speed: POWERUP_FALL_SPEED * timeScale,
         active: true,
       });
     }
@@ -135,7 +135,7 @@ export const usePowerUps = (
         width: POWERUP_SIZE,
         height: POWERUP_SIZE,
         type: assignedType,
-        speed: POWERUP_FALL_SPEED,
+        speed: POWERUP_FALL_SPEED * timeScale,
         active: true,
         pairedWithId: id2,
         isDualChoice: true,
@@ -147,7 +147,7 @@ export const usePowerUps = (
         width: POWERUP_SIZE,
         height: POWERUP_SIZE,
         type: secondType,
-        speed: POWERUP_FALL_SPEED,
+        speed: POWERUP_FALL_SPEED * timeScale,
         active: true,
         pairedWithId: id1,
         isDualChoice: true,
@@ -162,7 +162,7 @@ export const usePowerUps = (
       width: POWERUP_SIZE,
       height: POWERUP_SIZE,
       type: assignedType,
-      speed: POWERUP_FALL_SPEED,
+      speed: POWERUP_FALL_SPEED * timeScale,
       active: true,
     });
   }, [currentLevel, extraLifeUsedLevels, difficulty, powerUpAssignments, dualChoiceAssignments]);
