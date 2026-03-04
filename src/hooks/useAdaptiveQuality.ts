@@ -30,6 +30,7 @@ interface AdaptiveQualityOptions {
   highFpsThreshold?: number;
   sampleWindow?: number;
   enableLogging?: boolean;
+  isFullscreen?: boolean;
 }
 
 const QUALITY_PRESETS: Record<QualityLevel, Omit<QualitySettings, 'level' | 'autoAdjust'>> = {
