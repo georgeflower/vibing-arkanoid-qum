@@ -23,7 +23,6 @@ import { useViewportFrame } from "@/hooks/useViewportFrame";
 import { useCanvasResize } from "@/hooks/useCanvasResize";
 import CRTOverlay from "./CRTOverlay";
 import { BOSS_RUSH_CONFIG, BossRushLevel } from "@/constants/bossRushConfig";
-import { FPS_CAP } from "@/constants/gameLoopConfig";
 
 // ═══════════════════════════════════════════════════════════════
 // ████████╗ DEBUG IMPORTS - REMOVE BEFORE PRODUCTION ████████╗
@@ -4008,7 +4007,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   ]);
 
   // FPS tracking for adaptive quality
-  const fpsTrackerRef = useRef({ lastTime: performance.now(), frameCount: 0, fps: 120 });
+  const fpsTrackerRef = useRef({ lastTime: performance.now(), frameCount: 0, fps: FPS_CAP });
   const lastFrameTimeRef = useRef(performance.now());
   const dtSecondsRef = useRef(1 / FPS_CAP); // Actual delta time for current frame (seconds)
   const targetFrameTime = 1000 / FPS_CAP;
