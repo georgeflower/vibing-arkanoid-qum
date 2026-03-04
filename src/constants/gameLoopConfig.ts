@@ -6,7 +6,7 @@
  */
 
 /** Default game speed (1.0 = normal, 0.5 = half speed, 2.0 = double speed) */
-export const DEFAULT_TIME_SCALE = 0.7;
+export const DEFAULT_TIME_SCALE = 0.65;
 
 /** Minimum allowed time scale (used by debug speed controls) */
 export const MIN_TIME_SCALE = 0.1;
