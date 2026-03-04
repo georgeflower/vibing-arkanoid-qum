@@ -21,7 +21,7 @@ import { renderFrame } from "@/engine/canvasRenderer";
 const TARGET_FPS_HIGH = 120;
 const TARGET_FPS_LOW = 60;
 let currentTargetFps = TARGET_FPS_HIGH;
-let minFrameInterval = 1000 / currentTargetFps; // slight margin to avoid drift
+let minFrameInterval = 1000 / currentTargetFps;
 
 /** Update the render target FPS based on quality level */
 export function setRenderTargetFps(qualityLevel: "low" | "medium" | "high"): void {
