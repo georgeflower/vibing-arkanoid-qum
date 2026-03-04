@@ -15,7 +15,7 @@ export const MIN_TIME_SCALE = 0.1;
 export const MAX_TIME_SCALE = 3.0;
 
 /** FPS cap for high-end computers (frames per second) */
-export const FPS_CAP = 60;
+export const FPS_CAP = 120;
 
 /** Maximum delta time in milliseconds (prevents large jumps after tab switches etc.) */
 export const MAX_DELTA_MS = 250;
