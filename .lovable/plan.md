@@ -1,26 +1,45 @@
 
 
-# Why a Full Rebuild Isn't the Right Move
+# Fix Resolution Scaling (Zoom-In Bug)
 
-This game has **~15,000+ lines** of battle-tested logic across 80+ files covering CCD physics, boss AI (4 types + mega boss), 20 level layouts, 13+ power-ups, object pooling, adaptive quality, high scores, Boss Rush mode, particles, sound, mobile controls, PWA, and tutorials.
+## Root Cause
 
-A from-scratch rewrite would:
-- Take weeks of iterative sessions to reach feature parity
-- Reintroduce bugs already solved (paddle tunneling, cube boss CCD, high-refresh-rate glitches)
-- Lose all the edge-case handling built up over time
+The current implementation temporarily overrides `renderState.width` and `renderState.height` to the scaled-down values (e.g., 637x487 instead of 850x650). However, all game entities (balls, paddle, bricks, enemies, bosses) have positions calculated for the original 850x650 coordinate space. The renderer clips entities outside the smaller canvas, and the subsequent upscale produces a "zoomed in" effect showing only a portion of the game area.
 
-The architecture is already solid — the engine decoupling (world singleton, render loop, physics separation) follows exactly the patterns you'd want from the start. The main areas that could benefit from cleanup are **Game.tsx** (still too large) and some legacy shim patterns.
+## Fix
 
-## Recommended Alternative: Targeted Refactoring
+**File: `src/engine/renderLoop.ts`**
 
-Instead of rebuilding, I'd suggest a focused cleanup plan:
+Instead of overriding renderState dimensions, apply a `ctx.scale(scale, scale)` transform on the offscreen context. This way:
+- The offscreen canvas is still smaller (fewer pixels to fill = GPU savings)
+- The renderer still sees the original `width` and `height` from renderState
+- All entity positions remain correct in the original coordinate space
+- The scale transform makes the GPU rasterize at reduced resolution
+- The final `drawImage` upscales to the visible canvas
 
-1. **Split Game.tsx** — Extract handler groups (death/boss/level transitions, input, power-up timers) into dedicated modules under `src/engine/` or `src/game/`
-2. **Remove legacy shims** — Clean up any remaining `useState`-to-`world` compatibility wrappers that are no longer needed
-3. **Consolidate constants** — Merge scattered config files into a cleaner structure
-4. **Clean up unused code** — Remove dead imports, unused components, and orphaned utilities
+```text
+Before (broken):
+  offscreen canvas = 637x487
+  renderState.width/height = 637x487   <-- entities clip!
+  renderFrame draws at wrong scale
+  drawImage upscales = zoomed in
 
-This preserves all working gameplay while achieving the "clean from the start" feel. Each step is safe and testable.
+After (fixed):
+  offscreen canvas = 637x487
+  offCtx.scale(0.75, 0.75)             <-- GPU draws fewer pixels
+  renderState.width/height = 850x650   <-- unchanged, entities correct
+  renderFrame draws full scene
+  drawImage upscales = correct view at lower resolution
+```
 
-Want me to plan one of these refactoring steps instead?
+### Specific changes (lines 80-111):
+
+Remove the `renderState.width/height` override. Instead:
+1. Clear the offscreen canvas
+2. Apply `offCtx.scale(scale, scale)` before calling `renderFrame`
+3. Call `renderFrame` with the offscreen context but **original** renderState (no dimension override)
+4. Reset the transform after rendering
+5. Upscale to visible canvas with `ctx.drawImage`
+
+This is a single-file change to `src/engine/renderLoop.ts`, approximately 10 lines modified.
 
