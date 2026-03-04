@@ -47,7 +47,7 @@ export class FixedStepGameLoop {
     this.state = {
       lastTime: performance.now(),
       isPaused: false,
-      fps: 120,
+      fps: 60,
     };
   }
 
