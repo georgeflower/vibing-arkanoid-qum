@@ -28,7 +28,7 @@ export function setRenderTargetFps(qualityLevel: "low" | "medium" | "high"): voi
   const newTarget = qualityLevel === "low" ? TARGET_FPS_LOW : TARGET_FPS_HIGH;
   if (newTarget !== currentTargetFps) {
     currentTargetFps = newTarget;
-    minFrameInterval = 1000 / (currentTargetFps + 2);
+    minFrameInterval = 1000 / currentTargetFps;
   }
 }
 
