@@ -1672,7 +1672,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     (x: number, y: number, enemyType: EnemyType): Particle[] => {
       const particleCount = Math.round(qualitySettings.explosionParticles);
       // Add particles directly to the pool - no new array allocation
-      particlePool.acquireForExplosion(x, y, particleCount, enemyType);
+      particlePool.acquireForExplosion(x, y, particleCount, enemyType, gameLoopRef.current?.getTimeScale() ?? 1.0);
       // Return empty array for backwards compatibility with Explosion type
       // The actual particles are now managed by the pool
       return [];
@@ -1760,7 +1760,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
             y: 100,
             width: POWERUP_SIZE,
             height: POWERUP_SIZE,
-            speed: POWERUP_FALL_SPEED,
+            speed: POWERUP_FALL_SPEED * (gameLoopRef.current?.getTimeScale() ?? 1.0),
             active: true,
             isMercyLife: mercyType === "life",
           };
@@ -3175,7 +3175,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
             width: POWERUP_SIZE,
             height: POWERUP_SIZE,
             type: type,
-            speed: POWERUP_FALL_SPEED,
+            speed: POWERUP_FALL_SPEED * (gameLoopRef.current?.getTimeScale() ?? 1.0),
             active: true,
           };
 
@@ -3199,7 +3199,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
             width: POWERUP_SIZE,
             height: POWERUP_SIZE,
             type: type,
-            speed: POWERUP_FALL_SPEED,
+            speed: POWERUP_FALL_SPEED * (gameLoopRef.current?.getTimeScale() ?? 1.0),
             active: true,
           };
 
@@ -3505,7 +3505,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
           y: boss ? boss.y + boss.height : 200,
           width: POWERUP_SIZE,
           height: POWERUP_SIZE,
-          speed: POWERUP_FALL_SPEED,
+          speed: POWERUP_FALL_SPEED * (gameLoopRef.current?.getTimeScale() ?? 1.0),
           active: true,
         };
         setPowerUps((currentPowerUps) => [...currentPowerUps, shieldPowerUp]);
@@ -3744,11 +3744,11 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
             width: POWERUP_SIZE,
             height: POWERUP_SIZE,
             type: "multiball",
-            speed: POWERUP_FALL_SPEED,
+            speed: POWERUP_FALL_SPEED * (gameLoopRef.current?.getTimeScale() ?? 1.0),
             active: true,
           });
         } else {
-          const result = createPowerUp(brick);
+          const result = createPowerUp(brick, false, false, gameLoopRef.current?.getTimeScale() ?? 1.0);
           if (result) {
             if (Array.isArray(result)) {
               createdPowerUps.push(...result);
@@ -3857,7 +3857,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         width: POWERUP_SIZE,
         height: POWERUP_SIZE,
         type: randomType,
-        speed: POWERUP_FALL_SPEED,
+        speed: POWERUP_FALL_SPEED * (gameLoopRef.current?.getTimeScale() ?? 1.0),
         active: true,
       };
       setPowerUps((prev) => [...prev, powerUp]);
@@ -3906,10 +3906,10 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
             };
             if (isFirstBossMinion) firstBossMinionKilledRef.current = true;
 
-            let powerUp = createPowerUp(fakeBrick, isBossSpawned, isFirstBossMinion);
+            let powerUp = createPowerUp(fakeBrick, isBossSpawned, isFirstBossMinion, gameLoopRef.current?.getTimeScale() ?? 1.0);
             let attempts = 0;
             while (!powerUp && attempts < 10) {
-              powerUp = createPowerUp(fakeBrick, isBossSpawned, isFirstBossMinion);
+              powerUp = createPowerUp(fakeBrick, isBossSpawned, isFirstBossMinion, gameLoopRef.current?.getTimeScale() ?? 1.0);
               attempts++;
             }
             if (powerUp) {
@@ -3968,7 +3968,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         const newLives = prev - 1;
         soundManager.playLoseLife();
         if (newLives <= 0) {
-          particlePool.acquireForGameOver(SCALED_CANVAS_WIDTH / 2, SCALED_CANVAS_HEIGHT / 2, 100);
+          particlePool.acquireForGameOver(SCALED_CANVAS_WIDTH / 2, SCALED_CANVAS_HEIGHT / 2, 100, gameLoopRef.current?.getTimeScale() ?? 1.0);
           handleGameOver();
         } else {
           handleSurviveDeath(`Life lost! ${newLives} lives remaining. Here's some help!`, { spawnMercy: true });
@@ -4977,7 +4977,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
           // Create victory confetti particles using pool
           const particleCount = Math.round(150 * (qualitySettings.explosionParticles / 50));
-          particlePool.acquireForHighScore(bossCenter.x, bossCenter.y, particleCount);
+          particlePool.acquireForHighScore(bossCenter.x, bossCenter.y, particleCount, gameLoopRef.current?.getTimeScale() ?? 1.0);
           // particleRenderTick removed — pool renders directly
 
           setBossesKilled((k) => k + 1);
@@ -6738,6 +6738,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
             }
 
             // Pyramid enemies shoot bullets in random angles
+            const currentTimeScale = gameLoopRef.current?.getTimeScale() ?? 1.0;
             if (currentEnemy.type === "pyramid") {
               const randomAngle = (Math.random() * 160 - 80) * (Math.PI / 180); // -80 to +80 degrees
               const bulletSpeed = 4;
@@ -6747,10 +6748,10 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                 y: currentEnemy.y + currentEnemy.height,
                 width: 8,
                 height: 12,
-                speed: bulletSpeed,
+                speed: bulletSpeed * currentTimeScale,
                 enemyId: enemyId,
                 type: "pyramidBullet",
-                dx: Math.sin(randomAngle) * bulletSpeed,
+                dx: Math.sin(randomAngle) * bulletSpeed * currentTimeScale,
               });
               if (newBullet) {
                 soundManager.playPyramidBulletSound();
@@ -6763,7 +6764,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                 y: currentEnemy.y + currentEnemy.height,
                 width: 10,
                 height: 10,
-                speed: 3,
+                speed: 3 * currentTimeScale,
                 enemyId: enemyId,
                 type: "bomb", // Both cube and sphere enemies drop bombs
               });
@@ -6897,7 +6898,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                 y: currentEnemy.y + currentEnemy.height,
                 width: 10,
                 height: 10,
-                speed: 3,
+                speed: 3 * (gameLoopRef.current?.getTimeScale() ?? 1.0),
                 enemyId: enemyId,
                 type: projectileType,
               });
@@ -7110,7 +7111,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     try {
       // Create a burst of particles on submission using pool
       const particleCount = Math.round(150 * (qualitySettings.explosionParticles / 50));
-      particlePool.acquireForHighScore(SCALED_CANVAS_WIDTH / 2, SCALED_CANVAS_HEIGHT / 2, particleCount);
+      particlePool.acquireForHighScore(SCALED_CANVAS_WIDTH / 2, SCALED_CANVAS_HEIGHT / 2, particleCount, gameLoopRef.current?.getTimeScale() ?? 1.0);
       // particleRenderTick removed — pool renders directly
 
       // Flash the screen

@@ -71,7 +71,7 @@ class ParticlePool {
   }
 
   // Acquire multiple particles for an explosion - optimized batch acquisition
-  acquireForExplosion(x: number, y: number, count: number, enemyType?: EnemyType): void {
+  acquireForExplosion(x: number, y: number, count: number, enemyType?: EnemyType, timeScale: number = 1.0): void {
     const colors = COLOR_PALETTES[enemyType || 'default'];
     const colorCount = colors.length;
     
@@ -89,7 +89,7 @@ class ParticlePool {
       
       // Initialize particle in-place
       const angle = (Math.PI * 2 * i) / count + Math.random() * 0.3;
-      const speed = (2 + Math.random() * 3) * 60; // px/s
+      const speed = (2 + Math.random() * 3) * 60 * timeScale; // px/s
       
       particle.x = x;
       particle.y = y;
@@ -106,7 +106,7 @@ class ParticlePool {
   }
 
   // Acquire particles for game over effect — useCircle=true for celebration rendering pass
-  acquireForGameOver(centerX: number, centerY: number, count: number): void {
+  acquireForGameOver(centerX: number, centerY: number, count: number, timeScale: number = 1.0): void {
     for (let i = 0; i < count; i++) {
       let particle: Particle;
       
@@ -119,7 +119,7 @@ class ParticlePool {
       }
       
       const angle = Math.random() * Math.PI * 2;
-      const speed = (2 + Math.random() * 4) * 60; // px/s
+      const speed = (2 + Math.random() * 4) * 60 * timeScale; // px/s
       const hue = Math.floor(Math.random() * 360);
       
       particle.x = centerX;
@@ -137,7 +137,7 @@ class ParticlePool {
   }
 
   // Acquire particles for high score celebration — useCircle=true for celebration rendering pass
-  acquireForHighScore(centerX: number, centerY: number, count: number): void {
+  acquireForHighScore(centerX: number, centerY: number, count: number, timeScale: number = 1.0): void {
     const colors = ["#FFD700", "#FF6B6B", "#4ECDC4", "#45B7D1", "#FFA07A", "#98D8C8", "#F7DC6F", "#BB8FCE"];
     const colorCount = colors.length;
     
@@ -153,7 +153,7 @@ class ParticlePool {
       }
       
       const angle = (Math.PI * 2 * i) / count + Math.random() * 0.5;
-      const speed = (3 + Math.random() * 5) * 60; // px/s
+      const speed = (3 + Math.random() * 5) * 60 * timeScale; // px/s
       
       particle.x = centerX + (Math.random() - 0.5) * 200;
       particle.y = centerY + (Math.random() - 0.5) * 100;
