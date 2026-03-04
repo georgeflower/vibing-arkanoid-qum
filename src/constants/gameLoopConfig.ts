@@ -6,7 +6,7 @@
  */
 
 /** Default game speed (1.0 = normal, 0.5 = half speed, 2.0 = double speed) */
-export const DEFAULT_TIME_SCALE = 1.0;
+export const DEFAULT_TIME_SCALE = 0.7;
 
 /** Minimum allowed time scale (used by debug speed controls) */
 export const MIN_TIME_SCALE = 0.1;
@@ -15,7 +15,7 @@ export const MIN_TIME_SCALE = 0.1;
 export const MAX_TIME_SCALE = 3.0;
 
 /** FPS cap for high-end computers (frames per second) */
-export const FPS_CAP = 100;
+export const FPS_CAP = 60;
 
 /** Maximum delta time in milliseconds (prevents large jumps after tab switches etc.) */
 export const MAX_DELTA_MS = 250;
