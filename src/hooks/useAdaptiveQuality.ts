@@ -91,7 +91,7 @@ function detectIntegratedGPU(): boolean {
     const debugInfo = glCtx.getExtension("WEBGL_debug_renderer_info");
     if (!debugInfo) return false;
     const renderer = glCtx.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL).toLowerCase();
-    const integratedIndicators = ["intel", "uhd", "iris", "arc", "integrated", "mali", "adreno"];
+    const integratedIndicators = ["intel", "uhd", "iris", "arc", "integrated"];
     return integratedIndicators.some((indicator) => renderer.includes(indicator));
   } catch {
     return false;
