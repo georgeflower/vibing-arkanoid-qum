@@ -21,21 +21,18 @@ import { renderFrame } from "@/engine/canvasRenderer";
 const TARGET_FPS_HIGH = 120;
 const TARGET_FPS_LOW = 60;
 let currentTargetFps = TARGET_FPS_HIGH;
-let minFrameInterval = 1000 / (currentTargetFps + 2); // slight margin to avoid drift
+let minFrameInterval = 1000 / currentTargetFps; // slight margin to avoid drift
 
 /** Update the render target FPS based on quality level */
-export function setRenderTargetFps(qualityLevel: 'low' | 'medium' | 'high'): void {
-  const newTarget = qualityLevel === 'low' ? TARGET_FPS_LOW : TARGET_FPS_HIGH;
+export function setRenderTargetFps(qualityLevel: "low" | "medium" | "high"): void {
+  const newTarget = qualityLevel === "low" ? TARGET_FPS_LOW : TARGET_FPS_HIGH;
   if (newTarget !== currentTargetFps) {
     currentTargetFps = newTarget;
     minFrameInterval = 1000 / (currentTargetFps + 2);
   }
 }
 
-export function startRenderLoop(
-  canvas: HTMLCanvasElement,
-  assets: AssetRefs,
-): () => void {
+export function startRenderLoop(canvas: HTMLCanvasElement, assets: AssetRefs): () => void {
   const ctx = canvas.getContext("2d", {
     // alpha: false eliminates per-pixel alpha compositing when painting the
     // canvas to the page — a significant GPU bandwidth win on integrated GPUs.
