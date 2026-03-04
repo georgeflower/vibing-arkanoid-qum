@@ -1591,6 +1591,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       highFpsThreshold: 55,
       sampleWindow: 3,
       enableLogging: ENABLE_DEBUG_FEATURES && debugSettings.enableFPSLogging,
+      isFullscreen,
     });
 
   // ═══ Sync React state → renderState singleton (for decoupled canvas rendering) ═══

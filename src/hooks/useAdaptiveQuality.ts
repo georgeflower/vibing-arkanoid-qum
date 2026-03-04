@@ -30,6 +30,7 @@ interface AdaptiveQualityOptions {
   highFpsThreshold?: number;
   sampleWindow?: number;
   enableLogging?: boolean;
+  isFullscreen?: boolean;
 }
 
 const QUALITY_PRESETS: Record<QualityLevel, Omit<QualitySettings, 'level' | 'autoAdjust'>> = {
@@ -111,7 +112,8 @@ export const useAdaptiveQuality = (options: AdaptiveQualityOptions = {}) => {
     mediumFpsThreshold = 52,
     highFpsThreshold = 58,
     sampleWindow = 2,
-    enableLogging = true
+    enableLogging = true,
+    isFullscreen = false
   } = options;
 
   // GPU detection: force medium on integrated GPUs
@@ -145,12 +147,20 @@ export const useAdaptiveQuality = (options: AdaptiveQualityOptions = {}) => {
   }, [hasIntegratedGPU]);
 
   const getQualitySettings = useCallback((): QualitySettings => {
-    return {
+    const settings = {
       level: quality,
       autoAdjust: autoAdjustEnabled,
       ...QUALITY_PRESETS[quality]
     };
-  }, [quality, autoAdjustEnabled]);
+
+    // Force resolution scaling on integrated GPUs in fullscreen
+    if (hasIntegratedGPU && isFullscreen) {
+      const iGpuScales: Record<QualityLevel, number> = { low: 0.75, medium: 0.85, high: 0.75 };
+      settings.resolutionScale = iGpuScales[quality];
+    }
+
+    return settings;
+  }, [quality, autoAdjustEnabled, hasIntegratedGPU, isFullscreen]);
 
   const updateFps = useCallback((fps: number) => {
     const now = performance.now();
