@@ -112,7 +112,8 @@ export const useAdaptiveQuality = (options: AdaptiveQualityOptions = {}) => {
     mediumFpsThreshold = 52,
     highFpsThreshold = 58,
     sampleWindow = 2,
-    enableLogging = true
+    enableLogging = true,
+    isFullscreen = false
   } = options;
 
   // GPU detection: force medium on integrated GPUs
