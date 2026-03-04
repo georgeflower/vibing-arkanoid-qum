@@ -1,45 +1,26 @@
 
 
-# Fix Resolution Scaling (Zoom-In Bug)
+# Force Resolution Scaling on Integrated GPUs in Fullscreen
 
-## Root Cause
+## Problem
+Currently, resolution scaling (`resolutionScale < 1.0`) only applies to the "low" quality preset (0.75). On integrated GPUs, medium and high quality still render at full resolution (1.0), which can cause GPU fill-rate bottlenecks — especially in fullscreen where the canvas is much larger.
 
-The current implementation temporarily overrides `renderState.width` and `renderState.height` to the scaled-down values (e.g., 637x487 instead of 850x650). However, all game entities (balls, paddle, bricks, enemies, bosses) have positions calculated for the original 850x650 coordinate space. The renderer clips entities outside the smaller canvas, and the subsequent upscale produces a "zoomed in" effect showing only a portion of the game area.
+## Solution
+Override `resolutionScale` in `getQualitySettings()` when an integrated GPU is detected **and** the game is in fullscreen. This forces all quality levels to use reduced resolution rendering.
 
-## Fix
+### Changes
 
-**File: `src/engine/renderLoop.ts`**
+**File: `src/hooks/useAdaptiveQuality.ts`**
+- Add an `isFullscreen` parameter (boolean) that Game.tsx passes in, or expose a method to update it.
+- In `getQualitySettings()`, when `hasIntegratedGPU` is true and fullscreen is active, override `resolutionScale` to a reduced value for medium (0.85) and high (0.75). Low already uses 0.75 so it stays.
 
-Instead of overriding renderState dimensions, apply a `ctx.scale(scale, scale)` transform on the offscreen context. This way:
-- The offscreen canvas is still smaller (fewer pixels to fill = GPU savings)
-- The renderer still sees the original `width` and `height` from renderState
-- All entity positions remain correct in the original coordinate space
-- The scale transform makes the GPU rasterize at reduced resolution
-- The final `drawImage` upscales to the visible canvas
+**File: `src/components/Game.tsx`**
+- Pass `isFullscreen` state into the adaptive quality hook or call a setter when fullscreen changes, so the hook can factor it into the quality settings.
 
-```text
-Before (broken):
-  offscreen canvas = 637x487
-  renderState.width/height = 637x487   <-- entities clip!
-  renderFrame draws at wrong scale
-  drawImage upscales = zoomed in
+### Scaling values per quality level (integrated GPU + fullscreen):
+- **Low**: 0.75 (unchanged — already scaled)
+- **Medium**: 0.85
+- **High**: 0.75
 
-After (fixed):
-  offscreen canvas = 637x487
-  offCtx.scale(0.75, 0.75)             <-- GPU draws fewer pixels
-  renderState.width/height = 850x650   <-- unchanged, entities correct
-  renderFrame draws full scene
-  drawImage upscales = correct view at lower resolution
-```
-
-### Specific changes (lines 80-111):
-
-Remove the `renderState.width/height` override. Instead:
-1. Clear the offscreen canvas
-2. Apply `offCtx.scale(scale, scale)` before calling `renderFrame`
-3. Call `renderFrame` with the offscreen context but **original** renderState (no dimension override)
-4. Reset the transform after rendering
-5. Upscale to visible canvas with `ctx.drawImage`
-
-This is a single-file change to `src/engine/renderLoop.ts`, approximately 10 lines modified.
+This is a 2-file change. The render loop in `renderLoop.ts` already handles `resolutionScale < 1.0` correctly, so no changes needed there.
 
