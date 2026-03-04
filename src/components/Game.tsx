@@ -46,7 +46,6 @@ import { CCDPerformanceTracker } from "@/utils/rollingStats";
 import { debugLogger } from "@/utils/debugLogger";
 import { particlePool } from "@/utils/particlePool";
 
-
 // ═══════════════════════════════════════════════════════════════
 import { Maximize2, Minimize2, Home, X } from "lucide-react";
 import { QualityIndicator } from "./QualityIndicator";
@@ -83,7 +82,6 @@ import {
   BRICK_PADDING,
   BRICK_OFFSET_TOP,
   BRICK_OFFSET_LEFT,
-  
   POWERUP_DROP_CHANCE,
   getHitColor,
   getBrickColors,
@@ -182,7 +180,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   // Wrap setScore to always keep scoreRef in sync
   const setScore = useCallback((updater: number | ((prev: number) => number)) => {
     setScoreRaw((prev) => {
-      const newVal = typeof updater === 'function' ? updater(prev) : updater;
+      const newVal = typeof updater === "function" ? updater(prev) : updater;
       scoreRef.current = newVal;
       return newVal;
     });
@@ -252,7 +250,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   // ═══ PHASE 1: bricks lives in world.bricks (engine/state.ts) ═══
   const bricks = world.bricks;
   const setBricks = useCallback((updater: Brick[] | ((prev: Brick[]) => Brick[])) => {
-    if (typeof updater === 'function') {
+    if (typeof updater === "function") {
       world.bricks = updater(world.bricks);
     } else {
       world.bricks = updater;
@@ -263,7 +261,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   // `balls` is a getter so existing code reads the latest value.
   const balls = world.balls;
   const setBalls = useCallback((updater: Ball[] | ((prev: Ball[]) => Ball[])) => {
-    if (typeof updater === 'function') {
+    if (typeof updater === "function") {
       world.balls = updater(world.balls);
     } else {
       world.balls = updater;
@@ -273,7 +271,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   // Compatibility shim: setPaddle writes to world.paddle directly, no React re-render.
   const paddle = world.paddle;
   const setPaddle = useCallback((updater: Paddle | null | ((prev: Paddle | null) => Paddle | null)) => {
-    if (typeof updater === 'function') {
+    if (typeof updater === "function") {
       world.paddle = updater(world.paddle);
     } else {
       world.paddle = updater;
@@ -332,7 +330,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   void speedMultiplierInitialized; // suppress unused warning
   const speedMultiplier = world.speedMultiplier;
   const setSpeedMultiplier = useCallback((updater: number | ((prev: number) => number)) => {
-    if (typeof updater === 'function') {
+    if (typeof updater === "function") {
       world.speedMultiplier = updater(world.speedMultiplier);
     } else {
       world.speedMultiplier = updater;
@@ -354,7 +352,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   // ═══ PHASE 1: enemies lives in world.enemies (engine/state.ts) ═══
   const enemies = world.enemies;
   const setEnemies = useCallback((updater: Enemy[] | ((prev: Enemy[]) => Enemy[])) => {
-    if (typeof updater === 'function') {
+    if (typeof updater === "function") {
       world.enemies = updater(world.enemies);
     } else {
       world.enemies = updater;
@@ -363,7 +361,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   // ═══ PHASE 1: bombs lives in world.bombs (engine/state.ts) ═══
   const bombs = world.bombs;
   const setBombs = useCallback((updater: Bomb[] | ((prev: Bomb[]) => Bomb[])) => {
-    if (typeof updater === 'function') {
+    if (typeof updater === "function") {
       world.bombs = updater(world.bombs);
     } else {
       world.bombs = updater;
@@ -372,7 +370,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   // ═══ PHASE 1: backgroundPhase lives in world.backgroundPhase (engine/state.ts) ═══
   const backgroundPhase = world.backgroundPhase;
   const setBackgroundPhase = useCallback((updater: number | ((prev: number) => number)) => {
-    if (typeof updater === 'function') {
+    if (typeof updater === "function") {
       world.backgroundPhase = updater(world.backgroundPhase);
     } else {
       world.backgroundPhase = updater;
@@ -396,7 +394,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       return;
     }
 
-    if (typeof updater === 'function') {
+    if (typeof updater === "function") {
       // Updater pattern: setExplosions(prev => [...prev, newExplosion])
       // We pass the current active list to the updater, then pool any new entries
       const prevActive = explosionPool.getActive();
@@ -429,7 +427,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   // ═══ PHASE 1: enemySpawnCount lives in world.enemySpawnCount (engine/state.ts) ═══
   const enemySpawnCount = world.enemySpawnCount;
   const setEnemySpawnCount = useCallback((updater: number | ((prev: number) => number)) => {
-    if (typeof updater === 'function') {
+    if (typeof updater === "function") {
       world.enemySpawnCount = updater(world.enemySpawnCount);
     } else {
       world.enemySpawnCount = updater;
@@ -438,7 +436,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   // ═══ PHASE 1: lastEnemySpawnTime lives in world.lastEnemySpawnTime (engine/state.ts) ═══
   const lastEnemySpawnTime = world.lastEnemySpawnTime;
   const setLastEnemySpawnTime = useCallback((updater: number | ((prev: number) => number)) => {
-    if (typeof updater === 'function') {
+    if (typeof updater === "function") {
       world.lastEnemySpawnTime = updater(world.lastEnemySpawnTime);
     } else {
       world.lastEnemySpawnTime = updater;
@@ -447,7 +445,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   // ═══ PHASE 1: launchAngle lives in world.launchAngle (engine/state.ts) ═══
   const launchAngle = world.launchAngle;
   const setLaunchAngle = useCallback((updater: number | ((prev: number) => number)) => {
-    if (typeof updater === 'function') {
+    if (typeof updater === "function") {
       world.launchAngle = updater(world.launchAngle);
     } else {
       world.launchAngle = updater;
@@ -458,7 +456,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   // ═══ PHASE 1: bonusLetters lives in world.bonusLetters (engine/state.ts) ═══
   const bonusLetters = world.bonusLetters;
   const setBonusLetters = useCallback((updater: BonusLetter[] | ((prev: BonusLetter[]) => BonusLetter[])) => {
-    if (typeof updater === 'function') {
+    if (typeof updater === "function") {
       world.bonusLetters = updater(world.bonusLetters);
     } else {
       world.bonusLetters = updater;
@@ -471,7 +469,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   // ═══ PHASE 1: boss lives in world.boss (engine/state.ts) ═══
   const boss = world.boss;
   const setBoss = useCallback((updater: Boss | null | ((prev: Boss | null) => Boss | null)) => {
-    if (typeof updater === 'function') {
+    if (typeof updater === "function") {
       world.boss = updater(world.boss);
     } else {
       world.boss = updater;
@@ -480,7 +478,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   // ═══ PHASE 1: resurrectedBosses lives in world.resurrectedBosses (engine/state.ts) ═══
   const resurrectedBosses = world.resurrectedBosses;
   const setResurrectedBosses = useCallback((updater: Boss[] | ((prev: Boss[]) => Boss[])) => {
-    if (typeof updater === 'function') {
+    if (typeof updater === "function") {
       world.resurrectedBosses = updater(world.resurrectedBosses);
     } else {
       world.resurrectedBosses = updater;
@@ -489,15 +487,15 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   // ═══ PHASE 1: bossAttacks lives in world.bossAttacks (engine/state.ts) ═══
   const bossAttacks = world.bossAttacks;
   const setBossAttacks = useCallback((updater: BossAttack[] | ((prev: BossAttack[]) => BossAttack[])) => {
-    if (typeof updater === 'function') {
+    if (typeof updater === "function") {
       world.bossAttacks = updater(world.bossAttacks);
     } else {
       world.bossAttacks = updater;
     }
   }, []);
   const [bossDefeatedTransitioning, setBossDefeatedTransitioning] = useState(false);
-   const bossDefeatedTransitioningRef = useRef(false);
-   const hasAutoFullscreenedRef = useRef(false);
+  const bossDefeatedTransitioningRef = useRef(false);
+  const hasAutoFullscreenedRef = useRef(false);
   useEffect(() => {
     bossDefeatedTransitioningRef.current = bossDefeatedTransitioning;
   }, [bossDefeatedTransitioning]);
@@ -505,7 +503,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   // ═══ PHASE 1: bossActive lives in world.bossActive (engine/state.ts) ═══
   const bossActive = world.bossActive;
   const setBossActive = useCallback((updater: boolean | ((prev: boolean) => boolean)) => {
-    if (typeof updater === 'function') {
+    if (typeof updater === "function") {
       world.bossActive = updater(world.bossActive);
     } else {
       world.bossActive = updater;
@@ -514,7 +512,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   // ═══ PHASE 1: bossHitCooldown lives in world.bossHitCooldown (engine/state.ts) ═══
   const bossHitCooldown = world.bossHitCooldown;
   const setBossHitCooldown = useCallback((updater: number | ((prev: number) => number)) => {
-    if (typeof updater === 'function') {
+    if (typeof updater === "function") {
       world.bossHitCooldown = updater(world.bossHitCooldown);
     } else {
       world.bossHitCooldown = updater;
@@ -523,7 +521,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   // ═══ PHASE 1: laserWarnings lives in world.laserWarnings (engine/state.ts) ═══
   const laserWarnings = world.laserWarnings;
   const setLaserWarnings = useCallback((updater: LaserWarning[] | ((prev: LaserWarning[]) => LaserWarning[])) => {
-    if (typeof updater === 'function') {
+    if (typeof updater === "function") {
       world.laserWarnings = updater(world.laserWarnings);
     } else {
       world.laserWarnings = updater;
@@ -532,7 +530,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   // ═══ PHASE 1: superWarnings lives in world.superWarnings (engine/state.ts) ═══
   const superWarnings = world.superWarnings;
   const setSuperWarnings = useCallback((updater: SuperWarning[] | ((prev: SuperWarning[]) => SuperWarning[])) => {
-    if (typeof updater === 'function') {
+    if (typeof updater === "function") {
       world.superWarnings = updater(world.superWarnings);
     } else {
       world.superWarnings = updater;
@@ -573,7 +571,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   // ═══ PHASE 1: brickHitSpeedAccumulated lives in world (engine/state.ts) ═══
   const brickHitSpeedAccumulated = world.brickHitSpeedAccumulated;
   const setBrickHitSpeedAccumulated = useCallback((updater: number | ((prev: number) => number)) => {
-    if (typeof updater === 'function') {
+    if (typeof updater === "function") {
       world.brickHitSpeedAccumulated = updater(world.brickHitSpeedAccumulated);
     } else {
       world.brickHitSpeedAccumulated = updater;
@@ -582,7 +580,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   // ═══ PHASE 1: enemiesKilled lives in world (engine/state.ts) ═══
   const enemiesKilled = world.enemiesKilled;
   const setEnemiesKilled = useCallback((updater: number | ((prev: number) => number)) => {
-    if (typeof updater === 'function') {
+    if (typeof updater === "function") {
       world.enemiesKilled = updater(world.enemiesKilled);
     } else {
       world.enemiesKilled = updater;
@@ -591,7 +589,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   // ═══ PHASE 1: screenShake lives in world.screenShake (engine/state.ts) ═══
   const screenShake = world.screenShake;
   const setScreenShake = useCallback((updater: number | ((prev: number) => number)) => {
-    if (typeof updater === 'function') {
+    if (typeof updater === "function") {
       world.screenShake = updater(world.screenShake);
     } else {
       world.screenShake = updater;
@@ -604,14 +602,14 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     }
   }, []);
   const screenShakeStartRef = useRef<number | null>(null);
-   // BALL_GRAVITY and GRAVITY_DELAY_MS imported from @/engine/physics
+  // BALL_GRAVITY and GRAVITY_DELAY_MS imported from @/engine/physics
 
   // Screen shake tracking is now inlined in setScreenShake
 
   // ═══ PHASE 1: backgroundFlash lives in world.backgroundFlash (engine/state.ts) ═══
   const backgroundFlash = world.backgroundFlash;
   const setBackgroundFlash = useCallback((updater: number | ((prev: number) => number)) => {
-    if (typeof updater === 'function') {
+    if (typeof updater === "function") {
       world.backgroundFlash = updater(world.backgroundFlash);
     } else {
       world.backgroundFlash = updater;
@@ -620,7 +618,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   // ═══ PHASE 1: highlightFlash lives in world.highlightFlash (engine/state.ts) ═══
   const highlightFlash = world.highlightFlash;
   const setHighlightFlash = useCallback((updater: number | ((prev: number) => number)) => {
-    if (typeof updater === 'function') {
+    if (typeof updater === "function") {
       world.highlightFlash = updater(world.highlightFlash);
     } else {
       world.highlightFlash = updater;
@@ -630,7 +628,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   // ═══ PHASE 1: lastBossSpawnTime lives in world.lastBossSpawnTime (engine/state.ts) ═══
   const lastBossSpawnTime = world.lastBossSpawnTime;
   const setLastBossSpawnTime = useCallback((updater: number | ((prev: number) => number)) => {
-    if (typeof updater === 'function') {
+    if (typeof updater === "function") {
       world.lastBossSpawnTime = updater(world.lastBossSpawnTime);
     } else {
       world.lastBossSpawnTime = updater;
@@ -640,7 +638,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   // ═══ PHASE 1: shieldImpacts lives in world.shieldImpacts (engine/state.ts) ═══
   const shieldImpacts = world.shieldImpacts;
   const setShieldImpacts = useCallback((updater: ShieldImpact[] | ((prev: ShieldImpact[]) => ShieldImpact[])) => {
-    if (typeof updater === 'function') {
+    if (typeof updater === "function") {
       world.shieldImpacts = updater(world.shieldImpacts);
     } else {
       world.shieldImpacts = updater;
@@ -653,7 +651,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   // ═══ PHASE 1: dangerBalls lives in world.dangerBalls (engine/state.ts) ═══
   const dangerBalls = world.dangerBalls;
   const setDangerBalls = useCallback((updater: DangerBall[] | ((prev: DangerBall[]) => DangerBall[])) => {
-    if (typeof updater === 'function') {
+    if (typeof updater === "function") {
       world.dangerBalls = updater(world.dangerBalls);
     } else {
       world.dangerBalls = updater;
@@ -725,7 +723,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   // ═══ PHASE 1: bulletImpacts lives in world.bulletImpacts (engine/state.ts) ═══
   const bulletImpacts = world.bulletImpacts;
   const setBulletImpacts = useCallback((updater: BulletImpact[] | ((prev: BulletImpact[]) => BulletImpact[])) => {
-    if (typeof updater === 'function') {
+    if (typeof updater === "function") {
       world.bulletImpacts = updater(world.bulletImpacts);
     } else {
       world.bulletImpacts = updater;
@@ -740,9 +738,6 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   // Mobile ball glow state for Get Ready sequence
   const [getReadyGlow, setGetReadyGlow] = useState<{ opacity: number } | null>(null);
   const getReadyGlowStartTimeRef = useRef<number | null>(null);
-
-
-  
 
   // ═══════════════════════════════════════════════════════════════
   // ████████╗ DEBUG STATE - REMOVE BEFORE PRODUCTION ████████╗
@@ -931,44 +926,53 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       }
 
       // Adjust ball timestamps to account for pause duration
-      setBalls(prev => prev.map(ball => ({
-        ...ball,
-        lastGravityResetTime: ball.lastGravityResetTime 
-          ? ball.lastGravityResetTime + pauseDuration : ball.lastGravityResetTime,
-        lastPaddleHitTime: ball.lastPaddleHitTime 
-          ? ball.lastPaddleHitTime + pauseDuration : ball.lastPaddleHitTime,
-        releasedFromBossTime: ball.releasedFromBossTime 
-          ? ball.releasedFromBossTime + pauseDuration : ball.releasedFromBossTime,
-        lastHitTime: ball.lastHitTime
-          ? ball.lastHitTime + pauseDuration : ball.lastHitTime,
-        lastWallHitTime: ball.lastWallHitTime
-          ? ball.lastWallHitTime + pauseDuration : ball.lastWallHitTime,
-      })));
+      setBalls((prev) =>
+        prev.map((ball) => ({
+          ...ball,
+          lastGravityResetTime: ball.lastGravityResetTime
+            ? ball.lastGravityResetTime + pauseDuration
+            : ball.lastGravityResetTime,
+          lastPaddleHitTime: ball.lastPaddleHitTime ? ball.lastPaddleHitTime + pauseDuration : ball.lastPaddleHitTime,
+          releasedFromBossTime: ball.releasedFromBossTime
+            ? ball.releasedFromBossTime + pauseDuration
+            : ball.releasedFromBossTime,
+          lastHitTime: ball.lastHitTime ? ball.lastHitTime + pauseDuration : ball.lastHitTime,
+          lastWallHitTime: ball.lastWallHitTime ? ball.lastWallHitTime + pauseDuration : ball.lastWallHitTime,
+        })),
+      );
 
       // Adjust boss lastHitAt
       if (boss) {
-        setBoss(prev => prev ? { ...prev, lastHitAt: (prev.lastHitAt || 0) + pauseDuration } : null);
+        setBoss((prev) => (prev ? { ...prev, lastHitAt: (prev.lastHitAt || 0) + pauseDuration } : null));
       }
 
       // Adjust resurrected bosses
-      setResurrectedBosses(prev => prev.map(rb => ({
-        ...rb,
-        lastHitAt: (rb.lastHitAt || 0) + pauseDuration,
-      })));
+      setResurrectedBosses((prev) =>
+        prev.map((rb) => ({
+          ...rb,
+          lastHitAt: (rb.lastHitAt || 0) + pauseDuration,
+        })),
+      );
 
       // Adjust boss attack timestamps
-      setBossAttacks(prev => prev.map(attack => ({
-        ...attack,
-        stopStartTime: attack.stopStartTime ? attack.stopStartTime + pauseDuration : attack.stopStartTime,
-        nextCourseChangeTime: attack.nextCourseChangeTime ? attack.nextCourseChangeTime + pauseDuration : attack.nextCourseChangeTime,
-        spawnTime: attack.spawnTime ? attack.spawnTime + pauseDuration : attack.spawnTime,
-      })));
+      setBossAttacks((prev) =>
+        prev.map((attack) => ({
+          ...attack,
+          stopStartTime: attack.stopStartTime ? attack.stopStartTime + pauseDuration : attack.stopStartTime,
+          nextCourseChangeTime: attack.nextCourseChangeTime
+            ? attack.nextCourseChangeTime + pauseDuration
+            : attack.nextCourseChangeTime,
+          spawnTime: attack.spawnTime ? attack.spawnTime + pauseDuration : attack.spawnTime,
+        })),
+      );
 
       // Adjust bonus letter spawnTime (used for sine wave animation)
-      setBonusLetters(prev => prev.map(letter => ({
-        ...letter,
-        spawnTime: letter.spawnTime + pauseDuration,
-      })));
+      setBonusLetters((prev) =>
+        prev.map((letter) => ({
+          ...letter,
+          spawnTime: letter.spawnTime + pauseDuration,
+        })),
+      );
 
       pauseStartTimeRef.current = null;
       savedTimerDurationsRef.current = { bossStunner: null, reflectShield: null, homingBall: null, fireball: null };
@@ -1122,10 +1126,15 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
   // Initialize debug logger when debug features are enabled
   // Only intercept console when at least one logging toggle is active
-  const anyLoggingActive = debugSettings.enableLagLogging || debugSettings.enableGCLogging ||
-    debugSettings.enableCollisionLogging || debugSettings.enablePowerUpLogging ||
-    debugSettings.enablePerformanceLogging || debugSettings.enableFPSLogging ||
-    debugSettings.enableDetailedFrameLogging || debugSettings.enableBossLogging;
+  const anyLoggingActive =
+    debugSettings.enableLagLogging ||
+    debugSettings.enableGCLogging ||
+    debugSettings.enableCollisionLogging ||
+    debugSettings.enablePowerUpLogging ||
+    debugSettings.enablePerformanceLogging ||
+    debugSettings.enableFPSLogging ||
+    debugSettings.enableDetailedFrameLogging ||
+    debugSettings.enableBossLogging;
 
   useEffect(() => {
     if (ENABLE_DEBUG_FEATURES && anyLoggingActive) {
@@ -1195,7 +1204,6 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       gameLoopRef.current.pause();
     }
   }, [gameState, tutorialActive]);
-
 
   // Boss power-up effect handlers
   const handleBossStunner = useCallback(() => {
@@ -1444,11 +1452,19 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     // Boss defeat callback
     (bossType, defeatedBoss) => {
       if (bossType === "cube") {
-        handleBossDefeat("cube", defeatedBoss, BOSS_CONFIG.cube.points,
-          `CUBE GUARDIAN DEFEATED! +${BOSS_CONFIG.cube.points} points + BONUS LIFE!`);
+        handleBossDefeat(
+          "cube",
+          defeatedBoss,
+          BOSS_CONFIG.cube.points,
+          `CUBE GUARDIAN DEFEATED! +${BOSS_CONFIG.cube.points} points + BONUS LIFE!`,
+        );
       } else if (bossType === "sphere") {
-        handleBossDefeat("sphere", defeatedBoss, BOSS_CONFIG.sphere.points,
-          `SPHERE DESTROYER DEFEATED! +${BOSS_CONFIG.sphere.points} points + BONUS LIFE!`);
+        handleBossDefeat(
+          "sphere",
+          defeatedBoss,
+          BOSS_CONFIG.sphere.points,
+          `SPHERE DESTROYER DEFEATED! +${BOSS_CONFIG.sphere.points} points + BONUS LIFE!`,
+        );
       }
     },
     // Resurrected boss defeat callback
@@ -1496,7 +1512,9 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
           if (settings.difficulty !== "godlike") {
             setLives((prev) => prev + 1);
           }
-          toast.success(settings.difficulty === "godlike" ? "ALL PYRAMIDS DEFEATED!" : "ALL PYRAMIDS DEFEATED! + BONUS LIFE!");
+          toast.success(
+            settings.difficulty === "godlike" ? "ALL PYRAMIDS DEFEATED!" : "ALL PYRAMIDS DEFEATED! + BONUS LIFE!",
+          );
           setBossActive(false);
           setBossesKilled((k) => k + 1);
           setBossDefeatedTransitioning(true);
@@ -1505,7 +1523,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
           clearAllEnemies();
           setBossAttacks([]);
           clearAllBombs();
-          world.bullets = []; bulletPool.releaseAll();
+          world.bullets = [];
+          bulletPool.releaseAll();
 
           if (isBossRush) {
             gameLoopRef.current?.pause();
@@ -1614,10 +1633,18 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     // Sync render loop FPS target with quality level
     setRenderTargetFps(qualitySettings.level);
   }, [
-    gameState, level, collectedLetters,
-    qualitySettings, showHighScoreEntry, bossIntroActive,
-    bossSpawnAnimation, tutorialStep, isMobileDevice,
-    getReadyGlow, secondChanceImpact, ballReleaseHighlight,
+    gameState,
+    level,
+    collectedLetters,
+    qualitySettings,
+    showHighScoreEntry,
+    bossIntroActive,
+    bossSpawnAnimation,
+    tutorialStep,
+    isMobileDevice,
+    getReadyGlow,
+    secondChanceImpact,
+    ballReleaseHighlight,
   ]);
 
   // Desktop viewport frame - fills entire screen on desktop
@@ -1692,154 +1719,162 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
    * Survive-death branch: resets ball (with proper angle math), clears all power-up
    * timers, entities, and bomb intervals. Optionally spawns mercy power-ups.
    */
-  const handleSurviveDeath = useCallback((toastMessage: string, opts?: { spawnMercy?: boolean }) => {
-    const baseSpeed = 4.5;
-    const initialAngle = (-20 * Math.PI) / 180;
-    const resetBall: Ball = {
-      x: SCALED_CANVAS_WIDTH / 2,
-      y: SCALED_CANVAS_HEIGHT - SCALED_PADDLE_START_Y,
-      dx: baseSpeed * Math.sin(initialAngle),
-      dy: -baseSpeed * Math.cos(initialAngle),
-      radius: SCALED_BALL_RADIUS,
-      speed: baseSpeed,
-      id: nextBallId.current++,
-      isFireball: false,
-      waitingToLaunch: true,
-    };
-    setBalls([resetBall]);
-    setLaunchAngle(-20);
-    launchAngleDirectionRef.current = 1;
-    setShowInstructions(true);
+  const handleSurviveDeath = useCallback(
+    (toastMessage: string, opts?: { spawnMercy?: boolean }) => {
+      const baseSpeed = 4.5;
+      const initialAngle = (-20 * Math.PI) / 180;
+      const resetBall: Ball = {
+        x: SCALED_CANVAS_WIDTH / 2,
+        y: SCALED_CANVAS_HEIGHT - SCALED_PADDLE_START_Y,
+        dx: baseSpeed * Math.sin(initialAngle),
+        dy: -baseSpeed * Math.cos(initialAngle),
+        radius: SCALED_BALL_RADIUS,
+        speed: baseSpeed,
+        id: nextBallId.current++,
+        isFireball: false,
+        waitingToLaunch: true,
+      };
+      setBalls([resetBall]);
+      setLaunchAngle(-20);
+      launchAngleDirectionRef.current = 1;
+      setShowInstructions(true);
 
-    // Mercy power-ups (only for allBallsLost path)
-    if (opts?.spawnMercy) {
-      setLivesLostOnCurrentLevel((prev) => {
-        const newCount = prev + 1;
-        if (settings.difficulty === "godlike") {
-          setPowerUps([]);
+      // Mercy power-ups (only for allBallsLost path)
+      if (opts?.spawnMercy) {
+        setLivesLostOnCurrentLevel((prev) => {
+          const newCount = prev + 1;
+          if (settings.difficulty === "godlike") {
+            setPowerUps([]);
+            return newCount;
+          }
+          let mercyType: PowerUpType;
+          if (newCount >= 3) {
+            mercyType = "life";
+          } else {
+            const mercyTypes: PowerUpType[] = ["turrets", "secondChance", "shield"];
+            mercyType = mercyTypes[Math.floor(Math.random() * mercyTypes.length)];
+          }
+          const mercyPowerUp: PowerUp = {
+            type: mercyType,
+            x: SCALED_CANVAS_WIDTH / 2 - POWERUP_SIZE / 2,
+            y: 100,
+            width: POWERUP_SIZE,
+            height: POWERUP_SIZE,
+            speed: POWERUP_FALL_SPEED,
+            active: true,
+            isMercyLife: mercyType === "life",
+          };
+          setPowerUps([mercyPowerUp]);
           return newCount;
-        }
-        let mercyType: PowerUpType;
-        if (newCount >= 3) {
-          mercyType = "life";
-        } else {
-          const mercyTypes: PowerUpType[] = ["turrets", "secondChance", "shield"];
-          mercyType = mercyTypes[Math.floor(Math.random() * mercyTypes.length)];
-        }
-        const mercyPowerUp: PowerUp = {
-          type: mercyType,
-          x: SCALED_CANVAS_WIDTH / 2 - POWERUP_SIZE / 2,
-          y: 100,
-          width: POWERUP_SIZE,
-          height: POWERUP_SIZE,
-          speed: POWERUP_FALL_SPEED,
-          active: true,
-          isMercyLife: mercyType === "life",
-        };
-        setPowerUps([mercyPowerUp]);
-        return newCount;
-      });
-    } else {
-      setPowerUps([]);
-    }
+        });
+      } else {
+        setPowerUps([]);
+      }
 
-    setBonusLetters([]);
-    setPaddle((prev) =>
-      prev
-        ? { ...prev, hasTurrets: false, hasShield: false, hasReflectShield: false, width: SCALED_PADDLE_WIDTH }
-        : null,
-    );
+      setBonusLetters([]);
+      setPaddle((prev) =>
+        prev
+          ? { ...prev, hasTurrets: false, hasShield: false, hasReflectShield: false, width: SCALED_PADDLE_WIDTH }
+          : null,
+      );
 
-    // Clear all power-up timers
-    setBossStunnerEndTime(null);
-    setReflectShieldEndTime(null);
-    setHomingBallEndTime(null);
-    setFireballEndTime(null);
-    setReflectShieldActive(false);
-    setHomingBallActive(false);
-    if (reflectShieldTimeoutRef.current) {
-      clearTimeout(reflectShieldTimeoutRef.current);
-      reflectShieldTimeoutRef.current = null;
-    }
-    if (homingBallTimeoutRef.current) {
-      clearTimeout(homingBallTimeoutRef.current);
-      homingBallTimeoutRef.current = null;
-    }
+      // Clear all power-up timers
+      setBossStunnerEndTime(null);
+      setReflectShieldEndTime(null);
+      setHomingBallEndTime(null);
+      setFireballEndTime(null);
+      setReflectShieldActive(false);
+      setHomingBallActive(false);
+      if (reflectShieldTimeoutRef.current) {
+        clearTimeout(reflectShieldTimeoutRef.current);
+        reflectShieldTimeoutRef.current = null;
+      }
+      if (homingBallTimeoutRef.current) {
+        clearTimeout(homingBallTimeoutRef.current);
+        homingBallTimeoutRef.current = null;
+      }
 
-    world.bullets = []; bulletPool.releaseAll();
-    if (world.speedMultiplier < 1) setSpeedMultiplier(1);
-    setBrickHitSpeedAccumulated(0);
-    setTimer(0);
-    setLastEnemySpawnTime(0);
-    clearAllEnemies();
-    setBossAttacks([]);
-    setLaserWarnings([]);
-    clearAllBombs();
-    setExplosions([]);
-    bombIntervalsRef.current.forEach((interval) => clearInterval(interval));
-    bombIntervalsRef.current.clear();
-    setGameState("ready");
-    toast(toastMessage);
-  }, [
-    SCALED_CANVAS_WIDTH, SCALED_CANVAS_HEIGHT, SCALED_PADDLE_START_Y,
-    SCALED_BALL_RADIUS, SCALED_PADDLE_WIDTH, settings.difficulty,
-    clearAllEnemies, clearAllBombs,
-  ]);
+      world.bullets = [];
+      bulletPool.releaseAll();
+      if (world.speedMultiplier < 1) setSpeedMultiplier(1);
+      setBrickHitSpeedAccumulated(0);
+      setTimer(0);
+      setLastEnemySpawnTime(0);
+      clearAllEnemies();
+      setBossAttacks([]);
+      setLaserWarnings([]);
+      clearAllBombs();
+      setExplosions([]);
+      bombIntervalsRef.current.forEach((interval) => clearInterval(interval));
+      bombIntervalsRef.current.clear();
+      setGameState("ready");
+      toast(toastMessage);
+    },
+    [
+      SCALED_CANVAS_WIDTH,
+      SCALED_CANVAS_HEIGHT,
+      SCALED_PADDLE_START_Y,
+      SCALED_BALL_RADIUS,
+      SCALED_PADDLE_WIDTH,
+      settings.difficulty,
+      clearAllEnemies,
+      clearAllBombs,
+    ],
+  );
 
   /**
    * Boss defeat: plays sounds, awards points + bonus life, creates explosion,
    * cleans up entities, and transitions to victory overlay or next Boss Rush stage.
    */
-  const handleBossDefeat = useCallback((
-    bossType: EnemyType,
-    defeatedBoss: Boss,
-    points: number,
-    toastMessage: string,
-  ) => {
-    soundManager.playExplosion();
-    soundManager.playBossDefeatSound();
-    setScore((s) => s + points);
-    if (settings.difficulty !== "godlike") {
-      setLives((prev) => prev + 1);
-    }
-    toast.success(toastMessage);
+  const handleBossDefeat = useCallback(
+    (bossType: EnemyType, defeatedBoss: Boss, points: number, toastMessage: string) => {
+      soundManager.playExplosion();
+      soundManager.playBossDefeatSound();
+      setScore((s) => s + points);
+      if (settings.difficulty !== "godlike") {
+        setLives((prev) => prev + 1);
+      }
+      toast.success(toastMessage);
 
-    setExplosions((e) => [
-      ...e,
-      {
-        x: defeatedBoss.x + defeatedBoss.width / 2,
-        y: defeatedBoss.y + defeatedBoss.height / 2,
-        frame: 0,
-        maxFrames: 30,
-        enemyType: bossType,
-        particles: createExplosionParticles(
-          defeatedBoss.x + defeatedBoss.width / 2,
-          defeatedBoss.y + defeatedBoss.height / 2,
-          bossType,
-        ),
-      },
-    ]);
+      setExplosions((e) => [
+        ...e,
+        {
+          x: defeatedBoss.x + defeatedBoss.width / 2,
+          y: defeatedBoss.y + defeatedBoss.height / 2,
+          frame: 0,
+          maxFrames: 30,
+          enemyType: bossType,
+          particles: createExplosionParticles(
+            defeatedBoss.x + defeatedBoss.width / 2,
+            defeatedBoss.y + defeatedBoss.height / 2,
+            bossType,
+          ),
+        },
+      ]);
 
-    setBossesKilled((k) => k + 1);
-    setBossActive(false);
-    setBossDefeatedTransitioning(true);
-    setBossVictoryOverlayActive(true);
-    setBalls([]);
-    clearAllEnemies();
-    setBossAttacks([]);
-    clearAllBombs();
-    world.bullets = []; bulletPool.releaseAll();
+      setBossesKilled((k) => k + 1);
+      setBossActive(false);
+      setBossDefeatedTransitioning(true);
+      setBossVictoryOverlayActive(true);
+      setBalls([]);
+      clearAllEnemies();
+      setBossAttacks([]);
+      clearAllBombs();
+      world.bullets = [];
+      bulletPool.releaseAll();
 
-    if (isBossRush) {
-      gameLoopRef.current?.pause();
-      setBossRushTimeSnapshot(bossRushStartTime ? Date.now() - bossRushStartTime : 0);
-      setBossRushStatsOverlayActive(true);
-    } else {
-      soundManager.stopBossMusic();
-      soundManager.resumeBackgroundMusic();
-      setTimeout(() => nextLevelRef.current?.(), 3000);
-    }
-  }, [isBossRush, bossRushStartTime, createExplosionParticles, clearAllEnemies, clearAllBombs]);
+      if (isBossRush) {
+        gameLoopRef.current?.pause();
+        setBossRushTimeSnapshot(bossRushStartTime ? Date.now() - bossRushStartTime : 0);
+        setBossRushStatsOverlayActive(true);
+      } else {
+        soundManager.stopBossMusic();
+        soundManager.resumeBackgroundMusic();
+        setTimeout(() => nextLevelRef.current?.(), 3000);
+      }
+    },
+    [isBossRush, bossRushStartTime, createExplosionParticles, clearAllEnemies, clearAllBombs],
+  );
 
   // createHighScoreParticles removed — replaced by particlePool.acquireForHighScore
 
@@ -2133,13 +2168,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   // Initialize power-up assignments for bricks
   const initPowerUpAssignments = useCallback(
     (bricks: Brick[], targetLevel: number, dropCounts: Partial<Record<PowerUpType, number>> = {}) => {
-      const result = assignPowerUpsToBricks(
-        bricks,
-        extraLifeUsedLevels,
-        targetLevel,
-        settings.difficulty,
-        dropCounts,
-      );
+      const result = assignPowerUpsToBricks(bricks, extraLifeUsedLevels, targetLevel, settings.difficulty, dropCounts);
       setPowerUpAssignments(result.assignments);
       setDualChoiceAssignments(result.dualChoiceAssignments);
       if (ENABLE_DEBUG_FEATURES && debugSettings.enablePowerUpLogging) {
@@ -2362,7 +2391,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       initPowerUpAssignments(newLevelBricks, nextBossLevel, {});
       bricksDestroyedThisLevelRef.current = 0;
       setPowerUps([]);
-      world.bullets = []; bulletPool.releaseAll();
+      world.bullets = [];
+      bulletPool.releaseAll();
       setTimer(0);
       clearAllEnemies();
       clearAllBombs();
@@ -2457,7 +2487,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     initPowerUpAssignments(newLevelBricks, newLevel, {});
     bricksDestroyedThisLevelRef.current = 0; // Reset brick counter for new level
     setPowerUps([]);
-    world.bullets = []; bulletPool.releaseAll();
+    world.bullets = [];
+    bulletPool.releaseAll();
     setTimer(0);
     clearAllEnemies();
     clearAllBombs();
@@ -2669,12 +2700,12 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   );
   const activeTouchRef = useRef<number | null>(null);
   const secondTouchRef = useRef<number | null>(null);
-  
+
   // Mobile touch optimization: cache canvas rect to avoid layout thrashing
   const canvasRectRef = useRef<DOMRect | null>(null);
   const canvasRectTimeRef = useRef(0);
   const RECT_CACHE_MS = 500; // Refresh rect cache every 500ms
-  
+
   const getCanvasRect = useCallback(() => {
     const now = performance.now();
     if (!canvasRectRef.current || now - canvasRectTimeRef.current > RECT_CACHE_MS) {
@@ -2683,11 +2714,11 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     }
     return canvasRectRef.current;
   }, []);
-  
+
   // Mobile touch throttling: limit state updates to ~60fps
   const lastTouchUpdateRef = useRef(0);
   const TOUCH_THROTTLE_MS = 16; // ~60fps
-  
+
   const handleTouchStart = useCallback(
     (e: TouchEvent) => {
       // Don't process game input during tutorial - let TutorialOverlay handle it
@@ -2806,11 +2837,11 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       const paddle = world.paddle; // live read from engine state
       if (!canvasRef.current || !paddle || gameState === "paused") return;
       e.preventDefault();
-      
+
       // Use cached canvas rect to avoid layout thrashing on every touch event
       const rect = getCanvasRect();
       if (!rect) return;
-      
+
       const scaleX = SCALED_CANVAS_WIDTH / rect.width;
       const waitingBall = balls.find((ball) => ball.waitingToLaunch);
 
@@ -2847,7 +2878,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         activeTouchRef.current = activeTouch.identifier;
       }
       if (!activeTouch) return;
-      
+
       const touchX = (activeTouch.clientX - rect.left) * scaleX;
 
       // Implement scaled touch control zone (middle 70% controls full paddle range)
@@ -2867,7 +2898,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
       // Always update ref immediately for collision detection (no throttle)
       paddleXRef.current = newX;
-      
+
       // Throttle React state updates to ~60fps to reduce GC pressure on mobile
       const now = performance.now();
       if (now - lastTouchUpdateRef.current < TOUCH_THROTTLE_MS) {
@@ -3274,9 +3305,10 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
     // Gravity info — freeze display while paused so the countdown doesn't tick
     const isPausedNow = gameState === "paused" || gameState === "ready" || tutorialActive || bossRushStatsOverlayActive;
-    const gravityNow = isPausedNow && pauseStartTimeRef.current !== null
-      ? performance.now() - (Date.now() - pauseStartTimeRef.current)
-      : performance.now();
+    const gravityNow =
+      isPausedNow && pauseStartTimeRef.current !== null
+        ? performance.now() - (Date.now() - pauseStartTimeRef.current)
+        : performance.now();
     const firstBall = balls[0];
     const timeSinceCollision = gravityNow - (firstBall?.lastGravityResetTime ?? gravityNow);
     const gravityActive = timeSinceCollision > GRAVITY_DELAY_MS;
@@ -3292,7 +3324,9 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       gravityActive,
       gravityTimeLeft,
       ballDy: firstBall ? firstBall.dy : 0,
-      totalSpeed: firstBall ? Math.sqrt(firstBall.dx * firstBall.dx + firstBall.dy * firstBall.dy) * speedMultiplier : 0,
+      totalSpeed: firstBall
+        ? Math.sqrt(firstBall.dx * firstBall.dx + firstBall.dy * firstBall.dy) * speedMultiplier
+        : 0,
     };
   }, [SCALED_BRICK_WIDTH, SCALED_BRICK_HEIGHT]);
 
@@ -3302,8 +3336,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     const boss = world.boss;
     if (!paddle || balls.length === 0) return;
 
-    const maxTotalSpeed =
-      settings.difficulty === "godlike" ? MAX_TOTAL_SPEED_GODLIKE : MAX_TOTAL_SPEED_NORMAL;
+    const maxTotalSpeed = settings.difficulty === "godlike" ? MAX_TOTAL_SPEED_GODLIKE : MAX_TOTAL_SPEED_NORMAL;
 
     // ═══ Run pure physics frame ═══
     const result = runPhysicsFrame({
@@ -3433,7 +3466,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
           hitStreakRef.current = newStreak;
           // Award 100 points with streak bonus
           const bonus = Math.floor(100 * (1 + newStreak / 100));
-          
+
           setScore((s) => s + bonus);
           // Activate hue effect at x10+
           if (newStreak >= 10 && !hitStreakActive) {
@@ -3449,7 +3482,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
           const newStreak = prev + 1;
           hitStreakRef.current = newStreak;
           const bonus = Math.floor(100 * (1 + newStreak / 100));
-          
+
           setScore((s) => s + bonus);
           if (newStreak >= 10 && !hitStreakActive) {
             setHitStreakActive(true);
@@ -3532,8 +3565,12 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
             if (prev.type === "mega") return prev;
 
             if (prev.type === "cube") {
-              handleBossDefeat("cube", prev, BOSS_CONFIG.cube.points,
-                `CUBE GUARDIAN DEFEATED! +${BOSS_CONFIG.cube.points} points + BONUS LIFE!`);
+              handleBossDefeat(
+                "cube",
+                prev,
+                BOSS_CONFIG.cube.points,
+                `CUBE GUARDIAN DEFEATED! +${BOSS_CONFIG.cube.points} points + BONUS LIFE!`,
+              );
               return null;
             } else if (prev.type === "sphere") {
               if (prev.currentStage === 1) {
@@ -3547,7 +3584,11 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                     frame: 0,
                     maxFrames: 30,
                     enemyType: "sphere" as EnemyType,
-                    particles: createExplosionParticles(prev.x + prev.width / 2, prev.y + prev.height / 2, "sphere" as EnemyType),
+                    particles: createExplosionParticles(
+                      prev.x + prev.width / 2,
+                      prev.y + prev.height / 2,
+                      "sphere" as EnemyType,
+                    ),
                   },
                 ]);
                 return {
@@ -3559,8 +3600,12 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                   lastHitAt: hit.nowMs,
                 };
               } else {
-                handleBossDefeat("sphere", prev, BOSS_CONFIG.sphere.points,
-                  `SPHERE DESTROYER DEFEATED! +${BOSS_CONFIG.sphere.points} points + BONUS LIFE!`);
+                handleBossDefeat(
+                  "sphere",
+                  prev,
+                  BOSS_CONFIG.sphere.points,
+                  `SPHERE DESTROYER DEFEATED! +${BOSS_CONFIG.sphere.points} points + BONUS LIFE!`,
+                );
                 return null;
               }
             } else if (prev.type === "pyramid") {
@@ -3575,7 +3620,11 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                     frame: 0,
                     maxFrames: 30,
                     enemyType: "pyramid" as EnemyType,
-                    particles: createExplosionParticles(prev.x + prev.width / 2, prev.y + prev.height / 2, "pyramid" as EnemyType),
+                    particles: createExplosionParticles(
+                      prev.x + prev.width / 2,
+                      prev.y + prev.height / 2,
+                      "pyramid" as EnemyType,
+                    ),
                   },
                 ]);
                 const resurrected: Boss[] = [];
@@ -3649,7 +3698,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
               clearAllEnemies();
               setBossAttacks([]);
               clearAllBombs();
-              world.bullets = []; bulletPool.releaseAll();
+              world.bullets = [];
+              bulletPool.releaseAll();
 
               if (isBossRush) {
                 gameLoopRef.current?.pause();
@@ -3876,7 +3926,11 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                 }
               }
               if (isBossSpawned) {
-                toast.success(isFirstBossMinion ? "First boss minion! Guaranteed boss power-up!" : "Boss minion bonus! Power-up dropped!");
+                toast.success(
+                  isFirstBossMinion
+                    ? "First boss minion! Guaranteed boss power-up!"
+                    : "Boss minion bonus! Power-up dropped!",
+                );
               } else {
                 toast.success("Enemy kill bonus! Power-up dropped!");
               }
@@ -3953,10 +4007,10 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   ]);
 
   // FPS tracking for adaptive quality
-  const fpsTrackerRef = useRef({ lastTime: performance.now(), frameCount: 0, fps: 60 });
+  const fpsTrackerRef = useRef({ lastTime: performance.now(), frameCount: 0, fps: 120 });
   const lastFrameTimeRef = useRef(performance.now());
-  const dtSecondsRef = useRef(1 / 60); // Actual delta time for current frame (seconds)
-  const targetFrameTime = 1000 / 62; // ~60 FPS simulation pacing (slight margin)
+  const dtSecondsRef = useRef(1 / 120); // Actual delta time for current frame (seconds)
+  const targetFrameTime = 1000 / 120;
 
   // Lag detection ref for tracking frame timing with GC detection
   const lagDetectionRef = useRef({
@@ -4007,14 +4061,14 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
     // ═══ MOBILE PERF: Cache performance.now() once per frame ═══
     const frameNow = performance.now();
-    
+
     // ═══ MOBILE PERF: Single flag to gate all debug overhead ═══
-    const shouldRunDebugCode = ENABLE_DEBUG_FEATURES && (
-      debugSettings.showFrameProfiler ||
-      debugSettings.enableLagLogging ||
-      debugSettings.enableGCLogging ||
-      debugSettings.enableDetailedFrameLogging
-    );
+    const shouldRunDebugCode =
+      ENABLE_DEBUG_FEATURES &&
+      (debugSettings.showFrameProfiler ||
+        debugSettings.enableLagLogging ||
+        debugSettings.enableGCLogging ||
+        debugSettings.enableDetailedFrameLogging);
     const profilerEnabled = ENABLE_DEBUG_FEATURES && debugSettings.showFrameProfiler;
 
     // ═══ LAG DETECTION: Track frame-to-frame time with GC detection ═══
@@ -4036,8 +4090,10 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
             frameNow - lagDetectionRef.current.lastGCLogTime > GC_LOG_THROTTLE_MS
           ) {
             // Use lightweight logging - no object creation for lag events
-            debugLogger.addLogLite('warn', 
-              `[DEBUG] [GC DETECTED] Heap dropped by ${(heapDrop / 1_000_000).toFixed(2)}MB, heap: ${(currentHeap / 1_000_000).toFixed(1)}MB, gap: ${frameGap.toFixed(1)}ms`);
+            debugLogger.addLogLite(
+              "warn",
+              `[DEBUG] [GC DETECTED] Heap dropped by ${(heapDrop / 1_000_000).toFixed(2)}MB, heap: ${(currentHeap / 1_000_000).toFixed(1)}MB, gap: ${frameGap.toFixed(1)}ms`,
+            );
             lagDetectionRef.current.lastGCLogTime = frameNow;
           }
         }
@@ -4052,12 +4108,17 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         if (frameNow - lagDetectionRef.current.lastLagLogTime > 1000) {
           // Check if this was due to tab being backgrounded
           if (lagDetectionRef.current.tabWasHidden && frameGap > 500) {
-            debugLogger.addLogLite('log', `[DEBUG] [TAB RESUME] Resumed after ${frameGap.toFixed(0)}ms (tab was backgrounded)`);
+            debugLogger.addLogLite(
+              "log",
+              `[DEBUG] [TAB RESUME] Resumed after ${frameGap.toFixed(0)}ms (tab was backgrounded)`,
+            );
             lagDetectionRef.current.tabWasHidden = false;
           } else {
             // Use lightweight logging - skip object serialization entirely
-            debugLogger.addLogLite('error', 
-              `[DEBUG] [LAG DETECTED] Frame gap: ${frameGap.toFixed(1)}ms, balls: ${balls.length}, enemies: ${enemies.length}, quality: ${quality || "unknown"}`);
+            debugLogger.addLogLite(
+              "error",
+              `[DEBUG] [LAG DETECTED] Frame gap: ${frameGap.toFixed(1)}ms, balls: ${balls.length}, enemies: ${enemies.length}, quality: ${quality || "unknown"}`,
+            );
           }
           lagDetectionRef.current.lastLagLogTime = frameNow;
         }
@@ -4142,7 +4203,6 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
           performanceProfiler.logDetailedMetrics();
         }
       }
-
     }
 
     // FPS is already being updated once per second at line 3065, no need to duplicate here
@@ -4229,11 +4289,14 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         enemy.x = newX;
         enemy.y = newY;
         enemy.rotationX +=
-          (enemy.type === "pyramid" ? 0.06 : enemy.type === "sphere" || enemy.type === "crossBall" ? 0.08 : 0.05) * dtNorm;
+          (enemy.type === "pyramid" ? 0.06 : enemy.type === "sphere" || enemy.type === "crossBall" ? 0.08 : 0.05) *
+          dtNorm;
         enemy.rotationY +=
-          (enemy.type === "pyramid" ? 0.09 : enemy.type === "sphere" || enemy.type === "crossBall" ? 0.12 : 0.08) * dtNorm;
+          (enemy.type === "pyramid" ? 0.09 : enemy.type === "sphere" || enemy.type === "crossBall" ? 0.12 : 0.08) *
+          dtNorm;
         enemy.rotationZ +=
-          (enemy.type === "pyramid" ? 0.04 : enemy.type === "sphere" || enemy.type === "crossBall" ? 0.06 : 0.03) * dtNorm;
+          (enemy.type === "pyramid" ? 0.04 : enemy.type === "sphere" || enemy.type === "crossBall" ? 0.06 : 0.03) *
+          dtNorm;
       }
     }
     if (profilerEnabled) frameProfiler.endTiming("enemies");
@@ -4335,110 +4398,110 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     for (let i = world.bombs.length - 1; i >= 0; i--) {
       const bomb = world.bombs[i];
 
-        // Check if bomb should be frozen during stun (except near paddle)
-        const bombInDangerZone = bomb.y >= bombPaddleDangerZoneY;
-        const shouldFreezeBomb = isStunActive && !bomb.isReflected && !bombInDangerZone;
+      // Check if bomb should be frozen during stun (except near paddle)
+      const bombInDangerZone = bomb.y >= bombPaddleDangerZoneY;
+      const shouldFreezeBomb = isStunActive && !bomb.isReflected && !bombInDangerZone;
 
-        if (shouldFreezeBomb) {
-          // Skip movement update but keep bomb
-          continue;
+      if (shouldFreezeBomb) {
+        // Skip movement update but keep bomb
+        continue;
+      }
+
+      // Check if should be removed first
+      let shouldRemove = false;
+      if (bomb.isReflected) {
+        shouldRemove = bomb.y <= 0 || bomb.y >= SCALED_CANVAS_HEIGHT || bomb.x <= 0 || bomb.x >= SCALED_CANVAS_WIDTH;
+        if (shouldRemove && ENABLE_DEBUG_FEATURES && debugSettings.enableCollisionLogging) {
+          console.log(
+            `[Collision Debug] REFLECTED BOMB#${bomb.id} filtered OFF-SCREEN at (${bomb.x.toFixed(1)}, ${bomb.y.toFixed(1)})`,
+          );
+        }
+      } else {
+        shouldRemove = bomb.y >= SCALED_CANVAS_HEIGHT;
+      }
+
+      if (shouldRemove) {
+        bombPool.release(bomb);
+        world.bombs.splice(i, 1);
+        continue;
+      }
+
+      // Apply homing behavior to reflected bombs
+      if (bomb.isReflected) {
+        // Find closest target (boss or enemy)
+        let closestTarget: { x: number; y: number; width: number; height: number } | null = null;
+        let closestDist = Infinity;
+
+        const bombCenterX = bomb.x + bomb.width / 2;
+        const bombCenterY = bomb.y + bomb.height / 2;
+
+        // Check main boss
+        if (boss) {
+          const bossCenterX = boss.x + boss.width / 2;
+          const bossCenterY = boss.y + boss.height / 2;
+          const dist = Math.sqrt(Math.pow(bossCenterX - bombCenterX, 2) + Math.pow(bossCenterY - bombCenterY, 2));
+          if (dist < closestDist) {
+            closestDist = dist;
+            closestTarget = boss;
+          }
         }
 
-        // Check if should be removed first
-        let shouldRemove = false;
-        if (bomb.isReflected) {
-          shouldRemove = bomb.y <= 0 || bomb.y >= SCALED_CANVAS_HEIGHT || bomb.x <= 0 || bomb.x >= SCALED_CANVAS_WIDTH;
-          if (shouldRemove && ENABLE_DEBUG_FEATURES && debugSettings.enableCollisionLogging) {
-            console.log(
-              `[Collision Debug] REFLECTED BOMB#${bomb.id} filtered OFF-SCREEN at (${bomb.x.toFixed(1)}, ${bomb.y.toFixed(1)})`,
-            );
+        // Check resurrected bosses
+        for (const rb of resurrectedBosses) {
+          const rbCenterX = rb.x + rb.width / 2;
+          const rbCenterY = rb.y + rb.height / 2;
+          const dist = Math.sqrt(Math.pow(rbCenterX - bombCenterX, 2) + Math.pow(rbCenterY - bombCenterY, 2));
+          if (dist < closestDist) {
+            closestDist = dist;
+            closestTarget = rb;
           }
-        } else {
-          shouldRemove = bomb.y >= SCALED_CANVAS_HEIGHT;
         }
 
-        if (shouldRemove) {
-          bombPool.release(bomb);
-          world.bombs.splice(i, 1);
-          continue;
+        // Check enemies
+        for (const enemy of enemies) {
+          const enemyCenterX = enemy.x + enemy.width / 2;
+          const enemyCenterY = enemy.y + enemy.height / 2;
+          const dist = Math.sqrt(Math.pow(enemyCenterX - bombCenterX, 2) + Math.pow(enemyCenterY - bombCenterY, 2));
+          if (dist < closestDist) {
+            closestDist = dist;
+            closestTarget = enemy;
+          }
         }
 
-        // Apply homing behavior to reflected bombs
-        if (bomb.isReflected) {
-          // Find closest target (boss or enemy)
-          let closestTarget: { x: number; y: number; width: number; height: number } | null = null;
-          let closestDist = Infinity;
+        // Steer toward closest target
+        if (closestTarget) {
+          const targetCenterX = closestTarget.x + closestTarget.width / 2;
+          const targetCenterY = closestTarget.y + closestTarget.height / 2;
 
-          const bombCenterX = bomb.x + bomb.width / 2;
-          const bombCenterY = bomb.y + bomb.height / 2;
+          const dirX = targetCenterX - bombCenterX;
+          const dirY = targetCenterY - bombCenterY;
+          const dirLength = Math.sqrt(dirX * dirX + dirY * dirY);
 
-          // Check main boss
-          if (boss) {
-            const bossCenterX = boss.x + boss.width / 2;
-            const bossCenterY = boss.y + boss.height / 2;
-            const dist = Math.sqrt(Math.pow(bossCenterX - bombCenterX, 2) + Math.pow(bossCenterY - bombCenterY, 2));
-            if (dist < closestDist) {
-              closestDist = dist;
-              closestTarget = boss;
-            }
+          if (dirLength > 0) {
+            const normDirX = dirX / dirLength;
+            const normDirY = dirY / dirLength;
+            const steeringStrength = 0.15;
+            const currentSpeed = Math.sqrt((bomb.dx || 0) ** 2 + (bomb.dy || 0) ** 2);
+
+            const newDx = (bomb.dx || 0) * (1 - steeringStrength) + normDirX * currentSpeed * steeringStrength;
+            const newDy = (bomb.dy || 0) * (1 - steeringStrength) + normDirY * currentSpeed * steeringStrength;
+
+            const newSpeed = Math.sqrt(newDx * newDx + newDy * newDy);
+            bomb.dx = newSpeed > 0 ? (newDx / newSpeed) * currentSpeed : newDx;
+            bomb.dy = newSpeed > 0 ? (newDy / newSpeed) * currentSpeed : newDy;
+            bomb.x += bomb.dx * dtNormBombs;
+            bomb.y += bomb.dy * dtNormBombs;
+            continue;
           }
-
-          // Check resurrected bosses
-          for (const rb of resurrectedBosses) {
-            const rbCenterX = rb.x + rb.width / 2;
-            const rbCenterY = rb.y + rb.height / 2;
-            const dist = Math.sqrt(Math.pow(rbCenterX - bombCenterX, 2) + Math.pow(rbCenterY - bombCenterY, 2));
-            if (dist < closestDist) {
-              closestDist = dist;
-              closestTarget = rb;
-            }
-          }
-
-          // Check enemies
-          for (const enemy of enemies) {
-            const enemyCenterX = enemy.x + enemy.width / 2;
-            const enemyCenterY = enemy.y + enemy.height / 2;
-            const dist = Math.sqrt(Math.pow(enemyCenterX - bombCenterX, 2) + Math.pow(enemyCenterY - bombCenterY, 2));
-            if (dist < closestDist) {
-              closestDist = dist;
-              closestTarget = enemy;
-            }
-          }
-
-          // Steer toward closest target
-          if (closestTarget) {
-            const targetCenterX = closestTarget.x + closestTarget.width / 2;
-            const targetCenterY = closestTarget.y + closestTarget.height / 2;
-
-            const dirX = targetCenterX - bombCenterX;
-            const dirY = targetCenterY - bombCenterY;
-            const dirLength = Math.sqrt(dirX * dirX + dirY * dirY);
-
-            if (dirLength > 0) {
-              const normDirX = dirX / dirLength;
-              const normDirY = dirY / dirLength;
-              const steeringStrength = 0.15;
-              const currentSpeed = Math.sqrt((bomb.dx || 0) ** 2 + (bomb.dy || 0) ** 2);
-
-              const newDx = (bomb.dx || 0) * (1 - steeringStrength) + normDirX * currentSpeed * steeringStrength;
-              const newDy = (bomb.dy || 0) * (1 - steeringStrength) + normDirY * currentSpeed * steeringStrength;
-
-              const newSpeed = Math.sqrt(newDx * newDx + newDy * newDy);
-              bomb.dx = newSpeed > 0 ? (newDx / newSpeed) * currentSpeed : newDx;
-              bomb.dy = newSpeed > 0 ? (newDy / newSpeed) * currentSpeed : newDy;
-              bomb.x += bomb.dx * dtNormBombs;
-              bomb.y += bomb.dy * dtNormBombs;
-              continue;
-            }
-          }
-          bomb.x += (bomb.dx || 0) * dtNormBombs;
-          bomb.y += (bomb.dy || 0) * dtNormBombs;
-        } else if (bomb.type === "pyramidBullet" && bomb.dx !== undefined) {
-          bomb.x += (bomb.dx || 0) * dtNormBombs;
-          bomb.y += bomb.speed * dtNormBombs;
-        } else {
-          bomb.y += bomb.speed * dtNormBombs;
         }
+        bomb.x += (bomb.dx || 0) * dtNormBombs;
+        bomb.y += (bomb.dy || 0) * dtNormBombs;
+      } else if (bomb.type === "pyramidBullet" && bomb.dx !== undefined) {
+        bomb.x += (bomb.dx || 0) * dtNormBombs;
+        bomb.y += bomb.speed * dtNormBombs;
+      } else {
+        bomb.y += bomb.speed * dtNormBombs;
+      }
     }
 
     // Check bomb-paddle collision
@@ -4667,7 +4730,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                 : boss.isAngry && "angryMoveSpeed" in config
                   ? config.angryMoveSpeed
                   : boss.speed;
-             })();
+            })();
         // Dynamic speed variation for mega boss
         const moveSpeed = isMegaType
           ? baseMoveSpeed * (1.0 + Math.sin(Date.now() / 800) * 0.35 + Math.sin(Date.now() / 1300) * 0.2)
@@ -4883,9 +4946,12 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
           if (settings.difficulty !== "godlike") {
             setLives((prev) => prev + 1); // Bonus life for defeating Mega Boss
           }
-          toast.success(settings.difficulty === "godlike" 
-            ? `🎉 MEGA BOSS DEFEATED! +${MEGA_BOSS_CONFIG.points} points!` 
-            : `🎉 MEGA BOSS DEFEATED! +${MEGA_BOSS_CONFIG.points} points + BONUS LIFE!`, { duration: 5000 });
+          toast.success(
+            settings.difficulty === "godlike"
+              ? `🎉 MEGA BOSS DEFEATED! +${MEGA_BOSS_CONFIG.points} points!`
+              : `🎉 MEGA BOSS DEFEATED! +${MEGA_BOSS_CONFIG.points} points + BONUS LIFE!`,
+            { duration: 5000 },
+          );
 
           // Multiple explosion waves for dramatic effect
           const bossCenter = { x: megaBoss.x + megaBoss.width / 2, y: megaBoss.y + megaBoss.height / 2 };
@@ -4921,7 +4987,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
           setBossAttacks([]);
           clearAllEnemies();
           clearAllBombs();
-          world.bullets = []; bulletPool.releaseAll();
+          world.bullets = [];
+          bulletPool.releaseAll();
 
           // Do NOT release the ball after phase 3 victory - keep it trapped
           // Ball stays "consumed" for clean transition to victory screen
@@ -5506,7 +5573,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                 clearAllEnemies();
                 setBossAttacks([]);
                 clearAllBombs();
-                world.bullets = []; bulletPool.releaseAll();
+                world.bullets = [];
+                bulletPool.releaseAll();
                 setLaserWarnings([]);
 
                 // Stop boss music and resume background music
@@ -5615,7 +5683,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                   clearAllEnemies();
                   setBossAttacks([]);
                   clearAllBombs();
-                  world.bullets = []; bulletPool.releaseAll();
+                  world.bullets = [];
+                  bulletPool.releaseAll();
                   setLaserWarnings([]);
                   soundManager.stopBossMusic();
                   soundManager.resumeBackgroundMusic();
@@ -5979,7 +6048,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                 const newStreak = prev + 1;
                 hitStreakRef.current = newStreak;
                 const bonus = Math.floor(100 * (1 + newStreak / 100));
-                
+
                 setScore((s) => s + bonus);
                 if (newStreak >= 10 && !hitStreakActive) {
                   setHitStreakActive(true);
@@ -6097,7 +6166,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                 clearAllEnemies();
                 setBossAttacks([]);
                 clearAllBombs();
-                world.bullets = []; bulletPool.releaseAll();
+                world.bullets = [];
+                bulletPool.releaseAll();
                 soundManager.stopBossMusic();
                 soundManager.resumeBackgroundMusic();
                 setTimeout(() => nextLevel(), 3000);
@@ -6163,7 +6233,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                 clearAllEnemies();
                 setBossAttacks([]);
                 clearAllBombs();
-                world.bullets = []; bulletPool.releaseAll();
+                world.bullets = [];
+                bulletPool.releaseAll();
                 soundManager.stopBossMusic();
                 soundManager.resumeBackgroundMusic();
                 setTimeout(() => nextLevel(), 3000);
@@ -6265,7 +6336,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
               clearAllEnemies();
               setBossAttacks([]);
               clearAllBombs();
-              world.bullets = []; bulletPool.releaseAll();
+              world.bullets = [];
+              bulletPool.releaseAll();
               soundManager.stopBossMusic();
               soundManager.resumeBackgroundMusic();
               setTimeout(() => nextLevel(), 3000);
@@ -6405,7 +6477,6 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       checkPowerUpCollision(paddle, balls, setBalls, setPaddle, setSpeedMultiplier);
     }
 
-
     // ═══ PHASE 1: End Frame Profiling ═══
     if (profilerEnabled) {
       frameProfiler.endFrame();
@@ -6423,8 +6494,10 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       const frameDuration = frameEnd - frameNow;
       if (frameDuration > 50) {
         const stats = frameProfiler.getStats();
-        debugLogger.addLogLite('warn', 
-          `[SLOW FRAME] Duration: ${frameDuration.toFixed(1)}ms, fps: ${stats?.fps || "N/A"}, physics: ${stats?.timings?.physics.toFixed(1) || 0}ms`);
+        debugLogger.addLogLite(
+          "warn",
+          `[SLOW FRAME] Duration: ${frameDuration.toFixed(1)}ms, fps: ${stats?.fps || "N/A"}, physics: ${stats?.timings?.physics.toFixed(1) || 0}ms`,
+        );
       }
     }
 
@@ -7180,7 +7253,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
     // Clear all entities
     setPowerUps([]);
-    world.bullets = []; bulletPool.releaseAll();
+    world.bullets = [];
+    bulletPool.releaseAll();
     setTimer(0);
     setTotalPlayTime(0);
     totalPlayTimeStartedRef.current = false;
@@ -7353,13 +7427,13 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   // - Mobile (non-iOS): Auto-fullscreen
   // - iOS: Disabled (API not supported, user gesture required)
   useEffect(() => {
-    const shouldAutoFullscreen = 
-      !isIOSDevice && 
-      gameState === "ready" && 
-      !isFullscreen && 
+    const shouldAutoFullscreen =
+      !isIOSDevice &&
+      gameState === "ready" &&
+      !isFullscreen &&
       !hasAutoFullscreenedRef.current &&
       fullscreenContainerRef.current;
-      
+
     if (shouldAutoFullscreen) {
       hasAutoFullscreenedRef.current = true;
       // Small delay to ensure DOM is ready
@@ -7567,9 +7641,9 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
             try {
               const { supabase } = await import("@/integrations/supabase/client");
               // Submit to boss_rush_scores table
-              const response = await supabase.functions.invoke('submit-score', {
+              const response = await supabase.functions.invoke("submit-score", {
                 body: {
-                  type: 'boss_rush',
+                  type: "boss_rush",
                   player_name: name,
                   score: score,
                   completion_time_ms: bossRushCompletionTime,
@@ -7581,7 +7655,16 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
               if (result?.error) throw new Error(result.error);
               // Also submit to main high_scores table with boss_rush game_mode
               try {
-                await addHighScore(name, score, bossRushGameOverLevel, settings.difficulty, false, false, settings.startingLives, 'boss_rush');
+                await addHighScore(
+                  name,
+                  score,
+                  bossRushGameOverLevel,
+                  settings.difficulty,
+                  false,
+                  false,
+                  settings.startingLives,
+                  "boss_rush",
+                );
               } catch (_) {
                 // Non-critical: boss rush score already saved above
               }
@@ -7657,20 +7740,13 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                           }
                     }
                   >
-                    <GameCanvas
-                      ref={canvasRef}
-                      width={SCALED_CANVAS_WIDTH}
-                      height={SCALED_CANVAS_HEIGHT}
-                    />
+                    <GameCanvas ref={canvasRef} width={SCALED_CANVAS_WIDTH} height={SCALED_CANVAS_HEIGHT} />
 
                     {/* Boss Power-Up Duration Timers - Desktop only (paddle-relative positioning) */}
                     {!isMobileDevice &&
                       paddle &&
                       (bossStunnerEndTime || reflectShieldEndTime || homingBallEndTime || fireballEndTime) && (
-                        <div
-                          className="absolute pointer-events-none"
-                          style={{ inset: 0 }}
-                        >
+                        <div className="absolute pointer-events-none" style={{ inset: 0 }}>
                           {bossStunnerEndTime && Date.now() < bossStunnerEndTime && (
                             <div
                               className="absolute retro-pixel-text"
