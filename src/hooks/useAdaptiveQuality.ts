@@ -147,12 +147,20 @@ export const useAdaptiveQuality = (options: AdaptiveQualityOptions = {}) => {
   }, [hasIntegratedGPU]);
 
   const getQualitySettings = useCallback((): QualitySettings => {
-    return {
+    const settings = {
       level: quality,
       autoAdjust: autoAdjustEnabled,
       ...QUALITY_PRESETS[quality]
     };
-  }, [quality, autoAdjustEnabled]);
+
+    // Force resolution scaling on integrated GPUs in fullscreen
+    if (hasIntegratedGPU && isFullscreen) {
+      const iGpuScales: Record<QualityLevel, number> = { low: 0.75, medium: 0.85, high: 0.75 };
+      settings.resolutionScale = iGpuScales[quality];
+    }
+
+    return settings;
+  }, [quality, autoAdjustEnabled, hasIntegratedGPU, isFullscreen]);
 
   const updateFps = useCallback((fps: number) => {
     const now = performance.now();
