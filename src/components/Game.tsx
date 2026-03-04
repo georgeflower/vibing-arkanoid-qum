@@ -4128,7 +4128,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     // ═══ PHASE 1: Frame Profiler Start (only if explicitly enabled) ═══
     if (profilerEnabled) frameProfiler.startFrame();
 
-    // Throttle to 60 FPS (use cached frameNow)
+    // Throttle to 120 FPS (use cached frameNow)
     const elapsed = frameNow - lastFrameTimeRef.current;
 
     if (elapsed < targetFrameTime) {
