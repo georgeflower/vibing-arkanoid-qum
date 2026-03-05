@@ -537,8 +537,13 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
         )
       : null;
 
-  const ballResults = balls.map((ball) =>
-    processBallWithCCD(ball, dtSeconds, frameTick, {
+  const ballResults = balls.map((ball) => {
+    // Skip CCD for balls waiting to launch — they are pinned to the paddle by the
+    // game loop and must not be moved by the physics engine while in that state.
+    if (ball.waitingToLaunch) {
+      return { ball, events: [], substepsUsed: 0, maxIterations: 0, collisionCount: 0, toiIterationsUsed: 0 };
+    }
+    return processBallWithCCD(ball, dtSeconds, frameTick, {
       bricks,
       paddle,
       canvasSize: config.canvasSize,
@@ -548,8 +553,8 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
       resurrectedBosses: [],
       enemies,
       qualityLevel: config.qualityLevel,
-    }),
-  );
+    });
+  });
 
   // CCD performance data
   if (ballResults.length > 0 && ballResults[0].performance) {
