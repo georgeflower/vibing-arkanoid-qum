@@ -125,9 +125,3 @@ export function createAssetRefs(): AssetRefs {
     patterns: {},
   };
 }
-
-/**
- * Singleton asset references shared across the engine.
- * GameCanvas.tsx populates these on mount; the render loop reads them each frame.
- */
-export const assets: AssetRefs = createAssetRefs();

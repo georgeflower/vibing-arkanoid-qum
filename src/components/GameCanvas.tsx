@@ -1,5 +1,6 @@
-import { forwardRef, useEffect, useState } from "react";
-import { renderState, assets } from "@/engine/renderState";
+import { forwardRef, useEffect, useRef, useState } from "react";
+import { renderState, createAssetRefs, type AssetRefs } from "@/engine/renderState";
+import { startRenderLoop } from "@/engine/renderLoop";
 import { brickRenderer } from "@/utils/brickLayerCache";
 import { powerUpImages } from "@/utils/powerUpImages";
 import { bonusLetterImages } from "@/utils/bonusLetterImages";
@@ -28,6 +29,8 @@ interface GameCanvasProps {
 
 export const GameCanvas = forwardRef<HTMLCanvasElement, GameCanvasProps>(
   ({ width, height }, ref) => {
+    const assetsRef = useRef<AssetRefs>(createAssetRefs());
+    const stopLoopRef = useRef<(() => void) | null>(null);
     const [crackedImagesLoaded, setCrackedImagesLoaded] = useState(false);
 
     // Keep renderState dimensions in sync
@@ -38,6 +41,8 @@ export const GameCanvas = forwardRef<HTMLCanvasElement, GameCanvasProps>(
 
     // Load all image assets on mount
     useEffect(() => {
+      const assets = assetsRef.current;
+
       // Power-up images
       Object.entries(powerUpImages).forEach(([type, src]) => {
         if (!src) return;
@@ -88,10 +93,10 @@ export const GameCanvas = forwardRef<HTMLCanvasElement, GameCanvasProps>(
       }, 100);
 
       // Background tiles
-      const loadBg = (src: string, key: keyof typeof assets) => {
+      const loadBg = (src: string, key: keyof AssetRefs) => {
         const img = new Image();
         img.onload = () => {
-          (assets as Record<string, unknown>)[key] = img;
+          (assets as any)[key] = img;
           // Invalidate cached pattern when new image loads
           assets.patterns = {};
         };
@@ -132,6 +137,21 @@ export const GameCanvas = forwardRef<HTMLCanvasElement, GameCanvasProps>(
         brickRenderer.invalidate();
       }
     }, [crackedImagesLoaded]);
+
+    // Start/stop render loop
+    useEffect(() => {
+      const canvas = (ref as React.RefObject<HTMLCanvasElement>)?.current;
+      if (!canvas) return;
+
+      stopLoopRef.current = startRenderLoop(canvas, assetsRef.current);
+
+      return () => {
+        if (stopLoopRef.current) {
+          stopLoopRef.current();
+          stopLoopRef.current = null;
+        }
+      };
+    }, [ref]);
 
     return (
       <canvas
