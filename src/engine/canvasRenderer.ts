@@ -1862,7 +1862,7 @@ export function renderFrame(
   // Super warnings
   superWarnings.forEach((warning) => {
     const elapsed = now - warning.startTime;
-    const progress = elapsed / 800;
+    const progress = Math.max(0, elapsed / 800);
     const pulse = Math.abs(Math.sin(elapsed / 80));
     const alpha = 0.3 + pulse * 0.7;
 
