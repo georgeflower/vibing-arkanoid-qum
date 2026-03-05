@@ -85,7 +85,7 @@ export function performBossAttack(
   } else if (attackType === 'laser') {
     const laserX = boss.x + boss.width / 2 - ATTACK_PATTERNS.laser.width / 2;
     
-    setLaserWarnings(prev => [...prev, { x: laserX, startTime: Date.now() }]);
+    setLaserWarnings(prev => [...prev, { x: laserX, startTime: performance.now() }]);
     toast.warning(`${boss.type.toUpperCase()} CHARGING LASER!`, { duration: 1000 });
     soundManager.playLaserChargingSound();
     
@@ -120,7 +120,7 @@ export function performBossAttack(
     const centerY = boss.y + boss.height / 2;
     
     // Add super warning
-    setSuperWarnings(prev => [...prev, { x: centerX, y: centerY, startTime: Date.now() }]);
+    setSuperWarnings(prev => [...prev, { x: centerX, y: centerY, startTime: performance.now() }]);
     toast.error(`${boss.type.toUpperCase()} SUPER ATTACK!`);
     soundManager.playShoot();
     

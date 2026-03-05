@@ -71,7 +71,7 @@ export function startRenderLoop(canvas: HTMLCanvasElement, assets: AssetRefs): (
     if (elapsed < minFrameInterval) return;
     lastFrameTime = timestamp - (elapsed % minFrameInterval);
 
-    const now = Date.now();
+    const now = performance.now();
     const scale = renderState.qualitySettings.resolutionScale;
 
     if (scale < 1.0) {

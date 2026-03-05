@@ -1302,10 +1302,10 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   }, []);
 
   const handleBossHit = useCallback((x: number, y: number, isSuper: boolean) => {
-    setBulletImpacts((prev) => [...prev, { x, y, startTime: Date.now(), isSuper }]);
+    setBulletImpacts((prev) => [...prev, { x, y, startTime: performance.now(), isSuper }]);
     // Clean up old impacts after 500ms
     setTimeout(() => {
-      setBulletImpacts((prev) => prev.filter((impact) => Date.now() - impact.startTime < 500));
+      setBulletImpacts((prev) => prev.filter((impact) => performance.now() - impact.startTime < 500));
     }, 600);
   }, []);
 
@@ -1908,7 +1908,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   // Cleanup expired shield impacts periodically (optimized for mobile)
   useEffect(() => {
     const cleanupInterval = setInterval(() => {
-      const now = Date.now();
+      const now = performance.now();
       setShieldImpacts((prev) => prev.filter((impact) => now - impact.startTime < impact.duration));
     }, 500);
 
@@ -3962,7 +3962,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     // ═══ Second Chance saves ═══
     for (const save of result.secondChanceSaves) {
       setPaddle((prev) => (prev ? { ...prev, hasSecondChance: false } : null));
-      setSecondChanceImpact({ x: save.x, y: save.y, startTime: Date.now() });
+      setSecondChanceImpact({ x: save.x, y: save.y, startTime: performance.now() });
       toast.success("Second Chance saved you!");
       setTimeout(() => setSecondChanceImpact(null), 500);
     }
@@ -4570,7 +4570,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
             {
               x: bomb.x + bomb.width / 2,
               y: bomb.y + bomb.height / 2,
-              startTime: Date.now(),
+              startTime: performance.now(),
               duration: 600,
             },
           ]);
@@ -4656,7 +4656,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
             {
               x: bullet.x + bullet.width / 2,
               y: bullet.y + bullet.height / 2,
-              startTime: Date.now(),
+              startTime: performance.now(),
               duration: 600,
             },
           ]);
@@ -4861,7 +4861,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     // ═══ MEGA BOSS (Level 20) SPECIFIC GAME LOOP LOGIC ═══
     if (level === MEGA_BOSS_LEVEL && boss && isMegaBoss(boss) && paddle) {
       const megaBoss = boss as MegaBoss;
-      const now = Date.now();
+      const now = performance.now();
 
       // Check if player ball enters exposed core
       if (megaBoss.coreExposed && !megaBoss.trappedBall) {
@@ -4869,7 +4869,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
           if (!ball.waitingToLaunch && isBallInHatchArea(ball, megaBoss)) {
             // Mark trap time immediately so the life-loss pass can't incorrectly deduct a life
             // if state updates land on the next tick.
-            megaBossTrapJustHappenedRef.current = Date.now();
+            megaBossTrapJustHappenedRef.current = performance.now();
 
             // Trap the ball in the core!
             const trappedBoss = handleMegaBossCoreHit(megaBoss, ball);
@@ -4882,7 +4882,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
             soundManager.playCannonModeSound();
 
             // Initialize first cannon missile time (4-7 seconds from now)
-            setNextCannonMissileTime(Date.now() + 4000 + Math.random() * 3000);
+            setNextCannonMissileTime(performance.now() + 4000 + Math.random() * 3000);
           }
         });
       }
@@ -5047,7 +5047,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
             setBalls([releasedBall]);
 
             // Start ball release highlight (visual only)
-            setBallReleaseHighlight({ active: true, startTime: Date.now() });
+            setBallReleaseHighlight({ active: true, startTime: performance.now() });
 
             // End highlight after 1.5 seconds
             setTimeout(() => {
@@ -5796,7 +5796,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
               {
                 x: attack.x + attack.width / 2,
                 y: attack.y + attack.height / 2,
-                startTime: Date.now(),
+                startTime: performance.now(),
                 duration: 600,
               },
             ]);
@@ -6442,7 +6442,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
               {
                 x: paddle.x + paddle.width / 2,
                 y: paddle.y,
-                startTime: Date.now(),
+                startTime: performance.now(),
                 duration: 600,
               },
             ]);
@@ -6474,13 +6474,13 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
     // Clean up expired laser warnings (skip filter if empty)
     if (world.laserWarnings.length > 0) {
-      const nowCleanup = Date.now();
+      const nowCleanup = performance.now();
       setLaserWarnings((prev) => prev.filter((warning) => nowCleanup - warning.startTime < 800));
     }
 
     // Clean up expired super warnings (skip filter if empty)
     if (world.superWarnings.length > 0) {
-      const nowCleanup = Date.now();
+      const nowCleanup = performance.now();
       setSuperWarnings((prev) => prev.filter((warning) => nowCleanup - warning.startTime < 600));
     }
 

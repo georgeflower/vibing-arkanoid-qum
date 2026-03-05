@@ -661,7 +661,7 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
           const dot = checkDx * event.normal.x + checkDy * event.normal.y;
           const isRecentlyReleasedFromBoss =
             ccdResult.ball.releasedFromBossTime &&
-            Date.now() - ccdResult.ball.releasedFromBossTime < 2000;
+            performance.now() - ccdResult.ball.releasedFromBossTime < 2000;
           if (dot >= 0 && !isRecentlyReleasedFromBoss) break;
 
           const nowPerf = performance.now();
@@ -1279,7 +1279,7 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
     isMegaBoss(boss) &&
     (boss as MegaBoss).trappedBall !== null;
   const justTrappedRecently =
-    level === MEGA_BOSS_LEVEL && Date.now() - config.megaBossTrapJustHappenedTime < 1500;
+    level === MEGA_BOSS_LEVEL && performance.now() - config.megaBossTrapJustHappenedTime < 1500;
   result.allBallsLost =
     updatedBalls.length === 0 && !megaBossHasTrappedBall && !justTrappedRecently;
 
