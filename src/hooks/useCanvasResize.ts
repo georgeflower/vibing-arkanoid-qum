@@ -38,16 +38,6 @@ export function useCanvasResize({
 
     const container = containerRef.current;
     
-    // Don't imperatively size on narrow viewports - let CSS handle it
-    // This prevents conflicts when sidebars are hidden via CSS media queries
-    const viewportWidth = window.innerWidth;
-    if (viewportWidth < 769) {
-      // Clear any previously set inline styles
-      gameGlowRef.current.style.width = '';
-      gameGlowRef.current.style.height = '';
-      return;
-    }
-
     const availableWidth = container.clientWidth - 16; // Account for padding
     const availableHeight = container.clientHeight - 16;
 
@@ -92,19 +82,11 @@ export function useCanvasResize({
     const observer = new ResizeObserver(debouncedCalculate);
     observer.observe(containerRef.current);
 
-    // Also listen to window resize to detect viewport width changes
-    // This handles the case where sidebars hide/show via CSS media queries
-    const handleWindowResize = () => {
-      debouncedCalculate();
-    };
-    window.addEventListener('resize', handleWindowResize);
-
     // Initial calculation
     calculateSize();
 
     return () => {
       observer.disconnect();
-      window.removeEventListener('resize', handleWindowResize);
       if (rafRef.current) {
         cancelAnimationFrame(rafRef.current);
       }
