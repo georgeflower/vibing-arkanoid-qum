@@ -19,7 +19,7 @@ import { useServiceWorkerUpdate } from "@/hooks/useServiceWorkerUpdate";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { MobileGameControls } from "./MobileGameControls";
 import { useScaledConstants } from "@/hooks/useScaledConstants";
-import { useViewportFrame } from "@/hooks/useViewportFrame";
+
 import { useCanvasResize } from "@/hooks/useCanvasResize";
 import CRTOverlay from "./CRTOverlay";
 import { BOSS_RUSH_CONFIG, BossRushLevel } from "@/constants/bossRushConfig";
