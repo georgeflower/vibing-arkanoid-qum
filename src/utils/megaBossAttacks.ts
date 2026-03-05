@@ -5,6 +5,7 @@ import { ATTACK_PATTERNS } from "@/constants/bossConfig";
 import { MegaBoss, getMegaBossPhase, isMegaBoss } from "./megaBossUtils";
 import { soundManager } from "./sounds";
 import { debugToast as toast } from "@/utils/debugToast";
+import { world } from "@/engine/state";
 
 export interface DangerBall {
   id: number;
@@ -472,7 +473,7 @@ function performCrossAttack(
   for (let i = 0; i < count; i++) {
     offsets.push(-coneSpread / 2 + (coneSpread * i) / (count - 1));
   }
-  const now = Date.now();
+  const now = world.simTimeMs; // sim-time, not wall-clock
   
   offsets.forEach(offset => {
     const angle = baseAngle + offset;
