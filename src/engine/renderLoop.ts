@@ -1,10 +1,12 @@
 /**
- * engine/renderLoop.ts — Standalone requestAnimationFrame loop.
+ * engine/renderLoop.ts — DEPRECATED.
  *
- * Completely independent of React. Reads from `world` and `renderState`
- * every frame and calls `renderFrame()` to draw to the canvas.
+ * This module has been superseded by `engine/unifiedLoop.ts`, which combines
+ * physics stepping and rendering into a single requestAnimationFrame loop
+ * with a fixed-timestep accumulator.
  *
- * Returns a stop function for cleanup.
+ * This file is retained only for reference. It is no longer imported by any
+ * component. Use `UnifiedGameLoop` from `engine/unifiedLoop.ts` instead.
  */
 
 import { world } from "@/engine/state";
