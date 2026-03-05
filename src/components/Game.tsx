@@ -8147,7 +8147,6 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                           </Button>
                           <Button
                             onClick={() => {
-                              hasAutoFullscreenedRef.current = false;
                               soundManager.stopBackgroundMusic();
                               soundManager.stopBossMusic();
                               soundManager.playMenuClick();
