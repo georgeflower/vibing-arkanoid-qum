@@ -1104,7 +1104,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   const launchAngleIntervalRef = useRef<NodeJS.Timeout>();
   const fullscreenContainerRef = useRef<HTMLDivElement>(null);
   const gameContainerRef = useRef<HTMLDivElement>(null);
-  const gameAreaRef = useRef<HTMLDivElement>(null);
+  //const gameAreaRef = useRef<HTMLDivElement>(null);
   const gameGlowRef = useRef<HTMLDivElement>(null);
   const timerStartedRef = useRef(false);
   const nextLevelRef = useRef<(() => void) | null>(null);
@@ -1648,23 +1648,23 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   ]);
 
   // Desktop viewport frame - fills entire screen on desktop
-  useViewportFrame({
-    enabled: !isMobileDevice,
-    frameRef: gameContainerRef,
-  });
+  //useViewportFrame({
+  //    enabled: !isMobileDevice,
+  //    frameRef: gameContainerRef,
+  //  });
 
   // Dynamic canvas resize for desktop - uses ResizeObserver
-  const {
-    displayWidth,
-    displayHeight,
-    scale: dynamicScale,
-  } = useCanvasResize({
-    enabled: !isMobileDevice,
-    containerRef: gameAreaRef,
-    gameGlowRef,
-    logicalWidth: SCALED_CANVAS_WIDTH,
-    logicalHeight: SCALED_CANVAS_HEIGHT,
-  });
+  //  const {
+  //displayWidth,
+  //displayHeight,
+  //scale: dynamicScale,
+  //} = useCanvasResize({
+  //    enabled: !isMobileDevice,
+  //containerRef: gameAreaRef,
+  //gameGlowRef,
+  //logicalWidth: SCALED_CANVAS_WIDTH,
+  //logicalHeight: SCALED_CANVAS_HEIGHT,
+  //});
 
   // Helper function to create explosion particles based on enemy type
   // OPTIMIZED: Uses particle pool instead of creating new arrays
@@ -3906,10 +3906,20 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
             };
             if (isFirstBossMinion) firstBossMinionKilledRef.current = true;
 
-            let powerUp = createPowerUp(fakeBrick, isBossSpawned, isFirstBossMinion, gameLoopRef.current?.getTimeScale() ?? 1.0);
+            let powerUp = createPowerUp(
+              fakeBrick,
+              isBossSpawned,
+              isFirstBossMinion,
+              gameLoopRef.current?.getTimeScale() ?? 1.0,
+            );
             let attempts = 0;
             while (!powerUp && attempts < 10) {
-              powerUp = createPowerUp(fakeBrick, isBossSpawned, isFirstBossMinion, gameLoopRef.current?.getTimeScale() ?? 1.0);
+              powerUp = createPowerUp(
+                fakeBrick,
+                isBossSpawned,
+                isFirstBossMinion,
+                gameLoopRef.current?.getTimeScale() ?? 1.0,
+              );
               attempts++;
             }
             if (powerUp) {
@@ -3968,7 +3978,12 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         const newLives = prev - 1;
         soundManager.playLoseLife();
         if (newLives <= 0) {
-          particlePool.acquireForGameOver(SCALED_CANVAS_WIDTH / 2, SCALED_CANVAS_HEIGHT / 2, 100, gameLoopRef.current?.getTimeScale() ?? 1.0);
+          particlePool.acquireForGameOver(
+            SCALED_CANVAS_WIDTH / 2,
+            SCALED_CANVAS_HEIGHT / 2,
+            100,
+            gameLoopRef.current?.getTimeScale() ?? 1.0,
+          );
           handleGameOver();
         } else {
           handleSurviveDeath(`Life lost! ${newLives} lives remaining. Here's some help!`, { spawnMercy: true });
@@ -4977,7 +4992,12 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
           // Create victory confetti particles using pool
           const particleCount = Math.round(150 * (qualitySettings.explosionParticles / 50));
-          particlePool.acquireForHighScore(bossCenter.x, bossCenter.y, particleCount, gameLoopRef.current?.getTimeScale() ?? 1.0);
+          particlePool.acquireForHighScore(
+            bossCenter.x,
+            bossCenter.y,
+            particleCount,
+            gameLoopRef.current?.getTimeScale() ?? 1.0,
+          );
           // particleRenderTick removed — pool renders directly
 
           setBossesKilled((k) => k + 1);
@@ -7111,7 +7131,12 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     try {
       // Create a burst of particles on submission using pool
       const particleCount = Math.round(150 * (qualitySettings.explosionParticles / 50));
-      particlePool.acquireForHighScore(SCALED_CANVAS_WIDTH / 2, SCALED_CANVAS_HEIGHT / 2, particleCount, gameLoopRef.current?.getTimeScale() ?? 1.0);
+      particlePool.acquireForHighScore(
+        SCALED_CANVAS_WIDTH / 2,
+        SCALED_CANVAS_HEIGHT / 2,
+        particleCount,
+        gameLoopRef.current?.getTimeScale() ?? 1.0,
+      );
       // particleRenderTick removed — pool renders directly
 
       // Flash the screen
@@ -7721,7 +7746,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                 </div>
 
                 {/* Game Canvas - Apply scale transform when title is hidden (desktop only) */}
-                <div className="metal-game-area" ref={gameAreaRef}>
+                <div className="metal-game-area">
                   <div
                     ref={gameGlowRef}
                     className={`game-glow relative ${isFullscreen ? "game-canvas-wrapper" : ""}`}
@@ -7735,8 +7760,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                             transition: "transform 150ms ease-in-out",
                           }
                         : {
-                            // Desktop: Size controlled by useCanvasResize hook
-                            // Width/height set imperatively via ref
+                            width: `${SCALED_CANVAS_WIDTH}px`,
+                            height: `${SCALED_CANVAS_HEIGHT}px`,
                             transformOrigin: "top center",
                           }
                     }
