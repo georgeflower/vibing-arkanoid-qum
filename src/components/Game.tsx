@@ -102,7 +102,7 @@ import { useAdaptiveQuality } from "@/hooks/useAdaptiveQuality";
 import { useLevelProgress } from "@/hooks/useLevelProgress";
 import { soundManager } from "@/utils/sounds";
 import { FixedStepGameLoop } from "@/utils/gameLoop";
-import { DEFAULT_TIME_SCALE, MIN_TIME_SCALE, MAX_TIME_SCALE, FPS_CAP, MAX_DELTA_MS, FIXED_PHYSICS_TIMESTEP, MAX_ACCUMULATOR } from "@/constants/gameLoopConfig";
+import { DEFAULT_TIME_SCALE, MIN_TIME_SCALE, MAX_TIME_SCALE, FPS_CAP, MAX_DELTA_MS } from "@/constants/gameLoopConfig";
 import { createBoss, createResurrectedPyramid } from "@/utils/bossUtils";
 import { performBossAttack } from "@/utils/bossAttacks";
 import { BOSS_LEVELS, BOSS_CONFIG, ATTACK_PATTERNS } from "@/constants/bossConfig";
@@ -4032,7 +4032,6 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   const fpsTrackerRef = useRef({ lastTime: performance.now(), frameCount: 0, fps: FPS_CAP });
   const lastFrameTimeRef = useRef(performance.now());
   const dtSecondsRef = useRef(1 / FPS_CAP); // Actual delta time for current frame (seconds)
-  const physicsAccumulatorRef = useRef(0); // Fixed timestep accumulator for consistent physics
   const targetFrameTime = 1000 / FPS_CAP;
 
   // Lag detection ref for tracking frame timing with GC detection
@@ -4167,12 +4166,6 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     // Apply time scale to dt
     const timeScale = gameLoopRef.current?.getTimeScale() ?? 1.0;
     dtSecondsRef.current = Math.min((elapsed / 1000) * timeScale, 0.05);
-
-    // Accumulate time for fixed timestep physics, capped to prevent spiral of death
-    physicsAccumulatorRef.current = Math.min(
-      physicsAccumulatorRef.current + dtSecondsRef.current,
-      MAX_ACCUMULATOR,
-    );
 
     // Track FPS (use cached frameNow)
     fpsTrackerRef.current.frameCount++;
@@ -6494,19 +6487,16 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     // Boss collisions are now handled via CCD and shape-specific checks in Phase 3.5
     // Old collision code removed to prevent conflicts with unified boss-local cooldown system
 
-    // Fixed timestep physics loop: consume accumulated time in consistent increments.
-    // This ensures physics (ball movement, power-up falling, bullet movement) runs at a
-    // stable 60 FPS simulation rate regardless of the actual display frame rate.
+    // Single physics step per frame using the actual (clamped) delta time.
+    // The CCD engine already handles variable dt correctly via substeps, so a
+    // fixed-timestep accumulator is not needed and only doubles physics work on
+    // slow/integrated-GPU devices (e.g. 30 fps → 2 steps/frame with accumulator).
+    // Power-ups and bullets already use delta time (fixed in the previous PR),
+    // so consistency across frame rates is maintained without the accumulator.
     if (profilerEnabled) frameProfiler.startTiming("physics");
-    const savedDt = dtSecondsRef.current;
-    while (physicsAccumulatorRef.current >= FIXED_PHYSICS_TIMESTEP) {
-      dtSecondsRef.current = FIXED_PHYSICS_TIMESTEP;
-      updatePowerUps(FIXED_PHYSICS_TIMESTEP);
-      updateBullets(bricks, FIXED_PHYSICS_TIMESTEP);
-      checkCollision();
-      physicsAccumulatorRef.current -= FIXED_PHYSICS_TIMESTEP;
-    }
-    dtSecondsRef.current = savedDt;
+    updatePowerUps(dtSecondsRef.current);
+    updateBullets(bricks, dtSecondsRef.current);
+    checkCollision();
     if (profilerEnabled) frameProfiler.endTiming("physics");
 
     // Check power-up collision
