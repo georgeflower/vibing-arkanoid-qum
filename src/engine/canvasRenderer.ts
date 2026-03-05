@@ -470,6 +470,7 @@ function drawHexShadow(
   offsetY: number,
   alpha: number = 0.35,
 ) {
+  if (!isFinite(radius) || radius <= 0) return;
   ctx.fillStyle = `rgba(0, 0, 0, ${alpha})`;
   ctx.beginPath();
   for (let i = 0; i < 6; i++) {
@@ -3229,6 +3230,7 @@ function drawMegaBoss(
 ): void {
   const boss = megaBoss;
   const radius = boss.width / 2;
+  if (!isFinite(radius) || radius <= 0) return;
   const hexRotation = boss.rotationY || 0;
 
   // Phase-based color palette (tech-style)
