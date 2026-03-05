@@ -583,7 +583,11 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
   const readyExplosions = config.pendingChainExplosions.filter((p) => now >= p.triggerTime);
   for (const pending of readyExplosions) {
     const brick = bricks.find((b) => b.id === pending.brick.id);
-    if (brick && brick.visible) explosiveBricksToDetonate.push(brick);
+    if (brick) {
+      const pendingUpdate = brickUpdates.get(brick.id);
+      const effectivelyVisible = pendingUpdate ? pendingUpdate.visible : brick.visible;
+      if (effectivelyVisible) explosiveBricksToDetonate.push(brick);
+    }
   }
 
   // Process collision events from each ball result
@@ -1104,7 +1108,9 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
 
     // Destroy nearby bricks
     for (const otherBrick of bricks) {
-      if (otherBrick.id === brick.id || !otherBrick.visible) continue;
+      const otherBrickUpdate = brickUpdates.get(otherBrick.id);
+      const otherBrickEffectivelyVisible = otherBrickUpdate ? otherBrickUpdate.visible : otherBrick.visible;
+      if (otherBrick.id === brick.id || !otherBrickEffectivelyVisible) continue;
       const dx = otherBrick.x + otherBrick.width / 2 - brickCenterX;
       const dy = otherBrick.y + otherBrick.height / 2 - brickCenterY;
       if (Math.sqrt(dx * dx + dy * dy) <= explosionRadius) {
