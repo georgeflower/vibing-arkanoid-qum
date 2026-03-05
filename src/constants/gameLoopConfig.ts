@@ -19,3 +19,9 @@ export const FPS_CAP = 120;
 
 /** Maximum delta time in milliseconds (prevents large jumps after tab switches etc.) */
 export const MAX_DELTA_MS = 250;
+
+/** Fixed physics timestep in seconds (60 FPS physics for consistent simulation) */
+export const FIXED_PHYSICS_TIMESTEP = 1 / 60;
+
+/** Maximum physics accumulator value in seconds (prevents spiral of death on lag spikes) */
+export const MAX_ACCUMULATOR = 0.25;

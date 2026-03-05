@@ -102,7 +102,7 @@ import { useAdaptiveQuality } from "@/hooks/useAdaptiveQuality";
 import { useLevelProgress } from "@/hooks/useLevelProgress";
 import { soundManager } from "@/utils/sounds";
 import { FixedStepGameLoop } from "@/utils/gameLoop";
-import { DEFAULT_TIME_SCALE, MIN_TIME_SCALE, MAX_TIME_SCALE, FPS_CAP, MAX_DELTA_MS } from "@/constants/gameLoopConfig";
+import { DEFAULT_TIME_SCALE, MIN_TIME_SCALE, MAX_TIME_SCALE, FPS_CAP, MAX_DELTA_MS, FIXED_PHYSICS_TIMESTEP, MAX_ACCUMULATOR } from "@/constants/gameLoopConfig";
 import { createBoss, createResurrectedPyramid } from "@/utils/bossUtils";
 import { performBossAttack } from "@/utils/bossAttacks";
 import { BOSS_LEVELS, BOSS_CONFIG, ATTACK_PATTERNS } from "@/constants/bossConfig";
@@ -4032,6 +4032,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   const fpsTrackerRef = useRef({ lastTime: performance.now(), frameCount: 0, fps: FPS_CAP });
   const lastFrameTimeRef = useRef(performance.now());
   const dtSecondsRef = useRef(1 / FPS_CAP); // Actual delta time for current frame (seconds)
+  const physicsAccumulatorRef = useRef(0); // Fixed timestep accumulator for consistent physics
   const targetFrameTime = 1000 / FPS_CAP;
 
   // Lag detection ref for tracking frame timing with GC detection
@@ -4167,6 +4168,12 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     const timeScale = gameLoopRef.current?.getTimeScale() ?? 1.0;
     dtSecondsRef.current = Math.min((elapsed / 1000) * timeScale, 0.05);
 
+    // Accumulate time for fixed timestep physics, capped to prevent spiral of death
+    physicsAccumulatorRef.current = Math.min(
+      physicsAccumulatorRef.current + dtSecondsRef.current,
+      MAX_ACCUMULATOR,
+    );
+
     // Track FPS (use cached frameNow)
     fpsTrackerRef.current.frameCount++;
     const deltaTime = frameNow - fpsTrackerRef.current.lastTime;
@@ -4247,9 +4254,6 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       ball.rotation = ((ball.rotation || 0) + 180 * dtSecondsRef.current) % 360; // 180 deg/s = 3 deg/frame at 60fps
     }
 
-    // Update power-ups
-    updatePowerUps();
-
     // Update bonus letters - OPTIMIZED: In-place mutation with sine wave motion
     const currentTime = Date.now();
     // Direct world mutation — no React state updater, no stale-closure risk
@@ -4264,11 +4268,6 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
     // Check bonus letter collisions
     checkBonusLetterCollision();
-
-    // Update bullets
-    if (profilerEnabled) frameProfiler.startTiming("bullets");
-    updateBullets(bricks);
-    if (profilerEnabled) frameProfiler.endTiming("bullets");
 
     // Update enemies
     if (profilerEnabled) frameProfiler.startTiming("enemies");
@@ -6494,7 +6493,21 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
     // Boss collisions are now handled via CCD and shape-specific checks in Phase 3.5
     // Old collision code removed to prevent conflicts with unified boss-local cooldown system
-    checkCollision();
+
+    // Fixed timestep physics loop: consume accumulated time in consistent increments.
+    // This ensures physics (ball movement, power-up falling, bullet movement) runs at a
+    // stable 60 FPS simulation rate regardless of the actual display frame rate.
+    if (profilerEnabled) frameProfiler.startTiming("physics");
+    const savedDt = dtSecondsRef.current;
+    while (physicsAccumulatorRef.current >= FIXED_PHYSICS_TIMESTEP) {
+      dtSecondsRef.current = FIXED_PHYSICS_TIMESTEP;
+      updatePowerUps(FIXED_PHYSICS_TIMESTEP);
+      updateBullets(bricks, FIXED_PHYSICS_TIMESTEP);
+      checkCollision();
+      physicsAccumulatorRef.current -= FIXED_PHYSICS_TIMESTEP;
+    }
+    dtSecondsRef.current = savedDt;
+    if (profilerEnabled) frameProfiler.endTiming("physics");
 
     // Check power-up collision
     if (paddle) {

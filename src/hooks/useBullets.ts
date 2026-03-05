@@ -72,14 +72,15 @@ export const useBullets = (
     });
   }, [setPaddle, onTurretDepleted]);
 
-  const updateBullets = useCallback((currentBricks: Brick[]) => {
+  const updateBullets = useCallback((currentBricks: Brick[], deltaTimeSeconds: number) => {
     // Read directly from world — no React state updater
     const prev = world.bullets;
 
     // In-place mutation: update positions
     for (let i = 0; i < prev.length; i++) {
       const b = prev[i];
-      b.y = b.isBounced ? b.y + b.speed : b.y - b.speed;
+      const move = b.speed * deltaTimeSeconds * 60; // scale by normalized dt (speed is in pixels/60fps-frame)
+      b.y = b.isBounced ? b.y + move : b.y - move;
     }
 
     // Filter out-of-bounds bullets and release to pool
