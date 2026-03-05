@@ -62,7 +62,7 @@ const PERFORMANCE_CONFIG = {
   criticalFps: 40,
   maxFps: 58,
   historyWindowSize: 300,
-  logCooldownMs: 2000,
+  logCooldownMs: 10000,
   consecutiveThreshold: 3,
   particleWarningCount: 150,
   substepWarningCount: 15,
@@ -100,13 +100,24 @@ export class SystemResourceMonitor {
   private lastPaintTimeMs: number | undefined = undefined;
   private lastLayoutTimeMs: number | undefined = undefined;
   private lastScriptTimeMs: number | undefined = undefined;
+  private enabled: boolean = false;
 
   constructor() {
+    // Observer is not started automatically — call enable() to activate
+  }
+
+  enable(): void {
+    if (this.enabled) return;
+    this.enabled = true;
     this.setupPerformanceObserver();
   }
 
+  disable(): void {
+    this.destroy();
+  }
+
   private setupPerformanceObserver(): void {
-    if (typeof PerformanceObserver === 'undefined') return;
+    if (typeof PerformanceObserver === 'undefined' || !this.enabled) return;
     try {
       // Observe paint and longtask entries for script/layout/paint time estimation
       this.paintObserver = new PerformanceObserver((list) => {
@@ -131,6 +142,8 @@ export class SystemResourceMonitor {
   }
 
   captureMetrics(): Partial<FrameMetrics> {
+    if (!this.enabled) return {};
+
     const now = performance.now();
     const metrics: Partial<FrameMetrics> = {};
 
@@ -150,8 +163,12 @@ export class SystemResourceMonitor {
     const frameBudget = PERFORMANCE_CONFIG.frameBudgetMs;
     if (this.lastFrameTimestamp > 0) {
       const actualFrameTime = now - this.lastFrameTimestamp;
-      metrics.frameTimeMs = actualFrameTime;
-      metrics.cpuUsagePercent = Math.min(100, (actualFrameTime / frameBudget) * 100);
+      // Only record if reasonable (< 100ms) to avoid false measurements from
+      // captureMetrics being called once per second instead of per frame
+      if (actualFrameTime < 100) {
+        metrics.frameTimeMs = actualFrameTime;
+        metrics.cpuUsagePercent = Math.min(100, (actualFrameTime / frameBudget) * 100);
+      }
     }
     this.lastFrameTimestamp = now;
 
@@ -171,6 +188,7 @@ export class SystemResourceMonitor {
       this.paintObserver.disconnect();
       this.paintObserver = null;
     }
+    this.enabled = false;
   }
 }
 

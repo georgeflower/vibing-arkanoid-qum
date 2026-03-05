@@ -147,6 +147,13 @@ import {
   hasReflectedBallMissed,
   performMegaBossAttack,
 } from "@/utils/megaBossAttacks";
+interface EnemyProjectileTimer {
+  lastFireTime: number;
+  fireInterval: number;
+  enemyId: number;
+  minIntervalMs: number;
+  maxIntervalMs: number;
+}
 interface GameProps {
   settings: GameSettings;
   onReturnToMenu: () => void;
@@ -175,7 +182,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     brickOffsetLeft: SCALED_BRICK_OFFSET_LEFT,
   } = useScaledConstants();
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  // SystemResourceMonitor singleton — created once, lives for the component lifetime
+  // SystemResourceMonitor — enabled only when detailed frame logging is active
   const systemResourceMonitorRef = useRef<SystemResourceMonitor | null>(null);
   if (systemResourceMonitorRef.current === null) {
     systemResourceMonitorRef.current = new SystemResourceMonitor();
@@ -786,6 +793,15 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     }
   }, [debugSettings.showFrameProfiler]);
 
+  // Enable/disable SystemResourceMonitor based on detailed frame logging setting
+  useEffect(() => {
+    if (ENABLE_DEBUG_FEATURES && debugSettings.enableDetailedFrameLogging) {
+      systemResourceMonitorRef.current?.enable();
+    } else {
+      systemResourceMonitorRef.current?.disable();
+    }
+  }, [debugSettings.enableDetailedFrameLogging]);
+
   // Pause/Resume game when debug dashboard opens/closes
   useEffect(() => {
     if (!ENABLE_DEBUG_FEATURES) return;
@@ -1109,7 +1125,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   const timerIntervalRef = useRef<NodeJS.Timeout>();
   const totalPlayTimeIntervalRef = useRef<NodeJS.Timeout>();
   const totalPlayTimeStartedRef = useRef(false);
-  const bombIntervalsRef = useRef<Map<number, NodeJS.Timeout>>(new Map());
+  const enemyProjectileTimersRef = useRef<Map<number, EnemyProjectileTimer>>(new Map());
   const launchAngleIntervalRef = useRef<NodeJS.Timeout>();
   const fullscreenContainerRef = useRef<HTMLDivElement>(null);
   const gameContainerRef = useRef<HTMLDivElement>(null);
@@ -1192,9 +1208,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         clearInterval(launchAngleIntervalRef.current);
       }
 
-      // Clear bomb intervals map
-      bombIntervalsRef.current.forEach((t) => clearTimeout(t));
-      bombIntervalsRef.current.clear();
+      // Clear enemy projectile timers map
+      enemyProjectileTimersRef.current.clear();
 
       // Cancel animation frame
       if (animationFrameRef.current) {
@@ -1814,8 +1829,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       setLaserWarnings([]);
       clearAllBombs();
       setExplosions([]);
-      bombIntervalsRef.current.forEach((interval) => clearInterval(interval));
-      bombIntervalsRef.current.clear();
+      enemyProjectileTimersRef.current.clear();
       setGameState("ready");
       toast(toastMessage);
     },
@@ -2308,8 +2322,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         setBossIntroActive(false);
       }, 3000);
     }
-    bombIntervalsRef.current.forEach((interval) => clearInterval(interval));
-    bombIntervalsRef.current.clear();
+    enemyProjectileTimersRef.current.clear();
   }, [
     setPowerUps,
     initBricksForLevel,
@@ -2329,8 +2342,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       clearInterval(timerIntervalRef.current);
     }
     timerStartedRef.current = false;
-    bombIntervalsRef.current.forEach((interval) => clearInterval(interval));
-    bombIntervalsRef.current.clear();
+    enemyProjectileTimersRef.current.clear();
     setBonusLetters([]);
     setDroppedLettersThisLevel(new Set());
 
@@ -2428,8 +2440,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         setBossIntroActive(false);
       }, 3000);
 
-      bombIntervalsRef.current.forEach((interval) => clearInterval(interval));
-      bombIntervalsRef.current.clear();
+      enemyProjectileTimersRef.current.clear();
       setGameState("playing");
       toast.success(`Boss ${nextBossIndex + 1}/4! Speed: ${Math.round(newSpeedMultiplier * 100)}%`);
       return;
@@ -2546,8 +2557,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         setBossIntroActive(false);
       }, 3000);
     }
-    bombIntervalsRef.current.forEach((interval) => clearInterval(interval));
-    bombIntervalsRef.current.clear();
+    enemyProjectileTimersRef.current.clear();
     setGameState("playing");
     if (newLevel === 10) {
       toast.success(`Level ${newLevel}! New music unlocked!`);
@@ -3875,13 +3885,9 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       setPowerUps((prev) => [...prev, powerUp]);
     }
 
-    // ═══ Bomb interval cleanup ═══
+    // ═══ Enemy projectile timer cleanup ═══
     for (const enemyId of result.bombIntervalsToClean) {
-      const interval = bombIntervalsRef.current.get(enemyId);
-      if (interval) {
-        clearInterval(interval);
-        bombIntervalsRef.current.delete(enemyId);
-      }
+      enemyProjectileTimersRef.current.delete(enemyId);
     }
 
     // ═══ Enemy kill tracking + power-up drops ═══
@@ -4021,7 +4027,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     levelSkipped,
     score,
     qualitySettings,
-    bombIntervalsRef,
+    enemyProjectileTimersRef,
     createExplosionParticles,
     debugSettings,
     isBossRush,
@@ -4323,6 +4329,69 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       }
     }
     if (profilerEnabled) frameProfiler.endTiming("enemies");
+
+    // ═══ Frame-based enemy projectile timers (replaces setInterval approach) ═══
+    {
+      const projTimerNow = performance.now();
+      const currentTimeScale = gameLoopRef.current?.getTimeScale() ?? 1.0;
+      const newProjectilesFromTimers: Bomb[] = [];
+
+      for (const enemy of enemies) {
+        const projTimer = enemyProjectileTimersRef.current.get(enemy.id);
+        if (projTimer && projTimerNow - projTimer.lastFireTime >= projTimer.fireInterval) {
+          if (enemy.type === "pyramid") {
+            const randomAngle = (Math.random() * 160 - 80) * (Math.PI / 180); // -80 to +80 degrees
+            const bulletSpeed = 4;
+            const newBullet = bombPool.acquire({
+              id: Date.now() + Math.random(),
+              x: enemy.x + enemy.width / 2 - 4,
+              y: enemy.y + enemy.height,
+              width: 8,
+              height: 12,
+              speed: bulletSpeed * currentTimeScale,
+              enemyId: enemy.id,
+              type: "pyramidBullet",
+              dx: Math.sin(randomAngle) * bulletSpeed * currentTimeScale,
+            });
+            if (newBullet) {
+              soundManager.playPyramidBulletSound();
+              newProjectilesFromTimers.push(newBullet);
+            }
+          } else {
+            const newProjectile = bombPool.acquire({
+              id: Date.now() + Math.random(),
+              x: enemy.x + enemy.width / 2 - 5,
+              y: enemy.y + enemy.height,
+              width: 10,
+              height: 10,
+              speed: 3 * currentTimeScale,
+              enemyId: enemy.id,
+              type: "bomb",
+            });
+            if (newProjectile) {
+              soundManager.playBombDropSound();
+              newProjectilesFromTimers.push(newProjectile);
+            }
+          }
+
+          // Reset timer with a new random interval
+          projTimer.lastFireTime = projTimerNow;
+          projTimer.fireInterval =
+            projTimer.minIntervalMs + Math.random() * (projTimer.maxIntervalMs - projTimer.minIntervalMs);
+        }
+      }
+
+      // Clean up timers for enemies that no longer exist
+      enemyProjectileTimersRef.current.forEach((_, timerEnemyId) => {
+        if (!enemies.find((e) => e.id === timerEnemyId)) {
+          enemyProjectileTimersRef.current.delete(timerEnemyId);
+        }
+      });
+
+      if (newProjectilesFromTimers.length > 0) {
+        setBombs((prev) => [...prev, ...newProjectilesFromTimers]);
+      }
+    }
 
     // Update explosions and their particles - OPTIMIZED: Use particle pool
     if (profilerEnabled) frameProfiler.startTiming("particles");
@@ -6599,8 +6668,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         timerIntervalRef.current = undefined;
       }
       timerStartedRef.current = false;
-      bombIntervalsRef.current.forEach((interval) => clearInterval(interval));
-      bombIntervalsRef.current.clear();
+      enemyProjectileTimersRef.current.clear();
     }
 
     // Handle total play time independently
@@ -6632,8 +6700,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       if (totalPlayTimeIntervalRef.current) {
         clearInterval(totalPlayTimeIntervalRef.current);
       }
-      bombIntervalsRef.current.forEach((interval) => clearInterval(interval));
-      bombIntervalsRef.current.clear();
+      enemyProjectileTimersRef.current.clear();
     };
   }, [gameState, tutorialActive, bossRushStatsOverlayActive]);
 
@@ -6763,56 +6830,16 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
           minInterval = 3;
           maxInterval = 7;
         }
-        const randomInterval = minInterval * 1000 + Math.random() * (maxInterval - minInterval) * 1000;
-        const projectileInterval = setInterval(() => {
-          setEnemies((currentEnemies) => {
-            const currentEnemy = currentEnemies.find((e) => e.id === enemyId);
-            if (!currentEnemy) {
-              clearInterval(projectileInterval);
-              bombIntervalsRef.current.delete(enemyId);
-              return currentEnemies;
-            }
-
-            // Pyramid enemies shoot bullets in random angles
-            const currentTimeScale = gameLoopRef.current?.getTimeScale() ?? 1.0;
-            if (currentEnemy.type === "pyramid") {
-              const randomAngle = (Math.random() * 160 - 80) * (Math.PI / 180); // -80 to +80 degrees
-              const bulletSpeed = 4;
-              const newBullet = bombPool.acquire({
-                id: Date.now() + Math.random(),
-                x: currentEnemy.x + currentEnemy.width / 2 - 4,
-                y: currentEnemy.y + currentEnemy.height,
-                width: 8,
-                height: 12,
-                speed: bulletSpeed * currentTimeScale,
-                enemyId: enemyId,
-                type: "pyramidBullet",
-                dx: Math.sin(randomAngle) * bulletSpeed * currentTimeScale,
-              });
-              if (newBullet) {
-                soundManager.playPyramidBulletSound();
-                setBombs((prev) => [...prev, newBullet]);
-              }
-            } else {
-              const newProjectile = bombPool.acquire({
-                id: Date.now() + Math.random(),
-                x: currentEnemy.x + currentEnemy.width / 2 - 5,
-                y: currentEnemy.y + currentEnemy.height,
-                width: 10,
-                height: 10,
-                speed: 3 * currentTimeScale,
-                enemyId: enemyId,
-                type: "bomb", // Both cube and sphere enemies drop bombs
-              });
-              if (newProjectile) {
-                soundManager.playBombDropSound();
-                setBombs((prev) => [...prev, newProjectile]);
-              }
-            }
-            return currentEnemies;
-          });
-        }, randomInterval);
-        bombIntervalsRef.current.set(enemyId, projectileInterval);
+        const minIntervalMs = minInterval * 1000;
+        const maxIntervalMs = maxInterval * 1000;
+        const randomInterval = minIntervalMs + Math.random() * (maxIntervalMs - minIntervalMs);
+        enemyProjectileTimersRef.current.set(enemyId, {
+          lastFireTime: performance.now(),
+          fireInterval: randomInterval,
+          enemyId: enemyId,
+          minIntervalMs,
+          maxIntervalMs,
+        });
       }
     }
   }, [timer, gameState, lastEnemySpawnTime, enemySpawnCount, level, settings.difficulty]);
@@ -6912,48 +6939,20 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         if (newEnemy) {
           newEnemies.push(newEnemy);
 
-          // Set up bomb dropping for this enemy
+          // Set up frame-based projectile timer for this enemy
           const minInterval = 5;
           const maxInterval = 10;
-          const randomInterval = minInterval * 1000 + Math.random() * (maxInterval - minInterval) * 1000;
+          const minIntervalMs = minInterval * 1000;
+          const maxIntervalMs = maxInterval * 1000;
+          const randomInterval = minIntervalMs + Math.random() * (maxIntervalMs - minIntervalMs);
 
-          const projectileInterval = setInterval(() => {
-            setEnemies((currentEnemies) => {
-              const currentEnemy = currentEnemies.find((e) => e.id === enemyId);
-              if (!currentEnemy) {
-                clearInterval(projectileInterval);
-                bombIntervalsRef.current.delete(enemyId);
-                return currentEnemies;
-              }
-
-              const projectileType = enemyType === "pyramid" ? "pyramidBullet" : "bomb";
-
-              const newBomb = bombPool.acquire({
-                id: Date.now() + Math.random(),
-                x: currentEnemy.x + currentEnemy.width / 2 - 5,
-                y: currentEnemy.y + currentEnemy.height,
-                width: 10,
-                height: 10,
-                speed: 3 * (gameLoopRef.current?.getTimeScale() ?? 1.0),
-                enemyId: enemyId,
-                type: projectileType,
-              });
-
-              if (newBomb) {
-                setBombs((prev) => [...prev, newBomb]);
-
-                if (enemyType === "pyramid") {
-                  soundManager.playPyramidBulletSound();
-                } else {
-                  soundManager.playBombDropSound();
-                }
-              }
-
-              return currentEnemies;
-            });
-          }, randomInterval);
-
-          bombIntervalsRef.current.set(enemyId, projectileInterval);
+          enemyProjectileTimersRef.current.set(enemyId, {
+            lastFireTime: performance.now(),
+            fireInterval: randomInterval,
+            enemyId: enemyId,
+            minIntervalMs,
+            maxIntervalMs,
+          });
         }
       }
 
@@ -7229,8 +7228,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       clearInterval(timerIntervalRef.current);
     }
     timerStartedRef.current = false;
-    bombIntervalsRef.current.forEach((interval) => clearInterval(interval));
-    bombIntervalsRef.current.clear();
+    enemyProjectileTimersRef.current.clear();
 
     // Keep the current level
     const currentLevel = level;
