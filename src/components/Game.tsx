@@ -36,7 +36,7 @@ import { collisionHistory } from "@/utils/collisionHistory";
 import { DebugDashboard } from "./DebugDashboard";
 import { DebugModeIndicator } from "./DebugModeIndicator";
 import { useDebugSettings } from "@/hooks/useDebugSettings";
-import { performanceProfiler } from "@/utils/performanceProfiler";
+import { performanceProfiler, SystemResourceMonitor } from "@/utils/performanceProfiler";
 import { frameProfiler } from "@/utils/frameProfiler";
 
 import { getParticleLimits, shouldCreateParticle, calculateParticleCount } from "@/utils/particleLimits";
@@ -175,6 +175,11 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     brickOffsetLeft: SCALED_BRICK_OFFSET_LEFT,
   } = useScaledConstants();
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  // SystemResourceMonitor singleton — created once, lives for the component lifetime
+  const systemResourceMonitorRef = useRef<SystemResourceMonitor | null>(null);
+  if (systemResourceMonitorRef.current === null) {
+    systemResourceMonitorRef.current = new SystemResourceMonitor();
+  }
   const [score, setScoreRaw] = useState(0);
   const scoreRef = useRef(0);
   // Wrap setScore to always keep scoreRef in sync
@@ -4187,6 +4192,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         const totalParticles = particlePool.getStats().active;
 
         // Record frame metrics
+        const sysMetrics = systemResourceMonitorRef.current?.captureMetrics() ?? {};
         performanceProfiler.recordFrame({
           timestamp: performance.now(),
           fps: fps,
@@ -4218,6 +4224,9 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
           hasActiveBoss: boss !== null || resurrectedBosses.length > 0,
           hasScreenShake: screenShake > 0,
           hasBackgroundFlash: backgroundFlash > 0,
+
+          // System resource metrics
+          ...sysMetrics,
         });
 
         // Check for performance issues and log if detected

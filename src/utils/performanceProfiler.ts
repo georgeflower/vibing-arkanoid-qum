@@ -35,6 +35,20 @@ export interface FrameMetrics {
   renderMs?: number;
   debugMs?: number;
   longFrameCount?: number;
+
+  // System resource usage
+  cpuUsagePercent?: number;   // Estimated CPU usage based on frame budget
+  gpuTimeMs?: number;          // GPU frame time (via WebGL timer query)
+  memoryUsedMB?: number;       // JS heap memory used
+  memoryTotalMB?: number;      // JS heap memory allocated
+  memoryPercent?: number;      // JS heap used / heap limit
+
+  // Detailed frame timing
+  frameTimeMs?: number;        // Total wall-clock frame time
+  idleTimeMs?: number;         // Browser idle time
+  layoutTimeMs?: number;       // Layout/reflow time
+  paintTimeMs?: number;        // Paint time
+  scriptTimeMs?: number;       // Script execution time
 }
 
 interface PerformanceThresholds {
@@ -54,8 +68,111 @@ const PERFORMANCE_CONFIG = {
   substepWarningCount: 15,
   ccdWarningMs: 10,
   objectWarningCount: 150,
-  collisionWarningCount: 25
+  collisionWarningCount: 25,
+  // System resource thresholds
+  memoryWarningPercent: 85,       // % of JS heap limit
+  cpuWarningPercent: 90,          // % of frame budget utilization
+  gpuWarningMs: 14,               // ms (leaves 2.67ms headroom in 16.67ms budget)
+  frameBudgetMs: 16.67,           // ms target for 60 FPS
+  scriptWarningMs: 8,             // ms — half the frame budget
+  layoutWarningMs: 2,             // ms — layout/reflow threshold
+  paintWarningMs: 4,              // ms — paint threshold
 };
+
+// Type augmentation for Chrome-only performance.memory API
+declare global {
+  interface Performance {
+    memory?: {
+      usedJSHeapSize: number;
+      totalJSHeapSize: number;
+      jsHeapSizeLimit: number;
+    };
+  }
+}
+
+/**
+ * Captures browser resource metrics (memory, CPU estimate, frame timing) each frame.
+ * All APIs are optional and degrade gracefully on unsupported browsers.
+ */
+export class SystemResourceMonitor {
+  private lastFrameTimestamp: number = 0;
+  private paintObserver: PerformanceObserver | null = null;
+  private lastPaintTimeMs: number | undefined = undefined;
+  private lastLayoutTimeMs: number | undefined = undefined;
+  private lastScriptTimeMs: number | undefined = undefined;
+
+  constructor() {
+    this.setupPerformanceObserver();
+  }
+
+  private setupPerformanceObserver(): void {
+    if (typeof PerformanceObserver === 'undefined') return;
+    try {
+      // Observe paint and longtask entries for script/layout/paint time estimation
+      this.paintObserver = new PerformanceObserver((list) => {
+        for (const entry of list.getEntries()) {
+          if (entry.entryType === 'paint') {
+            // Only record paint duration when the browser reports a non-zero value;
+            // entry.startTime is the timestamp of when the paint began (not a duration)
+            // so we discard it to avoid misleading metrics.
+            if (entry.duration > 0) {
+              this.lastPaintTimeMs = entry.duration;
+            }
+          } else if (entry.entryType === 'longtask') {
+            // longtask duration approximates blocked script time
+            this.lastScriptTimeMs = entry.duration;
+          }
+        }
+      });
+      this.paintObserver.observe({ entryTypes: ['paint', 'longtask'] });
+    } catch {
+      // PerformanceObserver may not support all entry types; ignore safely
+    }
+  }
+
+  captureMetrics(): Partial<FrameMetrics> {
+    const now = performance.now();
+    const metrics: Partial<FrameMetrics> = {};
+
+    // Memory usage (Chrome/Edge only)
+    if (performance.memory) {
+      const mem = performance.memory;
+      metrics.memoryUsedMB = mem.usedJSHeapSize / (1024 * 1024);
+      metrics.memoryTotalMB = mem.totalJSHeapSize / (1024 * 1024);
+      metrics.memoryPercent = (mem.usedJSHeapSize / mem.jsHeapSizeLimit) * 100;
+    }
+
+    // Frame time and frame-budget utilization (proxy for CPU load on the main thread).
+    // NOTE: This measures wall-clock frame time which includes GPU idle and vsync wait, so
+    // it over-estimates CPU usage on high-refresh-rate displays and GPU-bound scenarios.
+    // It is labelled "cpuUsagePercent" to match the FrameMetrics interface but should be
+    // interpreted as "frame budget consumed" rather than true OS-level CPU usage.
+    const frameBudget = PERFORMANCE_CONFIG.frameBudgetMs;
+    if (this.lastFrameTimestamp > 0) {
+      const actualFrameTime = now - this.lastFrameTimestamp;
+      metrics.frameTimeMs = actualFrameTime;
+      metrics.cpuUsagePercent = Math.min(100, (actualFrameTime / frameBudget) * 100);
+    }
+    this.lastFrameTimestamp = now;
+
+    // Propagate paint/script timing gathered by PerformanceObserver
+    if (this.lastPaintTimeMs !== undefined) {
+      metrics.paintTimeMs = this.lastPaintTimeMs;
+    }
+    if (this.lastScriptTimeMs !== undefined) {
+      metrics.scriptTimeMs = this.lastScriptTimeMs;
+    }
+
+    return metrics;
+  }
+
+  destroy(): void {
+    if (this.paintObserver) {
+      this.paintObserver.disconnect();
+      this.paintObserver = null;
+    }
+  }
+}
 
 class PerformanceProfiler {
   private frameHistory: FrameMetrics[] = [];
@@ -181,6 +298,38 @@ class PerformanceProfiler {
       console.log('│');
     }
 
+    // System resource metrics (if available)
+    if (
+      latestMetrics.cpuUsagePercent !== undefined ||
+      latestMetrics.gpuTimeMs !== undefined ||
+      latestMetrics.memoryUsedMB !== undefined ||
+      latestMetrics.frameTimeMs !== undefined
+    ) {
+      console.log('%c├─ SYSTEM RESOURCES', 'color: #ff44aa; font-weight: bold;');
+      if (latestMetrics.cpuUsagePercent !== undefined) {
+        console.log(`│  ├─ CPU Usage: ${latestMetrics.cpuUsagePercent.toFixed(1)}%`);
+      }
+      if (latestMetrics.gpuTimeMs !== undefined) {
+        console.log(`│  ├─ GPU Time: ${latestMetrics.gpuTimeMs.toFixed(2)}ms`);
+      }
+      if (latestMetrics.memoryUsedMB !== undefined) {
+        console.log(`│  ├─ Memory: ${latestMetrics.memoryUsedMB.toFixed(0)}MB / ${latestMetrics.memoryTotalMB?.toFixed(0)}MB (${latestMetrics.memoryPercent?.toFixed(1)}%)`);
+      }
+      if (latestMetrics.frameTimeMs !== undefined) {
+        console.log(`│  ├─ Frame Time: ${latestMetrics.frameTimeMs.toFixed(2)}ms`);
+        if (latestMetrics.scriptTimeMs !== undefined) {
+          console.log(`│  │  ├─ Script: ${latestMetrics.scriptTimeMs.toFixed(2)}ms`);
+        }
+        if (latestMetrics.layoutTimeMs !== undefined) {
+          console.log(`│  │  ├─ Layout: ${latestMetrics.layoutTimeMs.toFixed(2)}ms`);
+        }
+        if (latestMetrics.paintTimeMs !== undefined) {
+          console.log(`│  │  └─ Paint: ${latestMetrics.paintTimeMs.toFixed(2)}ms`);
+        }
+      }
+      console.log('│');
+    }
+
     if (bottlenecks.length > 0) {
       console.log('%c└─ BOTTLENECK ANALYSIS', 'color: #ffaa00; font-weight: bold;');
       bottlenecks.forEach((issue) => {
@@ -226,6 +375,41 @@ class PerformanceProfiler {
 
     if (metrics.ccdCollisions > PERFORMANCE_CONFIG.collisionWarningCount) {
       issues.push(`⚠️ ${metrics.ccdCollisions} collisions per frame - high collision density`);
+    }
+
+    // Memory pressure detection
+    if (metrics.memoryPercent !== undefined && metrics.memoryPercent > PERFORMANCE_CONFIG.memoryWarningPercent) {
+      issues.push(`⚠️ HIGH MEMORY USAGE: ${metrics.memoryPercent.toFixed(1)}% (${metrics.memoryUsedMB?.toFixed(0)}MB used)`);
+    }
+
+    // CPU bottleneck (main thread saturated)
+    if (metrics.cpuUsagePercent !== undefined && metrics.cpuUsagePercent > PERFORMANCE_CONFIG.cpuWarningPercent) {
+      issues.push(`🔥 CPU BOTTLENECK: ${metrics.cpuUsagePercent.toFixed(1)}% usage - main thread saturated`);
+    }
+
+    // GPU bottleneck
+    if (metrics.gpuTimeMs !== undefined && metrics.gpuTimeMs > PERFORMANCE_CONFIG.gpuWarningMs) {
+      issues.push(`🎨 GPU BOTTLENECK: ${metrics.gpuTimeMs.toFixed(2)}ms render time (target: <${PERFORMANCE_CONFIG.gpuWarningMs}ms)`);
+    }
+
+    // Long frame with breakdown
+    if (metrics.frameTimeMs !== undefined && metrics.frameTimeMs > PERFORMANCE_CONFIG.frameBudgetMs) {
+      issues.push(`⏱️  LONG FRAME: ${metrics.frameTimeMs.toFixed(2)}ms (target: ${PERFORMANCE_CONFIG.frameBudgetMs}ms for 60 FPS)`);
+      if (metrics.scriptTimeMs !== undefined && metrics.scriptTimeMs > PERFORMANCE_CONFIG.scriptWarningMs) {
+        issues.push(`   └─ JavaScript execution: ${metrics.scriptTimeMs.toFixed(2)}ms`);
+      }
+      if (metrics.layoutTimeMs !== undefined && metrics.layoutTimeMs > PERFORMANCE_CONFIG.layoutWarningMs) {
+        issues.push(`   └─ Layout/Reflow: ${metrics.layoutTimeMs.toFixed(2)}ms`);
+      }
+      if (metrics.paintTimeMs !== undefined && metrics.paintTimeMs > PERFORMANCE_CONFIG.paintWarningMs) {
+        issues.push(`   └─ Paint: ${metrics.paintTimeMs.toFixed(2)}ms`);
+      }
+    }
+
+    // Low FPS with no bottleneck detected at all — likely a GPU driver or hardware issue
+    if (metrics.fps < 40 && issues.length === 0) {
+      issues.push(`❓ LOW FPS with no detected bottleneck - likely GPU/driver issue`);
+      issues.push(`   Check: GPU acceleration enabled, hardware acceleration, graphics drivers`);
     }
 
     return issues;
