@@ -1,44 +1,45 @@
 
 
-# Fix: Canvas Shrinking to Zero (Resize Feedback Loop)
+# Fix Resolution Scaling (Zoom-In Bug)
 
 ## Root Cause
 
-The `useCanvasResize` hook creates a **feedback loop**:
-1. It observes `gameAreaRef` (the `metal-game-area` div) with `ResizeObserver`
-2. It reads `container.clientWidth/Height` to calculate the canvas size
-3. It sets `gameGlowRef` (the child) to that calculated size
-4. The `metal-game-area` uses `flex: 1` — its size depends partly on its children's content
-5. A smaller child → smaller container → smaller calculation → repeat until zero
-
-The reverted changes likely had CSS that prevented this collapse. The fix is straightforward.
+The current implementation temporarily overrides `renderState.width` and `renderState.height` to the scaled-down values (e.g., 637x487 instead of 850x650). However, all game entities (balls, paddle, bricks, enemies, bosses) have positions calculated for the original 850x650 coordinate space. The renderer clips entities outside the smaller canvas, and the subsequent upscale produces a "zoomed in" effect showing only a portion of the game area.
 
 ## Fix
 
-**File: `src/hooks/useCanvasResize.ts`**
+**File: `src/engine/renderLoop.ts`**
 
-Stop the feedback loop by reading the container's **available space from the parent** rather than from the observed element itself, or — simpler — give `metal-game-area` a minimum size so it can't collapse.
+Instead of overriding renderState dimensions, apply a `ctx.scale(scale, scale)` transform on the offscreen context. This way:
+- The offscreen canvas is still smaller (fewer pixels to fill = GPU savings)
+- The renderer still sees the original `width` and `height` from renderState
+- All entity positions remain correct in the original coordinate space
+- The scale transform makes the GPU rasterize at reduced resolution
+- The final `drawImage` upscales to the visible canvas
 
-Best approach: **Change the hook to not shrink below the initial observation**. Specifically, guard against shrinking by checking if `availableWidth` or `availableHeight` are unreasonably small (< 100px), and if so, skip the update. Also, ensure the container doesn't depend on child size.
+```text
+Before (broken):
+  offscreen canvas = 637x487
+  renderState.width/height = 637x487   <-- entities clip!
+  renderFrame draws at wrong scale
+  drawImage upscales = zoomed in
 
-**File: `src/index.css`**
+After (fixed):
+  offscreen canvas = 637x487
+  offCtx.scale(0.75, 0.75)             <-- GPU draws fewer pixels
+  renderState.width/height = 850x650   <-- unchanged, entities correct
+  renderFrame draws full scene
+  drawImage upscales = correct view at lower resolution
+```
 
-Add `min-width: 0` and `min-height: 0` aren't enough — the real fix is to make `.metal-game-area` size independent of its children when `useCanvasResize` is active. Add:
-- `overflow: hidden` (already present conceptually but the flex child can still grow the parent)
-- The container already has `flex: 1` — ensure it also has `min-width: 200px; min-height: 200px` as a floor
+### Specific changes (lines 80-111):
 
-**Simplest complete fix (2 changes):**
+Remove the `renderState.width/height` override. Instead:
+1. Clear the offscreen canvas
+2. Apply `offCtx.scale(scale, scale)` before calling `renderFrame`
+3. Call `renderFrame` with the offscreen context but **original** renderState (no dimension override)
+4. Reset the transform after rendering
+5. Upscale to visible canvas with `ctx.drawImage`
 
-1. **`src/index.css`** — Add to `.metal-game-area`:
-   ```css
-   min-width: 200px;
-   min-height: 200px;
-   ```
-
-2. **`src/hooks/useCanvasResize.ts`** — In `calculateSize`, skip the update if available dimensions are too small (< 50px), preventing the collapse from starting:
-   ```typescript
-   if (availableWidth < 50 || availableHeight < 50) return;
-   ```
-
-These two changes break the feedback loop: the CSS floor prevents the container from collapsing, and the guard prevents applying nonsensically small sizes.
+This is a single-file change to `src/engine/renderLoop.ts`, approximately 10 lines modified.
 

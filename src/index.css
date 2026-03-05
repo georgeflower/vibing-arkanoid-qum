@@ -440,7 +440,8 @@ All colors MUST be HSL.
     0 2px 4px rgba(0, 0, 0, 0.3);
   flex: 1; /* Allow game area to grow but respect container bounds */
   max-width: calc(100% - 220px); /* Constrain to container minus side panels (60px + 140px) + gaps */
-  min-width: 0; /* Allow shrinking if needed */
+  min-width: 200px;
+  min-height: 200px;
 }
 
 .metal-bottom-bar {
