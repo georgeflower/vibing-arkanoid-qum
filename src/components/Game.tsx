@@ -102,7 +102,7 @@ import { useAdaptiveQuality } from "@/hooks/useAdaptiveQuality";
 import { useLevelProgress } from "@/hooks/useLevelProgress";
 import { soundManager } from "@/utils/sounds";
 import { FixedStepGameLoop } from "@/utils/gameLoop";
-import { DEFAULT_TIME_SCALE, MIN_TIME_SCALE, MAX_TIME_SCALE, FPS_CAP, MAX_DELTA_MS } from "@/constants/gameLoopConfig";
+import { DEFAULT_TIME_SCALE, MIN_TIME_SCALE, MAX_TIME_SCALE, FPS_CAP, MAX_DELTA_MS, FIXED_PHYSICS_TIMESTEP } from "@/constants/gameLoopConfig";
 import { createBoss, createResurrectedPyramid } from "@/utils/bossUtils";
 import { performBossAttack } from "@/utils/bossAttacks";
 import { BOSS_LEVELS, BOSS_CONFIG, ATTACK_PATTERNS } from "@/constants/bossConfig";
@@ -111,7 +111,7 @@ import { runPhysicsFrame, BALL_GRAVITY, GRAVITY_DELAY_MS } from "@/engine/physic
 import { brickSpatialHash } from "@/utils/spatialHash";
 import { resetAllPools, enemyPool, bombPool, explosionPool, getNextExplosionId, bulletPool } from "@/utils/entityPool";
 import { brickRenderer } from "@/utils/brickLayerCache";
-import { setRenderTargetFps } from "@/engine/renderLoop";
+import { UnifiedGameLoop, setRenderTargetFps } from "@/engine/unifiedLoop";
 import { assignPowerUpsToBricks, reassignPowerUpsToBricks } from "@/utils/powerUpAssignment";
 import { MEGA_BOSS_LEVEL, MEGA_BOSS_CONFIG } from "@/constants/megaBossConfig";
 import {
@@ -1087,7 +1087,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   const [powerUpDropCounts, setPowerUpDropCounts] = useState<Partial<Record<PowerUpType, number>>>({});
 
   const launchAngleDirectionRef = useRef(1);
-  const animationFrameRef = useRef<number>();
+  const unifiedLoopRef = useRef<UnifiedGameLoop | null>(null);
   const nextBallId = useRef(1);
 
   // Track bricks destroyed this level for level 1 multiball rule
@@ -1191,10 +1191,9 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       bombIntervalsRef.current.forEach((t) => clearTimeout(t));
       bombIntervalsRef.current.clear();
 
-      // Cancel animation frame
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
+      // Stop unified game loop
+      unifiedLoopRef.current?.stop();
+      unifiedLoopRef.current = null;
     };
   }, []);
 
@@ -4030,9 +4029,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
   // FPS tracking for adaptive quality
   const fpsTrackerRef = useRef({ lastTime: performance.now(), frameCount: 0, fps: FPS_CAP });
-  const lastFrameTimeRef = useRef(performance.now());
-  const dtSecondsRef = useRef(1 / FPS_CAP); // Actual delta time for current frame (seconds)
-  const targetFrameTime = 1000 / FPS_CAP;
+  const dtSecondsRef = useRef(FIXED_PHYSICS_TIMESTEP); // Delta time for current physics step (seconds)
 
   // Lag detection ref for tracking frame timing with GC detection
   const lagDetectionRef = useRef({
@@ -4150,39 +4147,15 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     // ═══ PHASE 1: Frame Profiler Start (only if explicitly enabled) ═══
     if (profilerEnabled) frameProfiler.startFrame();
 
-    // Throttle to 120 FPS (use cached frameNow)
-    const elapsed = frameNow - lastFrameTimeRef.current;
+    // ═══ Physics dt is set by UnifiedGameLoop.onPhysicsStep before calling gameLoop ═══
+    // dtSecondsRef.current = FIXED_PHYSICS_TIMESTEP (always 1/60 second)
 
-    if (elapsed < targetFrameTime) {
-      animationFrameRef.current = requestAnimationFrame(gameLoop);
-      lagDetectionRef.current.lastFrameEnd = frameNow;
-      return;
-    }
-
-    lastFrameTimeRef.current = frameNow - (elapsed % targetFrameTime);
-
-    // Calculate actual delta time in seconds, clamped to 50ms max to prevent
-    // physics tunneling and instabilities on lag spikes or tab resume events
-    // Apply time scale to dt
-    const timeScale = gameLoopRef.current?.getTimeScale() ?? 1.0;
-    dtSecondsRef.current = Math.min((elapsed / 1000) * timeScale, 0.05);
-
-    // Track FPS (use cached frameNow)
-    fpsTrackerRef.current.frameCount++;
-    const deltaTime = frameNow - fpsTrackerRef.current.lastTime;
-
-    if (deltaTime >= 1000) {
-      const fps = Math.round((fpsTrackerRef.current.frameCount * 1000) / deltaTime);
-      fpsTrackerRef.current.fps = fps;
-      fpsTrackerRef.current.frameCount = 0;
-      fpsTrackerRef.current.lastTime = frameNow;
-
-      // Update adaptive quality system and display
-      updateFps(fps);
-      setCurrentFps(fps);
-
-      // ========== Performance Profiling (Debug) ==========
-      if (ENABLE_DEBUG_FEATURES && debugSettings.enableDetailedFrameLogging) {
+    // ========== Performance Profiling (Debug) — fires once per second ==========
+    if (ENABLE_DEBUG_FEATURES && debugSettings.enableDetailedFrameLogging) {
+      const debugNow = frameNow; // already computed above
+      const debugDelta = debugNow - fpsTrackerRef.current.lastTime;
+      if (debugDelta >= 1000) {
+        const fps = fpsTrackerRef.current.fps; // set by onRender callback
         // Count total particles (from particle pool only - special particles now use pool)
         const totalParticles = particlePool.getStats().active;
 
@@ -4226,8 +4199,6 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         }
       }
     }
-
-    // FPS is already being updated once per second at line 3065, no need to duplicate here
 
     // ═══ PHASE 1: Time Rendering ═══
     if (profilerEnabled) frameProfiler.startTiming("rendering");
@@ -6527,8 +6498,6 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         );
       }
     }
-
-    animationFrameRef.current = requestAnimationFrame(gameLoop);
   }, [
     gameState,
     checkCollision,
@@ -6550,20 +6519,50 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     debugSettings,
   ]);
 
+  // Start/stop the unified game loop whenever gameState or game logic changes.
+  // Including `gameLoop` in deps mirrors the previous pattern (the old useEffect
+  // also depended on `gameLoop`). When `gameLoop` is recreated due to a React
+  // state change (score, debug settings, etc.) the loop restarts cleanly so the
+  // new closure captures fresh state. This is intentional — the restart is
+  // cheap (single rAF frame gap) and was already the existing behaviour.
   useEffect(() => {
-    if (gameState === "playing") {
-      animationFrameRef.current = requestAnimationFrame(gameLoop);
-    } else {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-    }
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    if (gameState !== "playing") return;
+
+    const loop = new UnifiedGameLoop(canvas, {
+      onPhysicsStep: (dtSeconds) => {
+        // Store the fixed dt in a ref so gameLoop can read it without needing
+        // a parameter change. dtSecondsRef.current is always FIXED_PHYSICS_TIMESTEP
+        // (1/60 second) — the UnifiedGameLoop's accumulator handles time scale.
+        dtSecondsRef.current = dtSeconds;
+        gameLoop();
+      },
+      onRender: (_alpha) => {
+        // Render FPS tracking — fires once per display frame
+        fpsTrackerRef.current.frameCount++;
+        const now = performance.now();
+        const renderDelta = now - fpsTrackerRef.current.lastTime;
+        if (renderDelta >= 1000) {
+          const fps = Math.round((fpsTrackerRef.current.frameCount * 1000) / renderDelta);
+          fpsTrackerRef.current.fps = fps;
+          fpsTrackerRef.current.frameCount = 0;
+          fpsTrackerRef.current.lastTime = now;
+          updateFps(fps);
+          setCurrentFps(fps);
+        }
+      },
+      getTimeScale: () => gameLoopRef.current?.getTimeScale() ?? DEFAULT_TIME_SCALE,
+    });
+
+    loop.start();
+    unifiedLoopRef.current = loop;
+
     return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
+      loop.stop();
+      unifiedLoopRef.current = null;
     };
-  }, [gameState, gameLoop]);
+  }, [gameState, gameLoop, updateFps]);
 
   // Separate useEffect for timer management - handle pause/resume
   // Include all pause-like states: paused, tutorial, boss rush stats overlay
@@ -7121,9 +7120,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     }
   };
   const handleRestart = useCallback(() => {
-    if (animationFrameRef.current) {
-      cancelAnimationFrame(animationFrameRef.current);
-    }
+    unifiedLoopRef.current?.stop();
+    unifiedLoopRef.current = null;
     soundManager.stopBossMusic();
     soundManager.stopBackgroundMusic();
     soundManager.stopHighScoreMusic();
