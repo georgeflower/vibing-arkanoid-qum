@@ -7416,27 +7416,6 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     };
   }, [isMobileDevice, gameState, isIOSDevice]);
 
-  // Auto-enter fullscreen when game starts
-  // - Desktop: Always auto-fullscreen
-  // - Mobile (non-iOS): Auto-fullscreen
-  // - iOS: Disabled (API not supported, user gesture required)
-  useEffect(() => {
-    const shouldAutoFullscreen =
-      !isIOSDevice &&
-      gameState === "ready" &&
-      !isFullscreen &&
-      !hasAutoFullscreenedRef.current &&
-      fullscreenContainerRef.current;
-
-    if (shouldAutoFullscreen) {
-      hasAutoFullscreenedRef.current = true;
-      // Small delay to ensure DOM is ready
-      const timer = setTimeout(() => {
-        toggleFullscreen();
-      }, 100);
-      return () => clearTimeout(timer);
-    }
-  }, [isMobileDevice, isIOSDevice, gameState]);
 
   // F key to toggle fullscreen
   useEffect(() => {
