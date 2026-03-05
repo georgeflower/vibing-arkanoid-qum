@@ -3312,7 +3312,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     const isPausedNow = gameState === "paused" || gameState === "ready" || tutorialActive || bossRushStatsOverlayActive;
     const gravityNow =
       isPausedNow && pauseStartTimeRef.current !== null
-        ? timingHub.now - (timingHub.now - pauseStartTimeRef.current)
+        ? pauseStartTimeRef.current
         : timingHub.now;
     const firstBall = balls[0];
     const timeSinceCollision = gravityNow - (firstBall?.lastGravityResetTime ?? gravityNow);

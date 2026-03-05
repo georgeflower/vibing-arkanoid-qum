@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+
+interface BossPowerUpTimerProps {
   label: string;
   endTime: number;
   duration: number;

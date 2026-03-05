@@ -10,7 +10,7 @@
 export class TimingHub {
   private _now: number = performance.now();
   private _deltaMs: number = 0;
-  private _lastUpdate: number = performance.now();
+  private _lastUpdate: number = 0;
   private _totalTime: number = 0;
 
   /**
@@ -18,6 +18,10 @@ export class TimingHub {
    * @param timestamp High-resolution timestamp from requestAnimationFrame
    */
   update(timestamp: number): void {
+    // On the first call, seed _lastUpdate to avoid a large initial delta
+    if (this._lastUpdate === 0) {
+      this._lastUpdate = timestamp;
+    }
     this._deltaMs = timestamp - this._lastUpdate;
     this._lastUpdate = timestamp;
     this._now = timestamp;
