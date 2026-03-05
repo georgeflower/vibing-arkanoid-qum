@@ -76,8 +76,10 @@ All colors MUST be HSL.
   * {
     @apply border-border;
   }
-  
-  html, body, #root {
+
+  html,
+  body,
+  #root {
     margin: 0;
     padding: 0;
     width: 100%;
@@ -95,14 +97,14 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
-    font-family: 'Press Start 2P', system-ui, monospace;
+    font-family: "Press Start 2P", system-ui, monospace;
     image-rendering: pixelated;
     image-rendering: -moz-crisp-edges;
     image-rendering: crisp-edges;
   }
 
   .retro-pixel-text {
-    font-family: 'Press Start 2P', monospace;
+    font-family: "Press Start 2P", monospace;
     text-shadow: 2px 2px 0px hsl(var(--amiga-dark-grey));
     letter-spacing: 0.05em;
   }
@@ -112,9 +114,10 @@ All colors MUST be HSL.
     border: 3px solid hsl(0, 0%, 40%);
     border-top-color: hsl(0, 0%, 50%);
     border-left-color: hsl(0, 0%, 50%);
-    box-shadow: inset 1px 1px 0px hsl(0, 0%, 55%), 
-                inset -1px -1px 0px hsl(0, 0%, 15%),
-                0 0 0 1px hsl(0, 0%, 10%);
+    box-shadow:
+      inset 1px 1px 0px hsl(0, 0%, 55%),
+      inset -1px -1px 0px hsl(0, 0%, 15%),
+      0 0 0 1px hsl(0, 0%, 10%);
   }
 
   /* Fullscreen game scaling */
@@ -161,16 +164,21 @@ All colors MUST be HSL.
   }
 
   .neon-text {
-    text-shadow: 0 0 6px currentColor, 0 0 12px currentColor;
+    text-shadow:
+      0 0 6px currentColor,
+      0 0 12px currentColor;
   }
 
   .game-glow {
-    box-shadow: 0 0 16px hsl(var(--neon-cyan) / 0.2), 0 0 32px hsl(var(--neon-purple) / 0.15);
+    box-shadow:
+      0 0 16px hsl(var(--neon-cyan) / 0.2),
+      0 0 32px hsl(var(--neon-purple) / 0.15);
   }
 
   /* High Score Animation Keyframes */
   @keyframes float {
-    0%, 100% {
+    0%,
+    100% {
       transform: translateY(0px);
     }
     50% {
@@ -188,8 +196,12 @@ All colors MUST be HSL.
   }
 
   @keyframes rainbow {
-    0% { filter: hue-rotate(0deg); }
-    100% { filter: hue-rotate(360deg); }
+    0% {
+      filter: hue-rotate(0deg);
+    }
+    100% {
+      filter: hue-rotate(360deg);
+    }
   }
 
   .animate-float {
@@ -198,7 +210,7 @@ All colors MUST be HSL.
 
   .animate-shimmer {
     animation: shimmer 2s linear infinite;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
     background-size: 1000px 100%;
   }
 
@@ -208,12 +220,7 @@ All colors MUST be HSL.
 
   /* Retro Amiga High Score Styles */
   .retro-title {
-    background: linear-gradient(90deg, 
-      hsl(280, 60%, 55%), 
-      hsl(330, 70%, 55%), 
-      hsl(200, 70%, 50%), 
-      hsl(280, 60%, 55%)
-    );
+    background: linear-gradient(90deg, hsl(280, 60%, 55%), hsl(330, 70%, 55%), hsl(200, 70%, 50%), hsl(280, 60%, 55%));
     background-size: 200% auto;
     -webkit-background-clip: text;
     background-clip: text;
@@ -223,19 +230,18 @@ All colors MUST be HSL.
   }
 
   @keyframes retro-shine {
-    0% { background-position: 0% center; }
-    100% { background-position: 200% center; }
+    0% {
+      background-position: 0% center;
+    }
+    100% {
+      background-position: 200% center;
+    }
   }
 
   .retro-border {
     border: 4px solid;
-    border-image: linear-gradient(
-      45deg,
-      hsl(280, 60%, 55%),
-      hsl(200, 70%, 50%),
-      hsl(330, 70%, 55%),
-      hsl(280, 60%, 55%)
-    ) 1;
+    border-image: linear-gradient(45deg, hsl(280, 60%, 55%), hsl(200, 70%, 50%), hsl(330, 70%, 55%), hsl(280, 60%, 55%))
+      1;
     animation: border-glow 2s ease-in-out infinite alternate;
   }
 
@@ -268,7 +274,8 @@ All colors MUST be HSL.
   }
 
   @keyframes button-pulse {
-    0%, 100% {
+    0%,
+    100% {
       box-shadow: 0 0 10px hsl(200, 70%, 50% / 0.5);
     }
     50% {
@@ -277,7 +284,7 @@ All colors MUST be HSL.
   }
 
   .animate-scale-in {
-    animation: scale-in-center 0.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
+    animation: scale-in-center 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
   }
 
   @keyframes scale-in-center {
@@ -297,7 +304,7 @@ All colors MUST be HSL.
   background: linear-gradient(135deg, hsl(210, 15%, 35%) 0%, hsl(210, 15%, 45%) 50%, hsl(210, 15%, 35%) 100%);
   border: 12px ridge hsl(210, 15%, 50%);
   border-radius: 8px;
-  box-shadow: 
+  box-shadow:
     0 0 0 2px hsl(210, 15%, 20%),
     0 0 0 4px hsl(210, 15%, 55%),
     0 20px 60px rgba(0, 0, 0, 0.6),
@@ -324,7 +331,7 @@ All colors MUST be HSL.
   border-radius: 4px;
   padding: 12px 16px;
   margin-bottom: 6px;
-  box-shadow: 
+  box-shadow:
     inset 0 1px 2px rgba(0, 0, 0, 0.5),
     0 2px 4px rgba(0, 0, 0, 0.3);
 }
@@ -339,7 +346,7 @@ All colors MUST be HSL.
   justify-content: space-between;
   align-items: center;
   gap: 8px;
-  box-shadow: 
+  box-shadow:
     inset 0 1px 2px rgba(0, 0, 0, 0.5),
     0 2px 4px rgba(0, 0, 0, 0.3);
 }
@@ -363,7 +370,7 @@ All colors MUST be HSL.
   flex-direction: column;
   gap: 15px;
   padding: 15px 8px;
-  box-shadow: 
+  box-shadow:
     inset 0 1px 2px rgba(0, 0, 0, 0.5),
     0 2px 4px rgba(0, 0, 0, 0.3);
 }
@@ -403,7 +410,7 @@ All colors MUST be HSL.
 
 .right-stat-label {
   font-size: 7px;
-  font-family: 'Press Start 2P', monospace;
+  font-family: "Press Start 2P", monospace;
   text-align: center;
   margin-bottom: 4px;
   font-weight: bold;
@@ -412,7 +419,7 @@ All colors MUST be HSL.
 
 .right-stat-value {
   font-size: 12px;
-  font-family: 'Press Start 2P', monospace;
+  font-family: "Press Start 2P", monospace;
   text-align: center;
   color: hsl(0, 0%, 90%);
   text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
@@ -435,12 +442,13 @@ All colors MUST be HSL.
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  box-shadow: 
+  box-shadow:
     inset 0 2px 4px rgba(0, 0, 0, 0.6),
     0 2px 4px rgba(0, 0, 0, 0.3);
-  flex: 1; /* Allow game area to grow but respect container bounds */
-  max-width: calc(100% - 220px); /* Constrain to container minus side panels (60px + 140px) + gaps */
-  min-width: 0; /* Allow shrinking if needed */
+  /* Remove expansion constraints */
+  flex: 0 0 auto;
+  max-width: none;
+  min-width: auto;
 }
 
 .metal-bottom-bar {
@@ -448,54 +456,9 @@ All colors MUST be HSL.
   border: 3px ridge hsl(210, 15%, 50%);
   border-radius: 4px;
   padding: 12px;
-  box-shadow: 
+  box-shadow:
     inset 0 1px 2px rgba(0, 0, 0, 0.5),
     0 2px 4px rgba(0, 0, 0, 0.3);
-}
-
-/* Desktop Fullscreen Mode - Frame fills entire viewport */
-@media (min-width: 769px) {
-  .metal-frame.desktop-fullscreen {
-    position: fixed;
-    inset: 0;
-    max-width: none;
-    max-height: none;
-    width: 100vw;
-    height: 100vh;
-    margin: 0;
-    border-radius: 0;
-    border-width: 8px;
-  }
-
-  .metal-frame.desktop-fullscreen .metal-main-content {
-    flex: 1;
-    min-height: 0;
-  }
-
-  .metal-frame.desktop-fullscreen .metal-game-area {
-    flex: 1;
-    max-width: none !important;
-    min-width: 0;
-    min-height: 0;
-    height: 100%;
-    width: 100%;
-  }
-
-  .metal-frame.desktop-fullscreen .game-glow {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    /* Let hook's inline width/height take precedence */
-    max-width: 100%;
-    max-height: 100%;
-  }
-
-  .metal-frame.desktop-fullscreen .game-glow canvas {
-    /* Fill the hook-sized container, maintain aspect via container sizing */
-    width: 100% !important;
-    height: 100% !important;
-    object-fit: contain;
-  }
 }
 
 /* Responsive adjustments */
@@ -504,7 +467,7 @@ All colors MUST be HSL.
     border: 8px ridge hsl(210, 15%, 50%);
     padding: 6px;
   }
-  
+
   .metal-side-panel {
     width: 50px;
     flex-shrink: 0;
@@ -516,11 +479,11 @@ All colors MUST be HSL.
     width: 120px;
     padding: 10px;
   }
-  
+
   .metal-game-area {
     max-width: calc(100% - 210px); /* Adjust for left (50px) + right (120px) panels + gaps */
   }
-  
+
   .game-glow canvas {
     max-width: calc(95vw - 210px); /* Account for different panel sizes */
   }
@@ -536,11 +499,11 @@ All colors MUST be HSL.
   .right-panel-btn {
     padding: 8px;
   }
-  
+
   .panel-decoration {
     height: 40px;
   }
-  
+
   .metal-title-bar {
     padding: 8px 12px;
     margin-bottom: 4px;
@@ -553,26 +516,26 @@ All colors MUST be HSL.
     padding: 4px;
     max-width: 100vw;
   }
-  
+
   /* Hide side panels on mobile only */
   .metal-side-panel {
     display: none;
   }
-  
+
   .metal-title-bar {
     padding: 6px 8px;
     margin-bottom: 3px;
   }
-  
+
   .metal-game-area {
     padding: 4px;
     max-width: 100%; /* Full width on mobile since panels are hidden */
   }
-  
+
   .metal-bottom-bar {
     padding: 8px;
   }
-  
+
   .fullscreen-btn {
     padding: 6px 8px;
   }
@@ -683,7 +646,7 @@ All colors MUST be HSL.
   height: 100%;
   pointer-events: none;
   z-index: 9998;
-  
+
   background: repeating-linear-gradient(
     0deg,
     rgba(0, 0, 0, 0.08) 0px,
@@ -704,8 +667,12 @@ All colors MUST be HSL.
 }
 
 @keyframes scanline-flicker {
-  0% { opacity: 0.95; }
-  100% { opacity: 1; }
+  0% {
+    opacity: 0.95;
+  }
+  100% {
+    opacity: 1;
+  }
 }
 
 /* Screen curvature and vignette */
@@ -717,42 +684,50 @@ All colors MUST be HSL.
   height: 100%;
   pointer-events: none;
   z-index: 9997;
-  
+
   /* Subtle screen curvature */
   border-radius: 2% / 3%;
 }
 
 /* High quality: Full vignette and animation */
 .crt-screen.crt-high {
-  background: radial-gradient(
-    ellipse at center,
-    transparent 0%,
-    transparent 60%,
-    rgba(0, 0, 0, 0.15) 100%
-  );
+  background: radial-gradient(ellipse at center, transparent 0%, transparent 60%, rgba(0, 0, 0, 0.15) 100%);
   animation: screen-flicker 5s infinite;
 }
 
 /* Medium quality: Simplified vignette, no animation */
 .crt-screen.crt-medium {
-  background: radial-gradient(
-    ellipse at center,
-    transparent 0%,
-    transparent 70%,
-    rgba(0, 0, 0, 0.08) 100%
-  );
+  background: radial-gradient(ellipse at center, transparent 0%, transparent 70%, rgba(0, 0, 0, 0.08) 100%);
 }
 
 @keyframes screen-flicker {
-  0% { opacity: 0.98; }
-  2% { opacity: 0.95; }
-  4% { opacity: 1; }
-  19% { opacity: 0.98; }
-  21% { opacity: 0.92; }
-  23% { opacity: 1; }
-  80% { opacity: 0.99; }
-  83% { opacity: 0.96; }
-  87% { opacity: 1; }
+  0% {
+    opacity: 0.98;
+  }
+  2% {
+    opacity: 0.95;
+  }
+  4% {
+    opacity: 1;
+  }
+  19% {
+    opacity: 0.98;
+  }
+  21% {
+    opacity: 0.92;
+  }
+  23% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 0.99;
+  }
+  83% {
+    opacity: 0.96;
+  }
+  87% {
+    opacity: 1;
+  }
 }
 
 /* Phosphor glow - subtle color separation */
@@ -764,7 +739,7 @@ All colors MUST be HSL.
   height: 100%;
   pointer-events: none;
   z-index: 9996;
-  
+
   mix-blend-mode: screen;
 }
 
@@ -784,14 +759,9 @@ All colors MUST be HSL.
   .crt-scanlines {
     opacity: 0.5;
   }
-  
+
   .crt-screen {
-    background: radial-gradient(
-      ellipse at center,
-      transparent 0%,
-      transparent 70%,
-      rgba(0, 0, 0, 0.2) 100%
-    );
+    background: radial-gradient(ellipse at center, transparent 0%, transparent 70%, rgba(0, 0, 0, 0.2) 100%);
   }
 }
 
@@ -849,4 +819,3 @@ All colors MUST be HSL.
 .boss-rush-scrollbar {
   scrollbar-color: hsl(15, 70%, 50%) hsl(210, 20%, 15%);
 }
-
