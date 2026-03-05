@@ -97,6 +97,10 @@ This project is **100% open source** and proudly **vibe coded**. Contributions, 
 3. Commit your changes
 4. Push to the branch and open a Pull Request
 
+### GitHub Copilot Model Preference
+
+When working on this repository with GitHub Copilot coding agent, **use Claude Sonnet 4.5** from the model picker. Claude Sonnet 4.6 has caused issues in previous tasks. Select "Claude Sonnet 4.5" when assigning issues or starting tasks with Copilot.
+
 ## 📝 License
 
 Open source. See the repository for license details.
