@@ -495,7 +495,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   }, []);
   const [bossDefeatedTransitioning, setBossDefeatedTransitioning] = useState(false);
   const bossDefeatedTransitioningRef = useRef(false);
-  const hasAutoFullscreenedRef = useRef(false);
+  
   useEffect(() => {
     bossDefeatedTransitioningRef.current = bossDefeatedTransitioning;
   }, [bossDefeatedTransitioning]);
