@@ -1,45 +1,25 @@
 
 
-# Fix Resolution Scaling (Zoom-In Bug)
+# Reverting Selected Changes
 
-## Root Cause
+You want to remove specific earlier changes while keeping later ones. Unfortunately, the built-in revert feature works as a full rollback to a point in time — it can't selectively skip individual changes while keeping later ones.
 
-The current implementation temporarily overrides `renderState.width` and `renderState.height` to the scaled-down values (e.g., 637x487 instead of 850x650). However, all game entities (balls, paddle, bricks, enemies, bosses) have positions calculated for the original 850x650 coordinate space. The renderer clips entities outside the smaller canvas, and the subsequent upscale produces a "zoomed in" effect showing only a portion of the game area.
+Since these changes are interleaved with other work you want to keep, the only way to achieve this is to manually undo the code those changes introduced. Let me explore what those changes affect to build a plan.
 
-## Fix
+Based on the memory context and file names, those 5 changes all relate to the **desktop auto-fullscreen and viewport-filling layout system**. Specifically:
 
-**File: `src/engine/renderLoop.ts`**
+1. **Desktop layout optimize** — introduced `useViewportFrame` hook and `.desktop-fullscreen` CSS class
+2. **Gate desktop resize by viewport** — added viewport width gating in `useCanvasResize`
+3. **Expand game area to fill space** — CSS and hook changes to make game area fill available space
+4. **Expand game area to frame space** — further adjustments to frame/game area sizing
+5. **Auto fullscreen on start desktop** — auto-fullscreen logic in `Game.tsx` with `hasAutoFullscreenedRef`
 
-Instead of overriding renderState dimensions, apply a `ctx.scale(scale, scale)` transform on the offscreen context. This way:
-- The offscreen canvas is still smaller (fewer pixels to fill = GPU savings)
-- The renderer still sees the original `width` and `height` from renderState
-- All entity positions remain correct in the original coordinate space
-- The scale transform makes the GPU rasterize at reduced resolution
-- The final `drawImage` upscales to the visible canvas
+These are tightly coupled. Removing them means:
 
-```text
-Before (broken):
-  offscreen canvas = 637x487
-  renderState.width/height = 637x487   <-- entities clip!
-  renderFrame draws at wrong scale
-  drawImage upscales = zoomed in
+- **Delete `src/hooks/useViewportFrame.ts`** entirely
+- **Revert `src/hooks/useCanvasResize.ts`** — remove the viewport-width gating logic (the `< 769px` bail-out that clears inline styles)
+- **Revert `src/components/Game.tsx`** — remove auto-fullscreen-on-start logic (`hasAutoFullscreenedRef`, the effect that triggers fullscreen on game start)
+- **Revert `src/index.css`** — remove the `.desktop-fullscreen` CSS rules and the `metal-frame.desktop-fullscreen` media query block
+- **Remove `useViewportFrame` usage** from wherever it's called (likely `Game.tsx` or `GameUI.tsx`)
 
-After (fixed):
-  offscreen canvas = 637x487
-  offCtx.scale(0.75, 0.75)             <-- GPU draws fewer pixels
-  renderState.width/height = 850x650   <-- unchanged, entities correct
-  renderFrame draws full scene
-  drawImage upscales = correct view at lower resolution
-```
-
-### Specific changes (lines 80-111):
-
-Remove the `renderState.width/height` override. Instead:
-1. Clear the offscreen canvas
-2. Apply `offCtx.scale(scale, scale)` before calling `renderFrame`
-3. Call `renderFrame` with the offscreen context but **original** renderState (no dimension override)
-4. Reset the transform after rendering
-5. Upscale to visible canvas with `ctx.drawImage`
-
-This is a single-file change to `src/engine/renderLoop.ts`, approximately 10 lines modified.
-
+I need to read the affected files to identify the exact code to remove.
