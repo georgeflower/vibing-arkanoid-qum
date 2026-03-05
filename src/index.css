@@ -440,8 +440,7 @@ All colors MUST be HSL.
     0 2px 4px rgba(0, 0, 0, 0.3);
   flex: 1; /* Allow game area to grow but respect container bounds */
   max-width: calc(100% - 220px); /* Constrain to container minus side panels (60px + 140px) + gaps */
-  min-width: 200px;
-  min-height: 200px;
+  min-width: 0; /* Allow shrinking if needed */
 }
 
 .metal-bottom-bar {
@@ -454,6 +453,50 @@ All colors MUST be HSL.
     0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
+/* Desktop Fullscreen Mode - Frame fills entire viewport */
+@media (min-width: 769px) {
+  .metal-frame.desktop-fullscreen {
+    position: fixed;
+    inset: 0;
+    max-width: none;
+    max-height: none;
+    width: 100vw;
+    height: 100vh;
+    margin: 0;
+    border-radius: 0;
+    border-width: 8px;
+  }
+
+  .metal-frame.desktop-fullscreen .metal-main-content {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .metal-frame.desktop-fullscreen .metal-game-area {
+    flex: 1;
+    max-width: none !important;
+    min-width: 0;
+    min-height: 0;
+    height: 100%;
+    width: 100%;
+  }
+
+  .metal-frame.desktop-fullscreen .game-glow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* Let hook's inline width/height take precedence */
+    max-width: 100%;
+    max-height: 100%;
+  }
+
+  .metal-frame.desktop-fullscreen .game-glow canvas {
+    /* Fill the hook-sized container, maintain aspect via container sizing */
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain;
+  }
+}
 
 /* Responsive adjustments */
 @media (max-width: 1200px) {

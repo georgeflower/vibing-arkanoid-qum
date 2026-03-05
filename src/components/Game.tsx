@@ -19,7 +19,7 @@ import { useServiceWorkerUpdate } from "@/hooks/useServiceWorkerUpdate";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { MobileGameControls } from "./MobileGameControls";
 import { useScaledConstants } from "@/hooks/useScaledConstants";
-
+import { useViewportFrame } from "@/hooks/useViewportFrame";
 import { useCanvasResize } from "@/hooks/useCanvasResize";
 import CRTOverlay from "./CRTOverlay";
 import { BOSS_RUSH_CONFIG, BossRushLevel } from "@/constants/bossRushConfig";
@@ -495,7 +495,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   }, []);
   const [bossDefeatedTransitioning, setBossDefeatedTransitioning] = useState(false);
   const bossDefeatedTransitioningRef = useRef(false);
-  
+  const hasAutoFullscreenedRef = useRef(false);
   useEffect(() => {
     bossDefeatedTransitioningRef.current = bossDefeatedTransitioning;
   }, [bossDefeatedTransitioning]);
@@ -1647,6 +1647,11 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     ballReleaseHighlight,
   ]);
 
+  // Desktop viewport frame - fills entire screen on desktop
+  useViewportFrame({
+    enabled: !isMobileDevice,
+    frameRef: gameContainerRef,
+  });
 
   // Dynamic canvas resize for desktop - uses ResizeObserver
   const {
@@ -7144,6 +7149,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   };
 
   const handleEndScreenReturnToMenu = () => {
+    hasAutoFullscreenedRef.current = false;
     soundManager.stopHighScoreMusic();
     soundManager.stopBossMusic();
     soundManager.stopBackgroundMusic();
@@ -7161,6 +7167,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     } else {
       // If coming back from end screen, go to menu
       soundManager.stopHighScoreMusic();
+      hasAutoFullscreenedRef.current = false;
       onReturnToMenu();
     }
   };
@@ -7416,6 +7423,27 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     };
   }, [isMobileDevice, gameState, isIOSDevice]);
 
+  // Auto-enter fullscreen when game starts
+  // - Desktop: Always auto-fullscreen
+  // - Mobile (non-iOS): Auto-fullscreen
+  // - iOS: Disabled (API not supported, user gesture required)
+  useEffect(() => {
+    const shouldAutoFullscreen =
+      !isIOSDevice &&
+      gameState === "ready" &&
+      !isFullscreen &&
+      !hasAutoFullscreenedRef.current &&
+      fullscreenContainerRef.current;
+
+    if (shouldAutoFullscreen) {
+      hasAutoFullscreenedRef.current = true;
+      // Small delay to ensure DOM is ready
+      const timer = setTimeout(() => {
+        toggleFullscreen();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isMobileDevice, isIOSDevice, gameState]);
 
   // F key to toggle fullscreen
   useEffect(() => {
@@ -8147,6 +8175,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                           </Button>
                           <Button
                             onClick={() => {
+                              hasAutoFullscreenedRef.current = false;
                               soundManager.stopBackgroundMusic();
                               soundManager.stopBossMusic();
                               soundManager.playMenuClick();
