@@ -46,11 +46,11 @@ export const GetReadyOverlay = ({
 
   // Progress animation over 3 seconds
   useEffect(() => {
-    const startTime = Date.now();
+    const startTime = performance.now();
     const duration = 3000;
 
     const animate = () => {
-      const elapsed = Date.now() - startTime;
+      const elapsed = performance.now() - startTime;
       const newProgress = Math.min(elapsed / duration, 1);
       setProgress(newProgress);
 

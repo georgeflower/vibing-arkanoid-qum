@@ -10,6 +10,7 @@
 import { world } from "@/engine/state";
 import { renderState, type AssetRefs } from "@/engine/renderState";
 import { renderFrame } from "@/engine/canvasRenderer";
+import { timingHub } from "@/engine/timingHub";
 
 /**
  * Start the render loop. Calls renderFrame every animation frame.
@@ -71,7 +72,7 @@ export function startRenderLoop(canvas: HTMLCanvasElement, assets: AssetRefs): (
     if (elapsed < minFrameInterval) return;
     lastFrameTime = timestamp - (elapsed % minFrameInterval);
 
-    const now = performance.now();
+    const now = timingHub.now;
     const scale = renderState.qualitySettings.resolutionScale;
 
     if (scale < 1.0) {
