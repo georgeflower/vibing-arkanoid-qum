@@ -82,19 +82,11 @@ export function useCanvasResize({
     const observer = new ResizeObserver(debouncedCalculate);
     observer.observe(containerRef.current);
 
-    // Also listen to window resize to detect viewport width changes
-    // This handles the case where sidebars hide/show via CSS media queries
-    const handleWindowResize = () => {
-      debouncedCalculate();
-    };
-    window.addEventListener('resize', handleWindowResize);
-
     // Initial calculation
     calculateSize();
 
     return () => {
       observer.disconnect();
-      window.removeEventListener('resize', handleWindowResize);
       if (rafRef.current) {
         cancelAnimationFrame(rafRef.current);
       }
