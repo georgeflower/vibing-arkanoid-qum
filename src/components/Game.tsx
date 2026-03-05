@@ -3376,7 +3376,10 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     }
 
     // ═══ Update pending chain explosions ═══
-    pendingChainExplosionsRef.current = result.updatedPendingChainExplosions;
+    // Must copy — result.updatedPendingChainExplosions is the reusable singleton array;
+    // assigning directly aliases it, so createEmptyResult()'s .length = 0 on the next
+    // frame would silently wipe pendingChainExplosionsRef.current before it is read.
+    pendingChainExplosionsRef.current = result.updatedPendingChainExplosions.slice();
 
     // ═══ Play sounds ═══
     for (const sound of result.soundsToPlay) {
