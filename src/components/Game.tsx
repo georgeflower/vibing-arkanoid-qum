@@ -7144,7 +7144,6 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   };
 
   const handleEndScreenReturnToMenu = () => {
-    hasAutoFullscreenedRef.current = false;
     soundManager.stopHighScoreMusic();
     soundManager.stopBossMusic();
     soundManager.stopBackgroundMusic();
