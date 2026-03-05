@@ -10,7 +10,7 @@
 
 import type { GameWorld } from "@/engine/state";
 import type { RenderState, AssetRefs } from "@/engine/renderState";
-import type { Brick, BonusLetterType } from "@/types/game";
+import type { Brick, BonusLetterType, Particle } from "@/types/game";
 import { isMegaBoss, type MegaBoss } from "@/utils/megaBossUtils";
 import { brickRenderer } from "@/utils/brickLayerCache";
 import { particlePool } from "@/utils/particlePool";
@@ -19,6 +19,13 @@ import { particlePool } from "@/utils/particlePool";
 
 let dashOffset = 0;
 const _drawnPairs = new Set<number>(); // reusable – cleared each frame, zero allocs
+
+// ─── Particle Batch Rendering Helpers ───────────────────────
+// Module-level collections reused each frame to avoid per-frame allocations.
+// Particles are grouped by color so fillStyle is set once per unique color.
+const _particleColorMap = new Map<string, Particle[]>();
+const _particleColorBuckets: Particle[][] = [];
+let _particleBucketCount = 0;
 
 // ─── Gradient Cache ──────────────────────────────────────────
 // Avoids recreating identical CanvasGradient objects every frame.
@@ -1080,7 +1087,7 @@ export function renderFrame(
 
       // Electrical arcs — only on high quality
       if (qualitySettings.shieldArcsEnabled) {
-        const arcCount = 6;
+        const arcCount = 3;
         for (let i = 0; i < arcCount; i++) {
           const arcTime = time * 3 + i * ((Math.PI * 2) / arcCount);
           const arcX = shieldX + shieldWidth / 2 + Math.cos(arcTime) * (shieldWidth / 2 - 5);
@@ -1093,15 +1100,7 @@ export function renderFrame(
           ctx.lineWidth = 2;
           ctx.beginPath();
           ctx.moveTo(arcX, arcY);
-          const segments = 4;
-          for (let s = 1; s <= segments; s++) {
-            const t = s / segments;
-            const baseX = arcX + (arcEndX - arcX) * t;
-            const baseY = arcY + (arcEndY - arcY) * t;
-            const jitterX = Math.sin(now * 0.037 + i * 1.3 + s * 2.7) * 4;
-            const jitterY = Math.cos(now * 0.041 + i * 1.7 + s * 3.1) * 4;
-            ctx.lineTo(baseX + jitterX, baseY + jitterY);
-          }
+          ctx.lineTo(arcEndX, arcEndY);
           ctx.stroke();
         }
       }
@@ -1213,7 +1212,30 @@ export function renderFrame(
       ctx.moveTo(lineStartX, safetyNetY);
       ctx.lineTo(lineEndX, safetyNetY);
       ctx.stroke();
+    } else if (qualitySettings.level === "medium") {
+      // Medium quality: dashed line with 3 moving sparks (no expensive arc paths)
+      const pulseIntensity = 0.6 + Math.sin(time * 6) * 0.4;
+      ctx.strokeStyle = `rgba(0, 200, 255, ${pulseIntensity * 0.9})`;
+      ctx.lineWidth = 2;
+      ctx.setLineDash([10, 5]);
+      ctx.beginPath();
+      ctx.moveTo(lineStartX, safetyNetY);
+      ctx.lineTo(lineEndX, safetyNetY);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      const sparkCount = 3;
+      for (let s = 0; s < sparkCount; s++) {
+        const sparkPhase = (time * 2 + s * 0.33) % 1;
+        const sparkX = lineStartX + (lineEndX - lineStartX) * sparkPhase;
+        const sparkGlow = Math.sin(sparkPhase * Math.PI);
+        ctx.fillStyle = `rgba(255, 255, 255, ${sparkGlow * 0.9})`;
+        ctx.beginPath();
+        ctx.arc(sparkX, safetyNetY, 3 + sparkGlow * 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
     } else {
+      // High quality: animated arc paths + sparks
       const pulseIntensity = 0.6 + Math.sin(time * 6) * 0.4;
       // shadowBlur removed
       ctx.strokeStyle = `rgba(0, 200, 255, ${pulseIntensity * 0.9})`;
@@ -1447,23 +1469,47 @@ export function renderFrame(
   if (pooledParticles.length > 0) {
     ctx.save();
     const particleStep = Math.ceil(1 / qualitySettings.particleMultiplier);
-    const enableGlow = qualitySettings.glowEnabled;
+
+    // Group particles by color (one fillStyle set per color group, not per particle)
+    _particleColorMap.clear();
+    _particleBucketCount = 0;
     for (let index = 0; index < pooledParticles.length; index += particleStep) {
-      const particle = pooledParticles[index];
-      const particleAlpha = particle.life / particle.maxLife;
-      ctx.globalAlpha = particleAlpha;
-      // shadowBlur removed
-      ctx.fillStyle = particle.color;
-      ctx.fillRect(particle.x - particle.size / 2, particle.y - particle.size / 2, particle.size, particle.size);
-      // shadowBlur removed
-      ctx.fillStyle = `rgba(255, 255, 255, ${particleAlpha * 0.8})`;
-      ctx.fillRect(
-        particle.x - particle.size / 4,
-        particle.y - particle.size / 4,
-        particle.size / 2,
-        particle.size / 2,
-      );
+      const p = pooledParticles[index];
+      let bucket = _particleColorMap.get(p.color);
+      if (!bucket) {
+        if (_particleBucketCount >= _particleColorBuckets.length) {
+          _particleColorBuckets.push([]);
+        }
+        bucket = _particleColorBuckets[_particleBucketCount++];
+        bucket.length = 0;
+        _particleColorMap.set(p.color, bucket);
+      }
+      bucket.push(p);
     }
+
+    // Color pass: one fillStyle change per unique color
+    for (const [color, colorParticles] of _particleColorMap) {
+      ctx.fillStyle = color;
+      for (const particle of colorParticles) {
+        ctx.globalAlpha = particle.life / particle.maxLife;
+        ctx.fillRect(particle.x - particle.size / 2, particle.y - particle.size / 2, particle.size, particle.size);
+      }
+    }
+
+    // White highlight pass: single fillStyle, per-particle alpha via globalAlpha
+    ctx.fillStyle = "white";
+    for (let b = 0; b < _particleBucketCount; b++) {
+      for (const particle of _particleColorBuckets[b]) {
+        ctx.globalAlpha = (particle.life / particle.maxLife) * 0.8;
+        ctx.fillRect(
+          particle.x - particle.size / 4,
+          particle.y - particle.size / 4,
+          particle.size / 2,
+          particle.size / 2,
+        );
+      }
+    }
+
     ctx.restore();
   }
 
@@ -1752,31 +1798,64 @@ export function renderFrame(
   const activeParticles = particlePool.getActive();
   if (activeParticles.length > 0) {
     ctx.save();
+    const enableGlow = qualitySettings.glowEnabled;
+
+    // Build color-grouped buckets (reuse module-level collections to avoid allocations)
+    _particleColorMap.clear();
+    _particleBucketCount = 0;
     for (let i = 0; i < activeParticles.length; i++) {
-      const particle = activeParticles[i];
-      if (!particle.useCircle) continue; // Skip debris particles (already rendered above)
-      const pAlpha = particle.life / particle.maxLife;
-      ctx.globalAlpha = pAlpha;
-      // Outer glow: slightly larger circle at low opacity (replaces shadowBlur=10)
-      if (qualitySettings.glowEnabled && particle.size > 2) {
-        ctx.fillStyle = particle.color;
-        ctx.globalAlpha = pAlpha * 0.3;
-        ctx.beginPath();
-        ctx.arc(particle.x, particle.y, particle.size * 1.8, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.globalAlpha = pAlpha;
+      const p = activeParticles[i];
+      if (!p.useCircle) continue;
+      let bucket = _particleColorMap.get(p.color);
+      if (!bucket) {
+        if (_particleBucketCount >= _particleColorBuckets.length) {
+          _particleColorBuckets.push([]);
+        }
+        bucket = _particleColorBuckets[_particleBucketCount++];
+        bucket.length = 0;
+        _particleColorMap.set(p.color, bucket);
       }
-      ctx.fillStyle = particle.color;
-      ctx.beginPath();
-      ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
-      ctx.fill();
-      if (particle.size > 3) {
-        ctx.fillStyle = `rgba(255, 255, 255, ${pAlpha * 0.9})`;
+      bucket.push(p);
+    }
+
+    // Glow pass (optional, high quality only): one fillStyle per color group
+    if (enableGlow) {
+      for (const [color, colorParticles] of _particleColorMap) {
+        ctx.fillStyle = color;
+        for (const particle of colorParticles) {
+          if (particle.size <= 2) continue;
+          ctx.globalAlpha = (particle.life / particle.maxLife) * 0.3;
+          ctx.beginPath();
+          ctx.arc(particle.x, particle.y, particle.size * 1.8, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    }
+
+    // Main circle pass: one fillStyle per color group
+    for (const [color, colorParticles] of _particleColorMap) {
+      ctx.fillStyle = color;
+      for (const particle of colorParticles) {
+        ctx.globalAlpha = particle.life / particle.maxLife;
+        ctx.beginPath();
+        ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // White highlight pass: single fillStyle for all particles with size > 3
+    ctx.fillStyle = "white";
+    for (let b = 0; b < _particleBucketCount; b++) {
+      for (const particle of _particleColorBuckets[b]) {
+        if (particle.size <= 3) continue;
+        const pAlpha = particle.life / particle.maxLife;
+        ctx.globalAlpha = pAlpha * 0.9;
         ctx.beginPath();
         ctx.arc(particle.x, particle.y, particle.size / 2, 0, Math.PI * 2);
         ctx.fill();
       }
     }
+
     ctx.restore();
   }
 
