@@ -1,7 +1,6 @@
 // Mega Boss creation and management utilities
 import type { Boss, Ball } from "@/types/game";
 import { MEGA_BOSS_CONFIG, MEGA_BOSS_POSITIONS, MEGA_BOSS_LEVEL } from "@/constants/megaBossConfig";
-import { timingHub } from "@/engine/timingHub";
 
 // Phase represents the current stage of the boss fight
 export type MegaBossCorePhase = 1 | 2 | 3;
@@ -129,7 +128,7 @@ export function handleMegaBossOuterDamage(boss: MegaBoss, damage: number): {
   shouldExposeCore: boolean;
 } {
   // Check invulnerability
-  if (boss.isInvulnerable && timingHub.now < boss.invulnerableUntil) {
+  if (boss.isInvulnerable && Date.now() < boss.invulnerableUntil) {
     return { 
       newOuterHP: boss.outerShieldHP, 
       newInnerHP: boss.innerShieldHP,
@@ -176,7 +175,7 @@ export function hasSufficientCoreHits(boss: MegaBoss): boolean {
 
 // Expose the core (hatch opens)
 export function exposeMegaBossCore(boss: MegaBoss): MegaBoss {
-  const now = timingHub.now;
+  const now = Date.now();
   return {
     ...boss,
     coreExposed: true,
@@ -189,7 +188,7 @@ export function exposeMegaBossCore(boss: MegaBoss): MegaBoss {
 // Handle core hit (ball enters and hits the core)
 export function handleMegaBossCoreHit(boss: MegaBoss, ball: Ball): MegaBoss {
   const config = MEGA_BOSS_CONFIG;
-  const now = timingHub.now;
+  const now = Date.now();
   
   // Schedule danger ball spawns
   const scheduledDangerBalls: number[] = [];
@@ -261,7 +260,7 @@ export function releaseBallAndNextPhase(boss: MegaBoss): { boss: MegaBoss; relea
       dx: Math.sin(randomAngle) * speed,
       dy: Math.cos(randomAngle) * speed, // Positive = downward
       waitingToLaunch: false,
-      releasedFromBossTime: timingHub.now
+      releasedFromBossTime: Date.now()
     };
   } else {
     // Release upward normally
@@ -272,7 +271,7 @@ export function releaseBallAndNextPhase(boss: MegaBoss): { boss: MegaBoss; relea
       dx: 0,
       dy: -4, // Release upwards
       waitingToLaunch: false,
-      releasedFromBossTime: timingHub.now
+      releasedFromBossTime: Date.now()
     };
   }
   
@@ -328,7 +327,7 @@ export function releaseBallAndNextPhase(boss: MegaBoss): { boss: MegaBoss; relea
       speed: newSpeed,
       attackCooldown: newAttackInterval,
       isInvulnerable: true,
-      invulnerableUntil: timingHub.now + 1500 // Brief invuln after phase change
+      invulnerableUntil: Date.now() + 1500 // Brief invuln after phase change
     },
     releasedBall,
     isDefeated: false
@@ -430,7 +429,7 @@ export function resetMegaBossPhaseProgress(boss: MegaBoss): { boss: MegaBoss; re
     dx: 0,
     dy: 4,
     waitingToLaunch: false,
-    releasedFromBossTime: timingHub.now // Track when ball was released for paddle collision grace period
+    releasedFromBossTime: Date.now() // Track when ball was released for paddle collision grace period
   };
   
   // Reset shield HP for another attempt - use inner shield if outer is removed
@@ -466,7 +465,7 @@ export function shouldSpawnSwarm(boss: MegaBoss): boolean {
   if (boss.corePhase < 3) return false;
   
   const config = MEGA_BOSS_CONFIG;
-  const now = timingHub.now;
+  const now = Date.now();
   
   return now - boss.lastSwarmSpawnTime >= config.swarmSpawnInterval;
 }
@@ -474,6 +473,6 @@ export function shouldSpawnSwarm(boss: MegaBoss): boolean {
 export function markSwarmSpawned(boss: MegaBoss): MegaBoss {
   return {
     ...boss,
-    lastSwarmSpawnTime: timingHub.now
+    lastSwarmSpawnTime: Date.now()
   };
 }

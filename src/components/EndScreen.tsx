@@ -28,11 +28,11 @@ const useAnimatedCounter = (targetValue: number, duration: number, delay: number
   const [count, setCount] = useState(0);
   
   useEffect(() => {
-    const startTime = performance.now() + delay;
+    const startTime = Date.now() + delay;
     const endTime = startTime + duration;
     
     const animate = () => {
-      const now = performance.now();
+      const now = Date.now();
       
       if (now < startTime) {
         requestAnimationFrame(animate);
