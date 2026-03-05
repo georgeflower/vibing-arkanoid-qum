@@ -71,7 +71,10 @@ export function startRenderLoop(canvas: HTMLCanvasElement, assets: AssetRefs): (
     if (elapsed < minFrameInterval) return;
     lastFrameTime = timestamp - (elapsed % minFrameInterval);
 
-    const now = Date.now();
+    // Use RAF's high-resolution timestamp for consistent animations.
+    // The timestamp parameter from requestAnimationFrame is a DOMHighResTimeStamp
+    // (same domain as performance.now()), which avoids the low-resolution /
+    // clamped behaviour of Date.now() on mobile devices.
     const scale = renderState.qualitySettings.resolutionScale;
 
     if (scale < 1.0) {
@@ -95,7 +98,7 @@ export function startRenderLoop(canvas: HTMLCanvasElement, assets: AssetRefs): (
         // coordinate space but the GPU rasterizes fewer pixels.
         offCtx.setTransform(scale, 0, 0, scale, 0, 0);
 
-        renderFrame(offCtx, world, renderState, assets, now);
+        renderFrame(offCtx, world, renderState, assets, timestamp);
 
         // Reset transform for next frame
         offCtx.setTransform(1, 0, 0, 1, 0, 0);
@@ -104,7 +107,7 @@ export function startRenderLoop(canvas: HTMLCanvasElement, assets: AssetRefs): (
         ctx.drawImage(offCanvas, 0, 0, renderState.width, renderState.height);
       }
     } else {
-      renderFrame(ctx, world, renderState, assets, now);
+      renderFrame(ctx, world, renderState, assets, timestamp);
     }
   };
 

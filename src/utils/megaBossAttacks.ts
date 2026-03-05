@@ -287,7 +287,7 @@ function performLaserAttack(
 ) {
   const laserX = boss.x + boss.width / 2 - 4; // 8px wide laser centered
   
-  setLaserWarnings(prev => [...prev, { x: laserX, startTime: Date.now() }]);
+  setLaserWarnings(prev => [...prev, { x: laserX, startTime: performance.now() }]);
   toast.warning("MEGA BOSS CHARGING LASER!", { duration: 1000 });
   soundManager.playLaserChargingSound();
   
@@ -423,7 +423,7 @@ function performSuperAttack(
   const centerX = boss.x + boss.width / 2;
   const centerY = boss.y + boss.height / 2;
   
-  setSuperWarnings(prev => [...prev, { x: centerX, y: centerY, startTime: Date.now() }]);
+  setSuperWarnings(prev => [...prev, { x: centerX, y: centerY, startTime: performance.now() }]);
   toast.error("MEGA BOSS SUPER ATTACK!");
   soundManager.playShoot();
   

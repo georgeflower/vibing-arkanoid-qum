@@ -32,7 +32,7 @@ export const BossPowerUpTimer = ({
       const progress = 1 - timeLeft / duration;
       const pulseSpeed = progress > 0.75 ? 8 : progress > 0.5 ? 4 : 2;
       const pulseIntensity = progress > 0.75 ? 0.15 : 0.08;
-      const newScale = 1 + Math.sin(Date.now() * 0.01 * pulseSpeed) * pulseIntensity;
+      const newScale = 1 + Math.sin(performance.now() * 0.01 * pulseSpeed) * pulseIntensity;
       setScale(newScale);
     }, 50);
 
