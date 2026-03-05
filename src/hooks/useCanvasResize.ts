@@ -41,6 +41,9 @@ export function useCanvasResize({
     const availableWidth = container.clientWidth - 16; // Account for padding
     const availableHeight = container.clientHeight - 16;
 
+    // Guard against feedback loop — skip if container has collapsed
+    if (availableWidth < 50 || availableHeight < 50) return;
+
     // Calculate scale to fit while maintaining aspect ratio
     const aspectRatio = logicalWidth / logicalHeight;
     let displayWidth: number;
