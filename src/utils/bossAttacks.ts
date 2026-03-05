@@ -3,6 +3,7 @@ import { BOSS_CONFIG, ATTACK_PATTERNS } from "@/constants/bossConfig";
 import { soundManager } from "@/utils/sounds";
 import { debugToast as toast } from "@/utils/debugToast";
 import { world } from "@/engine/state";
+import { timingHub } from "@/engine/timingHub";
 
 export function performBossAttack(
   boss: Boss,
@@ -85,7 +86,7 @@ export function performBossAttack(
   } else if (attackType === 'laser') {
     const laserX = boss.x + boss.width / 2 - ATTACK_PATTERNS.laser.width / 2;
     
-    setLaserWarnings(prev => [...prev, { x: laserX, startTime: Date.now() }]);
+    setLaserWarnings(prev => [...prev, { x: laserX, startTime: timingHub.now }]);
     toast.warning(`${boss.type.toUpperCase()} CHARGING LASER!`, { duration: 1000 });
     soundManager.playLaserChargingSound();
     
@@ -120,7 +121,7 @@ export function performBossAttack(
     const centerY = boss.y + boss.height / 2;
     
     // Add super warning
-    setSuperWarnings(prev => [...prev, { x: centerX, y: centerY, startTime: Date.now() }]);
+    setSuperWarnings(prev => [...prev, { x: centerX, y: centerY, startTime: timingHub.now }]);
     toast.error(`${boss.type.toUpperCase()} SUPER ATTACK!`);
     soundManager.playShoot();
     
@@ -154,7 +155,7 @@ export function performBossAttack(
     const centerX = boss.x + boss.width / 2;
     const centerY = boss.y + boss.height / 2;
     const attacks: BossAttack[] = [];
-    const spiralOffset = Date.now() / 1000; // Animated spiral
+    const spiralOffset = timingHub.now / 1000; // Animated spiral
     
     for (let i = 0; i < ATTACK_PATTERNS.spiral.count; i++) {
       const angle = (i / ATTACK_PATTERNS.spiral.count) * Math.PI * 2 + spiralOffset;

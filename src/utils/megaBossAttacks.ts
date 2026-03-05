@@ -6,6 +6,7 @@ import { MegaBoss, getMegaBossPhase, isMegaBoss } from "./megaBossUtils";
 import { soundManager } from "./sounds";
 import { debugToast as toast } from "@/utils/debugToast";
 import { world } from "@/engine/state";
+import { timingHub } from "@/engine/timingHub";
 
 export interface DangerBall {
   id: number;
@@ -50,7 +51,7 @@ export function spawnDangerBall(boss: MegaBoss): DangerBall {
     speed: config.dangerBallSpeed,
     targetCorner,
     flashPhase: 0,
-    spawnTime: Date.now(),
+    spawnTime: timingHub.now,
     isReflected: false,
     isHoming: false
   };
@@ -287,7 +288,7 @@ function performLaserAttack(
 ) {
   const laserX = boss.x + boss.width / 2 - 4; // 8px wide laser centered
   
-  setLaserWarnings(prev => [...prev, { x: laserX, startTime: Date.now() }]);
+  setLaserWarnings(prev => [...prev, { x: laserX, startTime: timingHub.now }]);
   toast.warning("MEGA BOSS CHARGING LASER!", { duration: 1000 });
   soundManager.playLaserChargingSound();
   
@@ -423,7 +424,7 @@ function performSuperAttack(
   const centerX = boss.x + boss.width / 2;
   const centerY = boss.y + boss.height / 2;
   
-  setSuperWarnings(prev => [...prev, { x: centerX, y: centerY, startTime: Date.now() }]);
+  setSuperWarnings(prev => [...prev, { x: centerX, y: centerY, startTime: timingHub.now }]);
   toast.error("MEGA BOSS SUPER ATTACK!");
   soundManager.playShoot();
   

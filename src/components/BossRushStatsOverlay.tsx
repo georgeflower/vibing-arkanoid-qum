@@ -38,9 +38,9 @@ const useAnimatedCounter = (target: number, duration: number = 1500, delay: numb
     }
 
     function startAnimation() {
-      const startTime = Date.now();
+      const startTime = performance.now();
       const animate = () => {
-        const elapsed = Date.now() - startTime;
+        const elapsed = performance.now() - startTime;
         const progress = Math.min(elapsed / duration, 1);
         // Easing function for smooth animation
         const eased = 1 - Math.pow(1 - progress, 3);
