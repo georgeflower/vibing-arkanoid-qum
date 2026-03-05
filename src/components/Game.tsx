@@ -941,6 +941,10 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         })),
       );
 
+      // NOTE: lastHitAt, lastAttackTime, chain explosion triggerTimes are now sim-time based
+      // and do NOT need pause adjustment. The adjustments below are kept for safety/legacy
+      // but are no-ops for those fields.
+
       // Adjust boss lastHitAt
       if (boss) {
         setBoss((prev) => (prev ? { ...prev, lastHitAt: (prev.lastHitAt || 0) + pauseDuration } : null));
@@ -1566,7 +1570,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         currentStage: 2,
         isAngry: true,
         speed: BOSS_CONFIG.sphere.angryMoveSpeed,
-        lastHitAt: Date.now(),
+        lastHitAt: world.simTimeMs,
       };
     },
     // Pyramid split callback
@@ -4725,12 +4729,11 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                 y: boss.targetPosition.y,
                 dx: 0,
                 dy: 0,
-                lastAttackTime: Date.now(),
+                lastAttackTime: world.simTimeMs,
               }
             : null,
         );
       } else {
-        // Use MEGA_BOSS_CONFIG for mega boss, otherwise use BOSS_CONFIG
         const isMegaType = boss.type === "mega";
         const baseMoveSpeed = isMegaType
           ? boss.isSuperAngry
@@ -4821,7 +4824,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       boss &&
       !boss.isStunned &&
       boss.phase === "attacking" &&
-      Date.now() - boss.lastAttackTime >= boss.attackCooldown &&
+      world.simTimeMs - boss.lastAttackTime >= boss.attackCooldown &&
       paddle
     ) {
       if (level === MEGA_BOSS_LEVEL && isMegaBoss(boss)) {
@@ -4854,7 +4857,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
               phase: "moving",
               targetPosition: prev.positions[nextIndex],
               currentPositionIndex: nextIndex,
-              lastAttackTime: Date.now(),
+              lastAttackTime: world.simTimeMs,
             }
           : null,
       );
@@ -5277,7 +5280,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         const dist = Math.sqrt(dx * dx + dy * dy);
         if (dist < 5) {
           setResurrectedBosses((prev) =>
-            prev.map((b, i) => (i === idx ? { ...b, phase: "attacking", lastAttackTime: Date.now() } : b)),
+            prev.map((b, i) => (i === idx ? { ...b, phase: "attacking", lastAttackTime: world.simTimeMs } : b)),
           );
         } else if (!resBoss.isStunned) {
           setResurrectedBosses((prev) =>
@@ -5297,7 +5300,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       } else if (
         !resBoss.isStunned &&
         resBoss.phase === "attacking" &&
-        Date.now() - resBoss.lastAttackTime >= resBoss.attackCooldown &&
+        world.simTimeMs - resBoss.lastAttackTime >= resBoss.attackCooldown &&
         paddle
       ) {
         performBossAttack(
@@ -5317,7 +5320,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                   phase: "moving",
                   targetPosition: b.positions[nextIdx],
                   currentPositionIndex: nextIdx,
-                  lastAttackTime: Date.now(),
+                  lastAttackTime: world.simTimeMs,
                 }
               : b,
           ),
@@ -5343,7 +5346,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
         // Special handling for cross attack course changes
         if (attack.type === "cross" && !attack.isReflected) {
-          const now = Date.now();
+          const now = world.simTimeMs; // sim-time, not wall-clock
 
           // Check if in paddle danger zone - never stop in this area
           const isInPaddleZone = attack.y >= paddleDangerZoneY;
@@ -5526,7 +5529,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
           ) {
             // Damage the boss with proper cooldown, defeat detection, and logging
             const REFLECTED_ATTACK_COOLDOWN_MS = 1000;
-            const nowMs = Date.now();
+            const nowMs = world.simTimeMs; // sim-time, not wall-clock
 
             // Use ref for synchronous cooldown check to prevent multiple hits in same frame
             const lastHitMs = reflectedAttackLastHitRef.current;
@@ -5632,7 +5635,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
               attack.y < rb.y + rb.height
             ) {
               const REFLECTED_ATTACK_COOLDOWN_MS = 1000;
-              const nowMs = Date.now();
+              const nowMs = world.simTimeMs; // sim-time, not wall-clock
               const lastHitMs = (rb as any).lastHitAt || 0;
               const canDamage = nowMs - lastHitMs >= REFLECTED_ATTACK_COOLDOWN_MS;
 
@@ -5828,7 +5831,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     // ═══ CROSS PROJECTILE COLLISION DETECTION ═══
     // Check for collisions between non-reflected cross projectiles to spawn crossBall enemies
     const MERGE_COOLDOWN_MS = 1000; // 1 second before projectiles can merge
-    const nowForMerge = Date.now();
+    const nowForMerge = world.simTimeMs; // sim-time, not wall-clock
 
     const crossProjectiles = bossAttacks.filter(
       (attack) =>
@@ -6082,7 +6085,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     }
 
     // Check reflected bomb collisions with boss and enemies
-    const reflectedBombNow = Date.now();
+    const reflectedBombNow = world.simTimeMs; // sim-time, not wall-clock
     const REFLECTED_BOMB_COOLDOWN = 200; // 200ms cooldown between reflected bomb hits
 
     // Log bomb state for debugging
@@ -6109,9 +6112,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         bomb.y + bomb.height > boss.y &&
         bomb.y < boss.y + boss.height
       ) {
-        const nowMs = Date.now();
-
-        // Remove the bomb that hit the boss first
+        const nowMs = world.simTimeMs; // sim-time, not wall-clock
         bombPool.release(bomb);
         setBombs((prev) => prev.filter((b) => b.id !== bomb.id));
 

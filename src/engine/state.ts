@@ -87,6 +87,11 @@ export interface GameWorld {
   bossActive: boolean;
   backgroundHue: number;
 
+  // Accumulated simulation time. Incremented each physics frame by dtSeconds.
+  // Use this for game-logic timers that must pause correctly and be FPS-independent.
+  simTimeSeconds: number; // floating-point seconds since level start
+  simTimeMs: number;      // integer milliseconds (Math.floor(simTimeSeconds * 1000)), for convenience
+
   // Score & lives live here so the game loop can mutate them
   // without setState. React reads them via hudSnapshot polling.
   score: number;
@@ -128,6 +133,9 @@ const WORLD_DEFAULTS: Readonly<GameWorld> = Object.freeze({
   bossHitCooldown: 0,
   bossActive: false,
   backgroundHue: 0,
+
+  simTimeSeconds: 0,
+  simTimeMs: 0,
 
   score: 0,
   lives: 3,
@@ -180,6 +188,8 @@ export function resetWorld(overrides?: Partial<GameWorld>): void {
   world.bossHitCooldown = WORLD_DEFAULTS.bossHitCooldown;
   world.bossActive = WORLD_DEFAULTS.bossActive;
   world.backgroundHue = WORLD_DEFAULTS.backgroundHue;
+  world.simTimeSeconds = WORLD_DEFAULTS.simTimeSeconds;
+  world.simTimeMs = WORLD_DEFAULTS.simTimeMs;
   world.score = WORLD_DEFAULTS.score;
   world.lives = WORLD_DEFAULTS.lives;
 

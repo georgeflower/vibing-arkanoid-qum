@@ -65,7 +65,7 @@ export function createBoss(level: number, canvasWidth: number, canvasHeight: num
     positions: positions,
     waitTimeAtPosition: 0,
     attackCooldown: config.attackInterval,
-    lastAttackTime: Date.now(),
+    lastAttackTime: 0,
     isCharging: false,
     lastHitAt: 0
   };
@@ -109,7 +109,7 @@ export function createResurrectedPyramid(
     positions: parentBoss.positions,
     waitTimeAtPosition: 0,
     attackCooldown: config.attackInterval * 0.7,
-    lastAttackTime: Date.now(),
+    lastAttackTime: 0,
     isCharging: false,
     parentBossId: parentBoss.id,
     isResurrected: true,
