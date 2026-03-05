@@ -2303,7 +2303,7 @@ function drawEnemies(
       ctx.lineWidth = 1.5;
       for (let i = -2; i <= 2; i++) {
         const latY = centerY + i * radius * 0.3;
-        const latRadius = Math.sqrt(radius * radius - i * radius * 0.3 * (i * radius * 0.3));
+        const latRadius = Math.sqrt(Math.max(0, radius * radius - i * radius * 0.3 * (i * radius * 0.3)));
         const squeeze = Math.abs(Math.cos(singleEnemy.rotationX + i * 0.5));
         ctx.beginPath();
         ctx.ellipse(centerX, latY, latRadius * squeeze, latRadius * 0.3, 0, 0, Math.PI * 2);
@@ -2415,7 +2415,7 @@ function drawEnemies(
       ctx.lineWidth = 1;
       for (let i = -2; i <= 2; i++) {
         const latY = centerY + i * radius * 0.3;
-        const latRadius = Math.sqrt(radius * radius - i * radius * 0.3 * (i * radius * 0.3));
+        const latRadius = Math.sqrt(Math.max(0, radius * radius - i * radius * 0.3 * (i * radius * 0.3)));
         const squeeze = Math.abs(Math.cos(singleEnemy.rotationX + i * 0.5));
         ctx.beginPath();
         ctx.ellipse(centerX, latY, latRadius * squeeze, latRadius * 0.3, 0, 0, Math.PI * 2);
