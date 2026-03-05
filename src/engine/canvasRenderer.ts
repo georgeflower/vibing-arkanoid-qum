@@ -34,6 +34,7 @@ let _particleBucketCount = 0;
 
 const gradientCache: Record<string, CanvasGradient> = {};
 let cacheCtx: CanvasRenderingContext2D | null = null;
+const FALLBACK_GRADIENT_KEY = "fallback_invalid_gradient";
 
 function ensureCacheCtx(ctx: CanvasRenderingContext2D): void {
   if (cacheCtx !== ctx) {
@@ -54,6 +55,20 @@ function getCachedRadialGradient(
   stops: [number, string][],
 ): CanvasGradient {
   ensureCacheCtx(ctx);
+
+  // Guard against invalid radius values that would cause a canvas API error
+  if (!isFinite(r0) || r0 < 0 || !isFinite(r1) || r1 < 0) {
+    console.warn(`Invalid radii in getCachedRadialGradient: r0=${r0}, r1=${r1}`);
+    const fallbackKey = FALLBACK_GRADIENT_KEY;
+    if (!gradientCache[fallbackKey]) {
+      const fallback = ctx.createRadialGradient(0, 0, 0, 0, 0, 1);
+      fallback.addColorStop(0, "rgba(0,0,0,0)");
+      fallback.addColorStop(1, "rgba(0,0,0,0)");
+      gradientCache[fallbackKey] = fallback;
+    }
+    return gradientCache[fallbackKey];
+  }
+
   if (!gradientCache[key]) {
     const g = ctx.createRadialGradient(x0, y0, r0, x1, y1, r1);
     for (let i = 0; i < stops.length; i++) g.addColorStop(stops[i][0], stops[i][1]);
