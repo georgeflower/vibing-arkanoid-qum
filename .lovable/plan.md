@@ -1,45 +1,38 @@
 
 
-# Fix Resolution Scaling (Zoom-In Bug)
+# Revert Game Area to Fixed Size (Pre-Expansion)
 
-## Root Cause
+## Problem
+Two previous changes ("Expand game area to frame space" and "Expand game area to fill space") made the game canvas dynamically resize to fill all available space within the metal frame on desktop. The user wants the playable area to return to its original fixed size.
 
-The current implementation temporarily overrides `renderState.width` and `renderState.height` to the scaled-down values (e.g., 637x487 instead of 850x650). However, all game entities (balls, paddle, bricks, enemies, bosses) have positions calculated for the original 850x650 coordinate space. The renderer clips entities outside the smaller canvas, and the subsequent upscale produces a "zoomed in" effect showing only a portion of the game area.
+## Current behavior
+- `useViewportFrame` makes the metal frame fill the entire viewport on desktop
+- `useCanvasResize` uses ResizeObserver to dynamically size the game canvas to fill the `metal-game-area` container
+- The canvas display size grows to match available space
 
-## Fix
+## Desired behavior
+The game canvas stays at its logical size (850×650 scaled by `scaleFactor`) and is simply centered within the frame — no dynamic expansion.
 
-**File: `src/engine/renderLoop.ts`**
+## Changes
 
-Instead of overriding renderState dimensions, apply a `ctx.scale(scale, scale)` transform on the offscreen context. This way:
-- The offscreen canvas is still smaller (fewer pixels to fill = GPU savings)
-- The renderer still sees the original `width` and `height` from renderState
-- All entity positions remain correct in the original coordinate space
-- The scale transform makes the GPU rasterize at reduced resolution
-- The final `drawImage` upscales to the visible canvas
+### 1. `src/components/Game.tsx`
+- **Remove** `useViewportFrame` import and hook call (lines 22, 1651-1654)
+- **Remove** `useCanvasResize` import and hook call (lines 23, 1657-1667), along with destructured `displayWidth`, `displayHeight`, `dynamicScale`
+- Remove `gameAreaRef` if only used for `useCanvasResize` (check first)
+- On desktop, set the `game-glow` div's width/height explicitly to `SCALED_CANVAS_WIDTH` × `SCALED_CANVAS_HEIGHT` (same as mobile path but without the scale transform), so the canvas is fixed-size and centered
 
-```text
-Before (broken):
-  offscreen canvas = 637x487
-  renderState.width/height = 637x487   <-- entities clip!
-  renderFrame draws at wrong scale
-  drawImage upscales = zoomed in
+### 2. `src/hooks/useViewportFrame.ts`
+- Delete file (no longer used)
 
-After (fixed):
-  offscreen canvas = 637x487
-  offCtx.scale(0.75, 0.75)             <-- GPU draws fewer pixels
-  renderState.width/height = 850x650   <-- unchanged, entities correct
-  renderFrame draws full scene
-  drawImage upscales = correct view at lower resolution
-```
+### 3. `src/hooks/useCanvasResize.ts`
+- Delete file (no longer used)
 
-### Specific changes (lines 80-111):
+### 4. `src/index.css`
+- Remove the `.metal-frame.desktop-fullscreen` CSS block (lines ~265-290) since the class is no longer applied
+- Remove `max-width` constraint on `.metal-game-area` that references side panel widths — let it auto-size around the fixed canvas
+- Keep `.metal-frame` as `width: fit-content` so it wraps the fixed-size content naturally
 
-Remove the `renderState.width/height` override. Instead:
-1. Clear the offscreen canvas
-2. Apply `offCtx.scale(scale, scale)` before calling `renderFrame`
-3. Call `renderFrame` with the offscreen context but **original** renderState (no dimension override)
-4. Reset the transform after rendering
-5. Upscale to visible canvas with `ctx.drawImage`
-
-This is a single-file change to `src/engine/renderLoop.ts`, approximately 10 lines modified.
+### 5. Verify
+- `gameAreaRef` usage — if it's only for `useCanvasResize`, remove the ref. If used elsewhere (e.g. click handlers), keep it.
+- `gameGlowRef` — same check; if only used by `useCanvasResize` for imperative sizing, it can be simplified but likely still needed for CRT overlay positioning.
 
