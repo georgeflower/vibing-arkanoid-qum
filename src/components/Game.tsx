@@ -1647,11 +1647,6 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     ballReleaseHighlight,
   ]);
 
-  // Desktop viewport frame - fills entire screen on desktop
-  useViewportFrame({
-    enabled: !isMobileDevice,
-    frameRef: gameContainerRef,
-  });
 
   // Dynamic canvas resize for desktop - uses ResizeObserver
   const {
