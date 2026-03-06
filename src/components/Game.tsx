@@ -6409,6 +6409,104 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     if (profilerEnabled) frameProfiler.startTiming("physics");
     updatePowerUps(dtSecondsRef.current);
     updateBullets(bricks, dtSecondsRef.current);
+
+    // ═══ Process bullet-boss hits (in-place mutation, no setBoss spread) ═══
+    if (pendingBulletBossHits.length > 0) {
+      for (let i = 0; i < pendingBulletBossHits.length; i++) {
+        const hit = pendingBulletBossHits[i];
+        if (!hit.isResurrected) {
+          // Main boss — mutate health in-place
+          const boss = world.boss;
+          if (boss) {
+            boss.currentHealth = Math.max(0, boss.currentHealth - hit.damage);
+            soundManager.playBossHitSound();
+            if (boss.currentHealth <= 0 && boss.type !== "mega") {
+              if (boss.type === "cube") {
+                handleBossDefeat("cube", boss, BOSS_CONFIG.cube.points, `CUBE GUARDIAN DEFEATED! +${BOSS_CONFIG.cube.points} points + BONUS LIFE!`);
+                world.boss = null;
+                setBoss(null);
+              } else if (boss.type === "sphere") {
+                if (boss.currentStage === 1) {
+                  soundManager.playExplosion();
+                  toast.error("SPHERE PHASE 2: DESTROYER MODE!");
+                  boss.currentHealth = BOSS_CONFIG.sphere.healthPhase2;
+                  boss.currentStage = 2;
+                  boss.isAngry = true;
+                  boss.speed = BOSS_CONFIG.sphere.angryMoveSpeed;
+                  boss.lastHitAt = world.simTimeMs;
+                } else {
+                  handleBossDefeat("sphere", boss, BOSS_CONFIG.sphere.points, `SPHERE DESTROYER DEFEATED! +${BOSS_CONFIG.sphere.points} points + BONUS LIFE!`);
+                  world.boss = null;
+                  setBoss(null);
+                }
+              } else if (boss.type === "pyramid") {
+                if (boss.currentStage === 1) {
+                  soundManager.playExplosion();
+                  toast.error("PYRAMID LORD SPLITS INTO 3!");
+                  const resurrected: Boss[] = [];
+                  for (let j = 0; j < 3; j++) {
+                    resurrected.push(createResurrectedPyramid(boss, j, SCALED_CANVAS_WIDTH, SCALED_CANVAS_HEIGHT));
+                  }
+                  setResurrectedBosses(resurrected);
+                  world.resurrectedBosses = resurrected;
+                  world.boss = null;
+                  setBoss(null);
+                }
+              }
+            }
+          }
+        } else {
+          // Resurrected boss — mutate in-place
+          const resBosses = world.resurrectedBosses;
+          const resBoss = resBosses.find(b => b.id === hit.bossId);
+          if (resBoss) {
+            resBoss.currentHealth = Math.max(0, resBoss.currentHealth - hit.damage);
+            soundManager.playBossHitSound();
+            if (resBoss.currentHealth <= 0) {
+              const config = BOSS_CONFIG.pyramid;
+              setScore((s) => s + config.resurrectedPoints);
+              toast.success(`PYRAMID DESTROYED! +${config.resurrectedPoints} points`);
+              soundManager.playBossDefeatSound();
+              soundManager.playExplosion();
+              // Remove from world array
+              world.resurrectedBosses = resBosses.filter(b => b.id !== resBoss.id);
+              // Enrage last one
+              if (world.resurrectedBosses.length === 1) {
+                toast.error("FINAL PYRAMID ENRAGED!");
+                world.resurrectedBosses[0].isSuperAngry = true;
+                world.resurrectedBosses[0].speed = BOSS_CONFIG.pyramid.superAngryMoveSpeed;
+              }
+              if (world.resurrectedBosses.length === 0) {
+                if (settings.difficulty !== "godlike") setLives((prev) => prev + 1);
+                toast.success(settings.difficulty === "godlike" ? "ALL PYRAMIDS DEFEATED!" : "ALL PYRAMIDS DEFEATED! + BONUS LIFE!");
+                setBossActive(false);
+                setBossesKilled((k) => k + 1);
+                setBossDefeatedTransitioning(true);
+                setBossVictoryOverlayActive(true);
+                setBalls([]);
+                clearAllEnemies();
+                setBossAttacks([]);
+                clearAllBombs();
+                world.bullets = [];
+                bulletPool.releaseAll();
+                if (isBossRush) {
+                  gameLoopRef.current?.pause();
+                  setBossRushTimeSnapshot(bossRushStartTime ? Date.now() - bossRushStartTime : 0);
+                  setBossRushStatsOverlayActive(true);
+                } else {
+                  soundManager.stopBossMusic();
+                  soundManager.resumeBackgroundMusic();
+                  setTimeout(() => nextLevel(), 3000);
+                }
+              }
+              setResurrectedBosses([...world.resurrectedBosses]);
+            }
+          }
+        }
+      }
+      pendingBulletBossHits.length = 0;
+    }
+
     checkCollision();
     if (profilerEnabled) frameProfiler.endTiming("physics");
 
