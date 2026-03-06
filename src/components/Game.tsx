@@ -97,7 +97,7 @@ import { useTutorial } from "@/hooks/useTutorial";
 import { TutorialOverlay } from "./TutorialOverlay";
 import { levelLayouts, getBrickHits } from "@/constants/levelLayouts";
 import { usePowerUps } from "@/hooks/usePowerUps";
-import { useBullets } from "@/hooks/useBullets";
+import { useBullets, pendingBulletBossHits } from "@/hooks/useBullets";
 import { useAdaptiveQuality } from "@/hooks/useAdaptiveQuality";
 import { useLevelProgress } from "@/hooks/useLevelProgress";
 import { soundManager } from "@/utils/sounds";
