@@ -36,7 +36,7 @@ import { collisionHistory } from "@/utils/collisionHistory";
 import { DebugDashboard } from "./DebugDashboard";
 import { DebugModeIndicator } from "./DebugModeIndicator";
 import { useDebugSettings } from "@/hooks/useDebugSettings";
-import { performanceProfiler } from "@/utils/performanceProfiler";
+import { performanceProfiler, SystemResourceMonitor } from "@/utils/performanceProfiler";
 import { frameProfiler } from "@/utils/frameProfiler";
 
 import { getParticleLimits, shouldCreateParticle, calculateParticleCount } from "@/utils/particleLimits";
@@ -97,7 +97,7 @@ import { useTutorial } from "@/hooks/useTutorial";
 import { TutorialOverlay } from "./TutorialOverlay";
 import { levelLayouts, getBrickHits } from "@/constants/levelLayouts";
 import { usePowerUps } from "@/hooks/usePowerUps";
-import { useBullets } from "@/hooks/useBullets";
+import { useBullets, pendingBulletBossHits } from "@/hooks/useBullets";
 import { useAdaptiveQuality } from "@/hooks/useAdaptiveQuality";
 import { useLevelProgress } from "@/hooks/useLevelProgress";
 import { soundManager } from "@/utils/sounds";
@@ -147,6 +147,13 @@ import {
   hasReflectedBallMissed,
   performMegaBossAttack,
 } from "@/utils/megaBossAttacks";
+interface EnemyProjectileTimer {
+  lastFireTime: number;
+  fireInterval: number;
+  enemyId: number;
+  minIntervalMs: number;
+  maxIntervalMs: number;
+}
 interface GameProps {
   settings: GameSettings;
   onReturnToMenu: () => void;
@@ -175,6 +182,11 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     brickOffsetLeft: SCALED_BRICK_OFFSET_LEFT,
   } = useScaledConstants();
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  // SystemResourceMonitor — enabled only when detailed frame logging is active
+  const systemResourceMonitorRef = useRef<SystemResourceMonitor | null>(null);
+  if (systemResourceMonitorRef.current === null) {
+    systemResourceMonitorRef.current = new SystemResourceMonitor();
+  }
   const [score, setScoreRaw] = useState(0);
   const scoreRef = useRef(0);
   // Wrap setScore to always keep scoreRef in sync
@@ -675,10 +687,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   // Fireball timer state
   const [fireballEndTime, setFireballEndTime] = useState<number | null>(null);
 
-  // Second chance impact effect state
-  const [secondChanceImpact, setSecondChanceImpact] = useState<{ x: number; y: number; startTime: number } | null>(
-    null,
-  );
+  // Second chance impact effect — written directly to renderState (no React state to avoid re-render freeze)
 
   // Audio toggle state (for UI reactivity)
   const [musicEnabled, setMusicEnabled] = useState(() => soundManager.getMusicEnabled());
@@ -780,6 +789,15 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       frameProfiler.disable();
     }
   }, [debugSettings.showFrameProfiler]);
+
+  // Enable/disable SystemResourceMonitor based on detailed frame logging setting
+  useEffect(() => {
+    if (ENABLE_DEBUG_FEATURES && debugSettings.enableDetailedFrameLogging) {
+      systemResourceMonitorRef.current?.enable();
+    } else {
+      systemResourceMonitorRef.current?.disable();
+    }
+  }, [debugSettings.enableDetailedFrameLogging]);
 
   // Pause/Resume game when debug dashboard opens/closes
   useEffect(() => {
@@ -941,6 +959,10 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         })),
       );
 
+      // NOTE: lastHitAt, lastAttackTime, chain explosion triggerTimes are now sim-time based
+      // and do NOT need pause adjustment. The adjustments below are kept for safety/legacy
+      // but are no-ops for those fields.
+
       // Adjust boss lastHitAt
       if (boss) {
         setBoss((prev) => (prev ? { ...prev, lastHitAt: (prev.lastHitAt || 0) + pauseDuration } : null));
@@ -1100,7 +1122,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   const timerIntervalRef = useRef<NodeJS.Timeout>();
   const totalPlayTimeIntervalRef = useRef<NodeJS.Timeout>();
   const totalPlayTimeStartedRef = useRef(false);
-  const bombIntervalsRef = useRef<Map<number, NodeJS.Timeout>>(new Map());
+  const enemyProjectileTimersRef = useRef<Map<number, EnemyProjectileTimer>>(new Map());
   const launchAngleIntervalRef = useRef<NodeJS.Timeout>();
   const fullscreenContainerRef = useRef<HTMLDivElement>(null);
   const gameContainerRef = useRef<HTMLDivElement>(null);
@@ -1183,9 +1205,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         clearInterval(launchAngleIntervalRef.current);
       }
 
-      // Clear bomb intervals map
-      bombIntervalsRef.current.forEach((t) => clearTimeout(t));
-      bombIntervalsRef.current.clear();
+      // Clear enemy projectile timers map
+      enemyProjectileTimersRef.current.clear();
 
       // Cancel animation frame
       if (animationFrameRef.current) {
@@ -1433,13 +1454,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     setScore,
     setBricks,
     bricks,
-    enemies,
     setPaddle,
     () => setBricksDestroyedByTurrets((prev) => prev + 1),
-    boss,
-    resurrectedBosses,
-    setBoss,
-    setResurrectedBosses,
     () => nextLevelRef.current?.(),
     () => {
       // Turret depleted callback with cooldown
@@ -1449,154 +1465,6 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         toast.info("Turrets depleted!");
       }
     },
-    // Boss defeat callback
-    (bossType, defeatedBoss) => {
-      if (bossType === "cube") {
-        handleBossDefeat(
-          "cube",
-          defeatedBoss,
-          BOSS_CONFIG.cube.points,
-          `CUBE GUARDIAN DEFEATED! +${BOSS_CONFIG.cube.points} points + BONUS LIFE!`,
-        );
-      } else if (bossType === "sphere") {
-        handleBossDefeat(
-          "sphere",
-          defeatedBoss,
-          BOSS_CONFIG.sphere.points,
-          `SPHERE DESTROYER DEFEATED! +${BOSS_CONFIG.sphere.points} points + BONUS LIFE!`,
-        );
-      }
-    },
-    // Resurrected boss defeat callback
-    (defeatedBoss, bossIdx) => {
-      const config = BOSS_CONFIG.pyramid;
-      setScore((s) => s + config.resurrectedPoints);
-      toast.success(`PYRAMID DESTROYED! +${config.resurrectedPoints} points`);
-      soundManager.playBossDefeatSound();
-      soundManager.playExplosion();
-
-      setExplosions((e) => [
-        ...e,
-        {
-          x: defeatedBoss.x + defeatedBoss.width / 2,
-          y: defeatedBoss.y + defeatedBoss.height / 2,
-          frame: 0,
-          maxFrames: 30,
-          enemyType: "pyramid" as EnemyType,
-          particles: createExplosionParticles(
-            defeatedBoss.x + defeatedBoss.width / 2,
-            defeatedBoss.y + defeatedBoss.height / 2,
-            "pyramid" as EnemyType,
-          ),
-        },
-      ]);
-
-      // Check remaining resurrected bosses
-      setResurrectedBosses((prev) => {
-        const remaining = prev.filter((b) => b.id !== defeatedBoss.id);
-
-        // Make last one super angry
-        if (remaining.length === 1) {
-          toast.error("FINAL PYRAMID ENRAGED!");
-          remaining[0] = {
-            ...remaining[0],
-            isSuperAngry: true,
-            speed: BOSS_CONFIG.pyramid.superAngryMoveSpeed,
-          };
-        }
-
-        // Check if all defeated
-        if (remaining.length === 0) {
-          // Use a simplified version since handleBossDefeat expects a single boss object
-          // and pyramid all-defeated doesn't award per-boss points (already awarded per-pyramid)
-          if (settings.difficulty !== "godlike") {
-            setLives((prev) => prev + 1);
-          }
-          toast.success(
-            settings.difficulty === "godlike" ? "ALL PYRAMIDS DEFEATED!" : "ALL PYRAMIDS DEFEATED! + BONUS LIFE!",
-          );
-          setBossActive(false);
-          setBossesKilled((k) => k + 1);
-          setBossDefeatedTransitioning(true);
-          setBossVictoryOverlayActive(true);
-          setBalls([]);
-          clearAllEnemies();
-          setBossAttacks([]);
-          clearAllBombs();
-          world.bullets = [];
-          bulletPool.releaseAll();
-
-          if (isBossRush) {
-            gameLoopRef.current?.pause();
-            setBossRushTimeSnapshot(bossRushStartTime ? Date.now() - bossRushStartTime : 0);
-            setBossRushStatsOverlayActive(true);
-          } else {
-            soundManager.stopBossMusic();
-            soundManager.resumeBackgroundMusic();
-            setTimeout(() => nextLevel(), 3000);
-          }
-        }
-
-        return remaining;
-      });
-    },
-    // Sphere phase change callback
-    (sphereBoss) => {
-      soundManager.playExplosion();
-      toast.error("SPHERE PHASE 2: DESTROYER MODE!");
-      setExplosions((e) => [
-        ...e,
-        {
-          x: sphereBoss.x + sphereBoss.width / 2,
-          y: sphereBoss.y + sphereBoss.height / 2,
-          frame: 0,
-          maxFrames: 30,
-          enemyType: "sphere" as EnemyType,
-          particles: createExplosionParticles(
-            sphereBoss.x + sphereBoss.width / 2,
-            sphereBoss.y + sphereBoss.height / 2,
-            "sphere" as EnemyType,
-          ),
-        },
-      ]);
-
-      return {
-        ...sphereBoss,
-        currentHealth: BOSS_CONFIG.sphere.healthPhase2,
-        currentStage: 2,
-        isAngry: true,
-        speed: BOSS_CONFIG.sphere.angryMoveSpeed,
-        lastHitAt: Date.now(),
-      };
-    },
-    // Pyramid split callback
-    (pyramidBoss) => {
-      soundManager.playExplosion();
-      toast.error("PYRAMID LORD SPLITS INTO 3!");
-      setExplosions((e) => [
-        ...e,
-        {
-          x: pyramidBoss.x + pyramidBoss.width / 2,
-          y: pyramidBoss.y + pyramidBoss.height / 2,
-          frame: 0,
-          maxFrames: 30,
-          enemyType: "pyramid" as EnemyType,
-          particles: createExplosionParticles(
-            pyramidBoss.x + pyramidBoss.width / 2,
-            pyramidBoss.y + pyramidBoss.height / 2,
-            "pyramid" as EnemyType,
-          ),
-        },
-      ]);
-
-      // Create 3 smaller resurrected pyramids
-      const resurrected: Boss[] = [];
-      for (let i = 0; i < 3; i++) {
-        resurrected.push(createResurrectedPyramid(pyramidBoss, i, SCALED_CANVAS_WIDTH, SCALED_CANVAS_HEIGHT));
-      }
-      setResurrectedBosses(resurrected);
-    },
-    // Boss hit visual effect callback
     handleBossHit,
   );
 
@@ -1627,7 +1495,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     renderState.debugEnabled = ENABLE_DEBUG_FEATURES;
     renderState.isMobile = isMobileDevice;
     renderState.getReadyGlow = isMobileDevice ? getReadyGlow : null;
-    renderState.secondChanceImpact = secondChanceImpact;
+    // secondChanceImpact is written directly to renderState (not via React state)
     renderState.ballReleaseHighlight = ballReleaseHighlight;
 
     // Sync render loop FPS target with quality level
@@ -1643,7 +1511,6 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     tutorialStep,
     isMobileDevice,
     getReadyGlow,
-    secondChanceImpact,
     ballReleaseHighlight,
   ]);
 
@@ -1805,8 +1672,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       setLaserWarnings([]);
       clearAllBombs();
       setExplosions([]);
-      bombIntervalsRef.current.forEach((interval) => clearInterval(interval));
-      bombIntervalsRef.current.clear();
+      enemyProjectileTimersRef.current.clear();
       setGameState("ready");
       toast(toastMessage);
     },
@@ -2299,8 +2165,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         setBossIntroActive(false);
       }, 3000);
     }
-    bombIntervalsRef.current.forEach((interval) => clearInterval(interval));
-    bombIntervalsRef.current.clear();
+    enemyProjectileTimersRef.current.clear();
   }, [
     setPowerUps,
     initBricksForLevel,
@@ -2320,8 +2185,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       clearInterval(timerIntervalRef.current);
     }
     timerStartedRef.current = false;
-    bombIntervalsRef.current.forEach((interval) => clearInterval(interval));
-    bombIntervalsRef.current.clear();
+    enemyProjectileTimersRef.current.clear();
     setBonusLetters([]);
     setDroppedLettersThisLevel(new Set());
 
@@ -2419,8 +2283,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         setBossIntroActive(false);
       }, 3000);
 
-      bombIntervalsRef.current.forEach((interval) => clearInterval(interval));
-      bombIntervalsRef.current.clear();
+      enemyProjectileTimersRef.current.clear();
       setGameState("playing");
       toast.success(`Boss ${nextBossIndex + 1}/4! Speed: ${Math.round(newSpeedMultiplier * 100)}%`);
       return;
@@ -2537,8 +2400,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         setBossIntroActive(false);
       }, 3000);
     }
-    bombIntervalsRef.current.forEach((interval) => clearInterval(interval));
-    bombIntervalsRef.current.clear();
+    enemyProjectileTimersRef.current.clear();
     setGameState("playing");
     if (newLevel === 10) {
       toast.success(`Level ${newLevel}! New music unlocked!`);
@@ -3372,7 +3234,10 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     }
 
     // ═══ Update pending chain explosions ═══
-    pendingChainExplosionsRef.current = result.updatedPendingChainExplosions;
+    // Must copy — result.updatedPendingChainExplosions is the reusable singleton array;
+    // assigning directly aliases it, so createEmptyResult()'s .length = 0 on the next
+    // frame would silently wipe pendingChainExplosionsRef.current before it is read.
+    pendingChainExplosionsRef.current = result.updatedPendingChainExplosions.slice();
 
     // ═══ Play sounds ═══
     for (const sound of result.soundsToPlay) {
@@ -3863,13 +3728,9 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       setPowerUps((prev) => [...prev, powerUp]);
     }
 
-    // ═══ Bomb interval cleanup ═══
+    // ═══ Enemy projectile timer cleanup ═══
     for (const enemyId of result.bombIntervalsToClean) {
-      const interval = bombIntervalsRef.current.get(enemyId);
-      if (interval) {
-        clearInterval(interval);
-        bombIntervalsRef.current.delete(enemyId);
-      }
+      enemyProjectileTimersRef.current.delete(enemyId);
     }
 
     // ═══ Enemy kill tracking + power-up drops ═══
@@ -3954,10 +3815,10 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
     // ═══ Second Chance saves ═══
     for (const save of result.secondChanceSaves) {
-      setPaddle((prev) => (prev ? { ...prev, hasSecondChance: false } : null));
-      setSecondChanceImpact({ x: save.x, y: save.y, startTime: Date.now() });
+      // Physics already set world.paddle.hasSecondChance = false — no setPaddle spread needed
+      renderState.secondChanceImpact = { x: save.x, y: save.y, startTime: Date.now() };
       toast.success("Second Chance saved you!");
-      setTimeout(() => setSecondChanceImpact(null), 500);
+      setTimeout(() => { renderState.secondChanceImpact = null; }, 500);
     }
 
     // ═══ All balls lost — life loss ═══
@@ -4009,7 +3870,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     levelSkipped,
     score,
     qualitySettings,
-    bombIntervalsRef,
+    enemyProjectileTimersRef,
     createExplosionParticles,
     debugSettings,
     isBossRush,
@@ -4180,6 +4041,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         const totalParticles = particlePool.getStats().active;
 
         // Record frame metrics
+        const sysMetrics = systemResourceMonitorRef.current?.captureMetrics() ?? {};
         performanceProfiler.recordFrame({
           timestamp: performance.now(),
           fps: fps,
@@ -4211,6 +4073,9 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
           hasActiveBoss: boss !== null || resurrectedBosses.length > 0,
           hasScreenShake: screenShake > 0,
           hasBackgroundFlash: backgroundFlash > 0,
+
+          // System resource metrics
+          ...sysMetrics,
         });
 
         // Check for performance issues and log if detected
@@ -4240,9 +4105,6 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       ball.rotation = ((ball.rotation || 0) + 180 * dtSecondsRef.current) % 360; // 180 deg/s = 3 deg/frame at 60fps
     }
 
-    // Update power-ups
-    updatePowerUps();
-
     // Update bonus letters - OPTIMIZED: In-place mutation with sine wave motion
     const currentTime = Date.now();
     // Direct world mutation — no React state updater, no stale-closure risk
@@ -4257,11 +4119,6 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
     // Check bonus letter collisions
     checkBonusLetterCollision();
-
-    // Update bullets
-    if (profilerEnabled) frameProfiler.startTiming("bullets");
-    updateBullets(bricks);
-    if (profilerEnabled) frameProfiler.endTiming("bullets");
 
     // Update enemies
     if (profilerEnabled) frameProfiler.startTiming("enemies");
@@ -4315,6 +4172,69 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       }
     }
     if (profilerEnabled) frameProfiler.endTiming("enemies");
+
+    // ═══ Frame-based enemy projectile timers (replaces setInterval approach) ═══
+    {
+      const projTimerNow = performance.now();
+      const currentTimeScale = gameLoopRef.current?.getTimeScale() ?? 1.0;
+      const newProjectilesFromTimers: Bomb[] = [];
+
+      for (const enemy of enemies) {
+        const projTimer = enemyProjectileTimersRef.current.get(enemy.id);
+        if (projTimer && projTimerNow - projTimer.lastFireTime >= projTimer.fireInterval) {
+          if (enemy.type === "pyramid") {
+            const randomAngle = (Math.random() * 160 - 80) * (Math.PI / 180); // -80 to +80 degrees
+            const bulletSpeed = 4;
+            const newBullet = bombPool.acquire({
+              id: Date.now() + Math.random(),
+              x: enemy.x + enemy.width / 2 - 4,
+              y: enemy.y + enemy.height,
+              width: 8,
+              height: 12,
+              speed: bulletSpeed * currentTimeScale,
+              enemyId: enemy.id,
+              type: "pyramidBullet",
+              dx: Math.sin(randomAngle) * bulletSpeed * currentTimeScale,
+            });
+            if (newBullet) {
+              soundManager.playPyramidBulletSound();
+              newProjectilesFromTimers.push(newBullet);
+            }
+          } else {
+            const newProjectile = bombPool.acquire({
+              id: Date.now() + Math.random(),
+              x: enemy.x + enemy.width / 2 - 5,
+              y: enemy.y + enemy.height,
+              width: 10,
+              height: 10,
+              speed: 3 * currentTimeScale,
+              enemyId: enemy.id,
+              type: "bomb",
+            });
+            if (newProjectile) {
+              soundManager.playBombDropSound();
+              newProjectilesFromTimers.push(newProjectile);
+            }
+          }
+
+          // Reset timer with a new random interval
+          projTimer.lastFireTime = projTimerNow;
+          projTimer.fireInterval =
+            projTimer.minIntervalMs + Math.random() * (projTimer.maxIntervalMs - projTimer.minIntervalMs);
+        }
+      }
+
+      // Clean up timers for enemies that no longer exist
+      enemyProjectileTimersRef.current.forEach((_, timerEnemyId) => {
+        if (!enemies.find((e) => e.id === timerEnemyId)) {
+          enemyProjectileTimersRef.current.delete(timerEnemyId);
+        }
+      });
+
+      if (newProjectilesFromTimers.length > 0) {
+        setBombs((prev) => [...prev, ...newProjectilesFromTimers]);
+      }
+    }
 
     // Update explosions and their particles - OPTIMIZED: Use particle pool
     if (profilerEnabled) frameProfiler.startTiming("particles");
@@ -4725,12 +4645,11 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                 y: boss.targetPosition.y,
                 dx: 0,
                 dy: 0,
-                lastAttackTime: Date.now(),
+                lastAttackTime: world.simTimeMs,
               }
             : null,
         );
       } else {
-        // Use MEGA_BOSS_CONFIG for mega boss, otherwise use BOSS_CONFIG
         const isMegaType = boss.type === "mega";
         const baseMoveSpeed = isMegaType
           ? boss.isSuperAngry
@@ -4821,7 +4740,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       boss &&
       !boss.isStunned &&
       boss.phase === "attacking" &&
-      Date.now() - boss.lastAttackTime >= boss.attackCooldown &&
+      world.simTimeMs - boss.lastAttackTime >= boss.attackCooldown &&
       paddle
     ) {
       if (level === MEGA_BOSS_LEVEL && isMegaBoss(boss)) {
@@ -4854,7 +4773,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
               phase: "moving",
               targetPosition: prev.positions[nextIndex],
               currentPositionIndex: nextIndex,
-              lastAttackTime: Date.now(),
+              lastAttackTime: world.simTimeMs,
             }
           : null,
       );
@@ -5277,7 +5196,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         const dist = Math.sqrt(dx * dx + dy * dy);
         if (dist < 5) {
           setResurrectedBosses((prev) =>
-            prev.map((b, i) => (i === idx ? { ...b, phase: "attacking", lastAttackTime: Date.now() } : b)),
+            prev.map((b, i) => (i === idx ? { ...b, phase: "attacking", lastAttackTime: world.simTimeMs } : b)),
           );
         } else if (!resBoss.isStunned) {
           setResurrectedBosses((prev) =>
@@ -5297,7 +5216,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       } else if (
         !resBoss.isStunned &&
         resBoss.phase === "attacking" &&
-        Date.now() - resBoss.lastAttackTime >= resBoss.attackCooldown &&
+        world.simTimeMs - resBoss.lastAttackTime >= resBoss.attackCooldown &&
         paddle
       ) {
         performBossAttack(
@@ -5317,7 +5236,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                   phase: "moving",
                   targetPosition: b.positions[nextIdx],
                   currentPositionIndex: nextIdx,
-                  lastAttackTime: Date.now(),
+                  lastAttackTime: world.simTimeMs,
                 }
               : b,
           ),
@@ -5343,7 +5262,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
         // Special handling for cross attack course changes
         if (attack.type === "cross" && !attack.isReflected) {
-          const now = Date.now();
+          const now = world.simTimeMs; // sim-time, not wall-clock
 
           // Check if in paddle danger zone - never stop in this area
           const isInPaddleZone = attack.y >= paddleDangerZoneY;
@@ -5526,7 +5445,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
           ) {
             // Damage the boss with proper cooldown, defeat detection, and logging
             const REFLECTED_ATTACK_COOLDOWN_MS = 1000;
-            const nowMs = Date.now();
+            const nowMs = world.simTimeMs; // sim-time, not wall-clock
 
             // Use ref for synchronous cooldown check to prevent multiple hits in same frame
             const lastHitMs = reflectedAttackLastHitRef.current;
@@ -5632,7 +5551,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
               attack.y < rb.y + rb.height
             ) {
               const REFLECTED_ATTACK_COOLDOWN_MS = 1000;
-              const nowMs = Date.now();
+              const nowMs = world.simTimeMs; // sim-time, not wall-clock
               const lastHitMs = (rb as any).lastHitAt || 0;
               const canDamage = nowMs - lastHitMs >= REFLECTED_ATTACK_COOLDOWN_MS;
 
@@ -5828,7 +5747,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     // ═══ CROSS PROJECTILE COLLISION DETECTION ═══
     // Check for collisions between non-reflected cross projectiles to spawn crossBall enemies
     const MERGE_COOLDOWN_MS = 1000; // 1 second before projectiles can merge
-    const nowForMerge = Date.now();
+    const nowForMerge = world.simTimeMs; // sim-time, not wall-clock
 
     const crossProjectiles = bossAttacks.filter(
       (attack) =>
@@ -6082,7 +6001,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     }
 
     // Check reflected bomb collisions with boss and enemies
-    const reflectedBombNow = Date.now();
+    const reflectedBombNow = world.simTimeMs; // sim-time, not wall-clock
     const REFLECTED_BOMB_COOLDOWN = 200; // 200ms cooldown between reflected bomb hits
 
     // Log bomb state for debugging
@@ -6109,9 +6028,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         bomb.y + bomb.height > boss.y &&
         bomb.y < boss.y + boss.height
       ) {
-        const nowMs = Date.now();
-
-        // Remove the bomb that hit the boss first
+        const nowMs = world.simTimeMs; // sim-time, not wall-clock
         bombPool.release(bomb);
         setBombs((prev) => prev.filter((b) => b.id !== bomb.id));
 
@@ -6159,78 +6076,44 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
               return prevBoss;
             }
             if (prevBoss.type === "cube") {
-              setTimeout(() => {
-                soundManager.playExplosion();
-                soundManager.playBossDefeatSound();
-                setScore((s) => s + BOSS_CONFIG.cube.points);
-                toast.success(`CUBE GUARDIAN DEFEATED! +${BOSS_CONFIG.cube.points} points`);
-                setExplosions((e) => [
-                  ...e,
-                  {
-                    x: prevBoss.x + prevBoss.width / 2,
-                    y: prevBoss.y + prevBoss.height / 2,
-                    frame: 0,
-                    maxFrames: 30,
-                    enemyType: "cube" as EnemyType,
-                    particles: createExplosionParticles(
-                      prevBoss.x + prevBoss.width / 2,
-                      prevBoss.y + prevBoss.height / 2,
-                      "cube" as EnemyType,
-                    ),
-                  },
-                ]);
-                setBossesKilled((k) => k + 1);
-                setBossActive(false);
-                setBossDefeatedTransitioning(true);
-                setBalls([]);
-                clearAllEnemies();
-                setBossAttacks([]);
-                clearAllBombs();
-                world.bullets = [];
-                bulletPool.releaseAll();
-                soundManager.stopBossMusic();
-                soundManager.resumeBackgroundMusic();
-                setTimeout(() => nextLevel(), 3000);
-              }, 0);
+              soundManager.playExplosion();
+              soundManager.playBossDefeatSound();
+              setScore((s) => s + BOSS_CONFIG.cube.points);
+              toast.success(`CUBE GUARDIAN DEFEATED! +${BOSS_CONFIG.cube.points} points`);
+              setExplosions((e) => [
+                ...e,
+                {
+                  x: prevBoss.x + prevBoss.width / 2,
+                  y: prevBoss.y + prevBoss.height / 2,
+                  frame: 0,
+                  maxFrames: 30,
+                  enemyType: "cube" as EnemyType,
+                  particles: createExplosionParticles(
+                    prevBoss.x + prevBoss.width / 2,
+                    prevBoss.y + prevBoss.height / 2,
+                    "cube" as EnemyType,
+                  ),
+                },
+              ]);
+              setBossesKilled((k) => k + 1);
+              setBossActive(false);
+              setBossDefeatedTransitioning(true);
+              setBalls([]);
+              clearAllEnemies();
+              setBossAttacks([]);
+              clearAllBombs();
+              world.bullets = [];
+              bulletPool.releaseAll();
+              soundManager.stopBossMusic();
+              soundManager.resumeBackgroundMusic();
+              setTimeout(() => nextLevel(), 3000);
               return null;
             }
 
             if (prevBoss.type === "sphere") {
               if (prevBoss.currentStage === 1) {
-                setTimeout(() => {
-                  soundManager.playExplosion();
-                  toast.error("SPHERE PHASE 2: DESTROYER MODE!");
-                  setExplosions((e) => [
-                    ...e,
-                    {
-                      x: prevBoss.x + prevBoss.width / 2,
-                      y: prevBoss.y + prevBoss.height / 2,
-                      frame: 0,
-                      maxFrames: 30,
-                      enemyType: "sphere" as EnemyType,
-                      particles: createExplosionParticles(
-                        prevBoss.x + prevBoss.width / 2,
-                        prevBoss.y + prevBoss.height / 2,
-                        "sphere" as EnemyType,
-                      ),
-                    },
-                  ]);
-                }, 0);
-                return {
-                  ...prevBoss,
-                  currentHealth: BOSS_CONFIG.sphere.healthPhase2,
-                  currentStage: 2,
-                  isAngry: true,
-                  speed: BOSS_CONFIG.sphere.angryMoveSpeed,
-                  lastHitAt: nowMs,
-                };
-              }
-
-              setTimeout(() => {
                 soundManager.playExplosion();
-                soundManager.playBossDefeatSound();
-                setScore((s) => s + BOSS_CONFIG.sphere.points);
-                toast.success(`SPHERE DESTROYER DEFEATED! +${BOSS_CONFIG.sphere.points} points`);
+                toast.error("SPHERE PHASE 2: DESTROYER MODE!");
                 setExplosions((e) => [
                   ...e,
                   {
@@ -6246,48 +6129,74 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                     ),
                   },
                 ]);
-                setBossesKilled((k) => k + 1);
-                setBossActive(false);
-                setBossDefeatedTransitioning(true);
-                setBalls([]);
-                clearAllEnemies();
-                setBossAttacks([]);
-                clearAllBombs();
-                world.bullets = [];
-                bulletPool.releaseAll();
-                soundManager.stopBossMusic();
-                soundManager.resumeBackgroundMusic();
-                setTimeout(() => nextLevel(), 3000);
-              }, 0);
+                return {
+                  ...prevBoss,
+                  currentHealth: BOSS_CONFIG.sphere.healthPhase2,
+                  currentStage: 2,
+                  isAngry: true,
+                  speed: BOSS_CONFIG.sphere.angryMoveSpeed,
+                  lastHitAt: nowMs,
+                };
+              }
+
+              soundManager.playExplosion();
+              soundManager.playBossDefeatSound();
+              setScore((s) => s + BOSS_CONFIG.sphere.points);
+              toast.success(`SPHERE DESTROYER DEFEATED! +${BOSS_CONFIG.sphere.points} points`);
+              setExplosions((e) => [
+                ...e,
+                {
+                  x: prevBoss.x + prevBoss.width / 2,
+                  y: prevBoss.y + prevBoss.height / 2,
+                  frame: 0,
+                  maxFrames: 30,
+                  enemyType: "sphere" as EnemyType,
+                  particles: createExplosionParticles(
+                    prevBoss.x + prevBoss.width / 2,
+                    prevBoss.y + prevBoss.height / 2,
+                    "sphere" as EnemyType,
+                  ),
+                },
+              ]);
+              setBossesKilled((k) => k + 1);
+              setBossActive(false);
+              setBossDefeatedTransitioning(true);
+              setBalls([]);
+              clearAllEnemies();
+              setBossAttacks([]);
+              clearAllBombs();
+              world.bullets = [];
+              bulletPool.releaseAll();
+              soundManager.stopBossMusic();
+              soundManager.resumeBackgroundMusic();
+              setTimeout(() => nextLevel(), 3000);
               return null;
             }
 
             if (prevBoss.type === "pyramid") {
               if (prevBoss.currentStage === 1) {
-                setTimeout(() => {
-                  soundManager.playExplosion();
-                  toast.error("PYRAMID LORD SPLITS INTO 3!");
-                  setExplosions((e) => [
-                    ...e,
-                    {
-                      x: prevBoss.x + prevBoss.width / 2,
-                      y: prevBoss.y + prevBoss.height / 2,
-                      frame: 0,
-                      maxFrames: 30,
-                      enemyType: "pyramid" as EnemyType,
-                      particles: createExplosionParticles(
-                        prevBoss.x + prevBoss.width / 2,
-                        prevBoss.y + prevBoss.height / 2,
-                        "pyramid" as EnemyType,
-                      ),
-                    },
-                  ]);
-                  const resurrected: Boss[] = [];
-                  for (let i = 0; i < 3; i++) {
-                    resurrected.push(createResurrectedPyramid(prevBoss, i, SCALED_CANVAS_WIDTH, SCALED_CANVAS_HEIGHT));
-                  }
-                  setResurrectedBosses(resurrected);
-                }, 0);
+                soundManager.playExplosion();
+                toast.error("PYRAMID LORD SPLITS INTO 3!");
+                setExplosions((e) => [
+                  ...e,
+                  {
+                    x: prevBoss.x + prevBoss.width / 2,
+                    y: prevBoss.y + prevBoss.height / 2,
+                    frame: 0,
+                    maxFrames: 30,
+                    enemyType: "pyramid" as EnemyType,
+                    particles: createExplosionParticles(
+                      prevBoss.x + prevBoss.width / 2,
+                      prevBoss.y + prevBoss.height / 2,
+                      "pyramid" as EnemyType,
+                    ),
+                  },
+                ]);
+                const resurrected: Boss[] = [];
+                for (let i = 0; i < 3; i++) {
+                  resurrected.push(createResurrectedPyramid(prevBoss, i, SCALED_CANVAS_WIDTH, SCALED_CANVAS_HEIGHT));
+                }
+                setResurrectedBosses(resurrected);
                 return null;
               }
             }
@@ -6490,7 +6399,116 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
     // Boss collisions are now handled via CCD and shape-specific checks in Phase 3.5
     // Old collision code removed to prevent conflicts with unified boss-local cooldown system
+
+    // Single physics step per frame using the actual (clamped) delta time.
+    // The CCD engine already handles variable dt correctly via substeps, so a
+    // fixed-timestep accumulator is not needed and only doubles physics work on
+    // slow/integrated-GPU devices (e.g. 30 fps → 2 steps/frame with accumulator).
+    // Power-ups and bullets already use delta time (fixed in the previous PR),
+    // so consistency across frame rates is maintained without the accumulator.
+    if (profilerEnabled) frameProfiler.startTiming("physics");
+    updatePowerUps(dtSecondsRef.current);
+    updateBullets(bricks, dtSecondsRef.current);
+
+    // ═══ Process bullet-boss hits (in-place mutation, no setBoss spread) ═══
+    if (pendingBulletBossHits.length > 0) {
+      for (let i = 0; i < pendingBulletBossHits.length; i++) {
+        const hit = pendingBulletBossHits[i];
+        if (!hit.isResurrected) {
+          // Main boss — mutate health in-place
+          const boss = world.boss;
+          if (boss) {
+            boss.currentHealth = Math.max(0, boss.currentHealth - hit.damage);
+            soundManager.playBossHitSound();
+            if (boss.currentHealth <= 0 && boss.type !== "mega") {
+              if (boss.type === "cube") {
+                handleBossDefeat("cube", boss, BOSS_CONFIG.cube.points, `CUBE GUARDIAN DEFEATED! +${BOSS_CONFIG.cube.points} points + BONUS LIFE!`);
+                world.boss = null;
+                setBoss(null);
+              } else if (boss.type === "sphere") {
+                if (boss.currentStage === 1) {
+                  soundManager.playExplosion();
+                  toast.error("SPHERE PHASE 2: DESTROYER MODE!");
+                  boss.currentHealth = BOSS_CONFIG.sphere.healthPhase2;
+                  boss.currentStage = 2;
+                  boss.isAngry = true;
+                  boss.speed = BOSS_CONFIG.sphere.angryMoveSpeed;
+                  boss.lastHitAt = world.simTimeMs;
+                } else {
+                  handleBossDefeat("sphere", boss, BOSS_CONFIG.sphere.points, `SPHERE DESTROYER DEFEATED! +${BOSS_CONFIG.sphere.points} points + BONUS LIFE!`);
+                  world.boss = null;
+                  setBoss(null);
+                }
+              } else if (boss.type === "pyramid") {
+                if (boss.currentStage === 1) {
+                  soundManager.playExplosion();
+                  toast.error("PYRAMID LORD SPLITS INTO 3!");
+                  const resurrected: Boss[] = [];
+                  for (let j = 0; j < 3; j++) {
+                    resurrected.push(createResurrectedPyramid(boss, j, SCALED_CANVAS_WIDTH, SCALED_CANVAS_HEIGHT));
+                  }
+                  setResurrectedBosses(resurrected);
+                  world.resurrectedBosses = resurrected;
+                  world.boss = null;
+                  setBoss(null);
+                }
+              }
+            }
+          }
+        } else {
+          // Resurrected boss — mutate in-place
+          const resBosses = world.resurrectedBosses;
+          const resBoss = resBosses.find(b => b.id === hit.bossId);
+          if (resBoss) {
+            resBoss.currentHealth = Math.max(0, resBoss.currentHealth - hit.damage);
+            soundManager.playBossHitSound();
+            if (resBoss.currentHealth <= 0) {
+              const config = BOSS_CONFIG.pyramid;
+              setScore((s) => s + config.resurrectedPoints);
+              toast.success(`PYRAMID DESTROYED! +${config.resurrectedPoints} points`);
+              soundManager.playBossDefeatSound();
+              soundManager.playExplosion();
+              // Remove from world array
+              world.resurrectedBosses = resBosses.filter(b => b.id !== resBoss.id);
+              // Enrage last one
+              if (world.resurrectedBosses.length === 1) {
+                toast.error("FINAL PYRAMID ENRAGED!");
+                world.resurrectedBosses[0].isSuperAngry = true;
+                world.resurrectedBosses[0].speed = BOSS_CONFIG.pyramid.superAngryMoveSpeed;
+              }
+              if (world.resurrectedBosses.length === 0) {
+                if (settings.difficulty !== "godlike") setLives((prev) => prev + 1);
+                toast.success(settings.difficulty === "godlike" ? "ALL PYRAMIDS DEFEATED!" : "ALL PYRAMIDS DEFEATED! + BONUS LIFE!");
+                setBossActive(false);
+                setBossesKilled((k) => k + 1);
+                setBossDefeatedTransitioning(true);
+                setBossVictoryOverlayActive(true);
+                setBalls([]);
+                clearAllEnemies();
+                setBossAttacks([]);
+                clearAllBombs();
+                world.bullets = [];
+                bulletPool.releaseAll();
+                if (isBossRush) {
+                  gameLoopRef.current?.pause();
+                  setBossRushTimeSnapshot(bossRushStartTime ? Date.now() - bossRushStartTime : 0);
+                  setBossRushStatsOverlayActive(true);
+                } else {
+                  soundManager.stopBossMusic();
+                  soundManager.resumeBackgroundMusic();
+                  setTimeout(() => nextLevel(), 3000);
+                }
+              }
+              setResurrectedBosses([...world.resurrectedBosses]);
+            }
+          }
+        }
+      }
+      pendingBulletBossHits.length = 0;
+    }
+
     checkCollision();
+    if (profilerEnabled) frameProfiler.endTiming("physics");
 
     // Check power-up collision
     if (paddle) {
@@ -6583,8 +6601,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         timerIntervalRef.current = undefined;
       }
       timerStartedRef.current = false;
-      bombIntervalsRef.current.forEach((interval) => clearInterval(interval));
-      bombIntervalsRef.current.clear();
+      enemyProjectileTimersRef.current.clear();
     }
 
     // Handle total play time independently
@@ -6616,8 +6633,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       if (totalPlayTimeIntervalRef.current) {
         clearInterval(totalPlayTimeIntervalRef.current);
       }
-      bombIntervalsRef.current.forEach((interval) => clearInterval(interval));
-      bombIntervalsRef.current.clear();
+      enemyProjectileTimersRef.current.clear();
     };
   }, [gameState, tutorialActive, bossRushStatsOverlayActive]);
 
@@ -6747,56 +6763,16 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
           minInterval = 3;
           maxInterval = 7;
         }
-        const randomInterval = minInterval * 1000 + Math.random() * (maxInterval - minInterval) * 1000;
-        const projectileInterval = setInterval(() => {
-          setEnemies((currentEnemies) => {
-            const currentEnemy = currentEnemies.find((e) => e.id === enemyId);
-            if (!currentEnemy) {
-              clearInterval(projectileInterval);
-              bombIntervalsRef.current.delete(enemyId);
-              return currentEnemies;
-            }
-
-            // Pyramid enemies shoot bullets in random angles
-            const currentTimeScale = gameLoopRef.current?.getTimeScale() ?? 1.0;
-            if (currentEnemy.type === "pyramid") {
-              const randomAngle = (Math.random() * 160 - 80) * (Math.PI / 180); // -80 to +80 degrees
-              const bulletSpeed = 4;
-              const newBullet = bombPool.acquire({
-                id: Date.now() + Math.random(),
-                x: currentEnemy.x + currentEnemy.width / 2 - 4,
-                y: currentEnemy.y + currentEnemy.height,
-                width: 8,
-                height: 12,
-                speed: bulletSpeed * currentTimeScale,
-                enemyId: enemyId,
-                type: "pyramidBullet",
-                dx: Math.sin(randomAngle) * bulletSpeed * currentTimeScale,
-              });
-              if (newBullet) {
-                soundManager.playPyramidBulletSound();
-                setBombs((prev) => [...prev, newBullet]);
-              }
-            } else {
-              const newProjectile = bombPool.acquire({
-                id: Date.now() + Math.random(),
-                x: currentEnemy.x + currentEnemy.width / 2 - 5,
-                y: currentEnemy.y + currentEnemy.height,
-                width: 10,
-                height: 10,
-                speed: 3 * currentTimeScale,
-                enemyId: enemyId,
-                type: "bomb", // Both cube and sphere enemies drop bombs
-              });
-              if (newProjectile) {
-                soundManager.playBombDropSound();
-                setBombs((prev) => [...prev, newProjectile]);
-              }
-            }
-            return currentEnemies;
-          });
-        }, randomInterval);
-        bombIntervalsRef.current.set(enemyId, projectileInterval);
+        const minIntervalMs = minInterval * 1000;
+        const maxIntervalMs = maxInterval * 1000;
+        const randomInterval = minIntervalMs + Math.random() * (maxIntervalMs - minIntervalMs);
+        enemyProjectileTimersRef.current.set(enemyId, {
+          lastFireTime: performance.now(),
+          fireInterval: randomInterval,
+          enemyId: enemyId,
+          minIntervalMs,
+          maxIntervalMs,
+        });
       }
     }
   }, [timer, gameState, lastEnemySpawnTime, enemySpawnCount, level, settings.difficulty]);
@@ -6896,48 +6872,20 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         if (newEnemy) {
           newEnemies.push(newEnemy);
 
-          // Set up bomb dropping for this enemy
+          // Set up frame-based projectile timer for this enemy
           const minInterval = 5;
           const maxInterval = 10;
-          const randomInterval = minInterval * 1000 + Math.random() * (maxInterval - minInterval) * 1000;
+          const minIntervalMs = minInterval * 1000;
+          const maxIntervalMs = maxInterval * 1000;
+          const randomInterval = minIntervalMs + Math.random() * (maxIntervalMs - minIntervalMs);
 
-          const projectileInterval = setInterval(() => {
-            setEnemies((currentEnemies) => {
-              const currentEnemy = currentEnemies.find((e) => e.id === enemyId);
-              if (!currentEnemy) {
-                clearInterval(projectileInterval);
-                bombIntervalsRef.current.delete(enemyId);
-                return currentEnemies;
-              }
-
-              const projectileType = enemyType === "pyramid" ? "pyramidBullet" : "bomb";
-
-              const newBomb = bombPool.acquire({
-                id: Date.now() + Math.random(),
-                x: currentEnemy.x + currentEnemy.width / 2 - 5,
-                y: currentEnemy.y + currentEnemy.height,
-                width: 10,
-                height: 10,
-                speed: 3 * (gameLoopRef.current?.getTimeScale() ?? 1.0),
-                enemyId: enemyId,
-                type: projectileType,
-              });
-
-              if (newBomb) {
-                setBombs((prev) => [...prev, newBomb]);
-
-                if (enemyType === "pyramid") {
-                  soundManager.playPyramidBulletSound();
-                } else {
-                  soundManager.playBombDropSound();
-                }
-              }
-
-              return currentEnemies;
-            });
-          }, randomInterval);
-
-          bombIntervalsRef.current.set(enemyId, projectileInterval);
+          enemyProjectileTimersRef.current.set(enemyId, {
+            lastFireTime: performance.now(),
+            fireInterval: randomInterval,
+            enemyId: enemyId,
+            minIntervalMs,
+            maxIntervalMs,
+          });
         }
       }
 
@@ -7213,8 +7161,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       clearInterval(timerIntervalRef.current);
     }
     timerStartedRef.current = false;
-    bombIntervalsRef.current.forEach((interval) => clearInterval(interval));
-    bombIntervalsRef.current.clear();
+    enemyProjectileTimersRef.current.clear();
 
     // Keep the current level
     const currentLevel = level;

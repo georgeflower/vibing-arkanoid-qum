@@ -1,6 +1,7 @@
 import { forwardRef, useEffect, useRef, useState } from "react";
 import { renderState, createAssetRefs, type AssetRefs } from "@/engine/renderState";
 import { startRenderLoop } from "@/engine/renderLoop";
+import { warmUpGradients } from "@/engine/canvasRenderer";
 import { brickRenderer } from "@/utils/brickLayerCache";
 import { powerUpImages } from "@/utils/powerUpImages";
 import { bonusLetterImages } from "@/utils/bonusLetterImages";
@@ -137,6 +138,20 @@ export const GameCanvas = forwardRef<HTMLCanvasElement, GameCanvasProps>(
         brickRenderer.invalidate();
       }
     }, [crackedImagesLoaded]);
+
+    // Warm up gradient cache before the render loop starts so that the browser
+    // compiles GPU shaders during init rather than during the first gameplay
+    // frames.  This prevents the "30 FPS for 30-60 s then 60 FPS" stall seen
+    // on integrated GPUs.  Use the same creation attributes as startRenderLoop
+    // so that canvas.getContext() returns the identical context object both
+    // here and inside the render loop, keeping the gradient cache intact.
+    useEffect(() => {
+      const canvas = (ref as React.RefObject<HTMLCanvasElement>)?.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext("2d", { alpha: false });
+      if (!ctx) return;
+      warmUpGradients(ctx);
+    }, [ref]);
 
     // Start/stop render loop
     useEffect(() => {
