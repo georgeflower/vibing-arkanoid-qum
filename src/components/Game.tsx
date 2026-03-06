@@ -954,7 +954,10 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
           releasedFromBossTime: ball.releasedFromBossTime
             ? ball.releasedFromBossTime + pauseDuration
             : ball.releasedFromBossTime,
-          lastHitTime: ball.lastHitTime ? ball.lastHitTime + pauseDuration : ball.lastHitTime,
+          // IMPORTANT: do not shift lastHitTime on pause resume.
+          // lastHitTime is used by sim-time based cooldown checks (world.simTimeMs),
+          // so adding wall-clock pauseDuration can suppress damage after unpause.
+          lastHitTime: ball.lastHitTime,
           lastWallHitTime: ball.lastWallHitTime ? ball.lastWallHitTime + pauseDuration : ball.lastWallHitTime,
         })),
       );
@@ -962,19 +965,9 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       // NOTE: lastHitAt, lastAttackTime, chain explosion triggerTimes are now sim-time based
       // and do NOT need pause adjustment. The adjustments below are kept for safety/legacy
       // but are no-ops for those fields.
-
-      // Adjust boss lastHitAt
-      if (boss) {
-        setBoss((prev) => (prev ? { ...prev, lastHitAt: (prev.lastHitAt || 0) + pauseDuration } : null));
-      }
-
-      // Adjust resurrected bosses
-      setResurrectedBosses((prev) =>
-        prev.map((rb) => ({
-          ...rb,
-          lastHitAt: (rb.lastHitAt || 0) + pauseDuration,
-        })),
-      );
+      // IMPORTANT: do not adjust boss/resurrected boss lastHitAt on pause resume.
+      // These timestamps are sim-time based (world.simTimeMs), so adding wall-clock
+      // pauseDuration can desync cooldown logic and suppress post-resume damage.
 
       // Adjust boss attack timestamps
       setBossAttacks((prev) =>
