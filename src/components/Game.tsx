@@ -1511,7 +1511,6 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     tutorialStep,
     isMobileDevice,
     getReadyGlow,
-    secondChanceImpact,
     ballReleaseHighlight,
   ]);
 
