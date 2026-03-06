@@ -3815,10 +3815,10 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
     // ═══ Second Chance saves ═══
     for (const save of result.secondChanceSaves) {
-      setPaddle((prev) => (prev ? { ...prev, hasSecondChance: false } : null));
-      setSecondChanceImpact({ x: save.x, y: save.y, startTime: Date.now() });
+      // Physics already set world.paddle.hasSecondChance = false — no setPaddle spread needed
+      renderState.secondChanceImpact = { x: save.x, y: save.y, startTime: Date.now() };
       toast.success("Second Chance saved you!");
-      setTimeout(() => setSecondChanceImpact(null), 500);
+      setTimeout(() => { renderState.secondChanceImpact = null; }, 500);
     }
 
     // ═══ All balls lost — life loss ═══
