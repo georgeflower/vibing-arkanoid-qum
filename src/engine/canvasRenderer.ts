@@ -123,26 +123,18 @@ export function warmUpGradients(ctx: CanvasRenderingContext2D): void {
   // ball.radius = BALL_RADIUS * scaleFactor = 6 (non-Mac) or 5.4 (Mac).
   // visualRadius = ball.radius + 2, used directly as the cache-key fragment.
   for (const vr of [7.4, 8]) {
-    getCachedRadialGradient(
-      ctx, `ball_fire_${vr}`,
-      -vr * 0.3, -vr * 0.3, 0, 0, 0, vr,
-      [
-        [0, "rgba(255,255,255,0.9)"],
-        [0.3, "hsl(30,85%,65%)"],
-        [0.7, "hsl(30,85%,55%)"],
-        [1, "hsl(30,85%,35%)"],
-      ],
-    );
-    getCachedRadialGradient(
-      ctx, `ball_norm_${vr}`,
-      -vr * 0.3, -vr * 0.3, 0, 0, 0, vr,
-      [
-        [0, "rgba(255,255,255,1)"],
-        [0.3, "hsl(0,0%,95%)"],
-        [0.7, "hsl(0,0%,92%)"],
-        [1, "hsl(0,0%,60%)"],
-      ],
-    );
+    getCachedRadialGradient(ctx, `ball_fire_${vr}`, -vr * 0.3, -vr * 0.3, 0, 0, 0, vr, [
+      [0, "rgba(255,255,255,0.9)"],
+      [0.3, "hsl(30,85%,65%)"],
+      [0.7, "hsl(30,85%,55%)"],
+      [1, "hsl(30,85%,35%)"],
+    ]);
+    getCachedRadialGradient(ctx, `ball_norm_${vr}`, -vr * 0.3, -vr * 0.3, 0, 0, 0, vr, [
+      [0, "rgba(255,255,255,1)"],
+      [0.3, "hsl(0,0%,95%)"],
+      [0.7, "hsl(0,0%,92%)"],
+      [1, "hsl(0,0%,60%)"],
+    ]);
   }
 
   // ─── Per-opacity-bucket glow effects ─────────────────────────
@@ -152,25 +144,17 @@ export function warmUpGradients(ctx: CanvasRenderingContext2D): void {
     for (const ballRadius of [5.4, 6]) {
       const roundedR = Math.round(ballRadius);
       // getReadyGlow
-      getCachedRadialGradient(
-        ctx, `getReadyGlow_${opaBucket}_${roundedR}`,
-        0, 0, ballRadius, 0, 0, ballRadius * 3,
-        [
-          [0, `rgba(100, 200, 255, ${opa * 0.6})`],
-          [0.5, `rgba(100, 200, 255, ${opa * 0.3})`],
-          [1, "rgba(100, 200, 255, 0)"],
-        ],
-      );
+      getCachedRadialGradient(ctx, `getReadyGlow_${opaBucket}_${roundedR}`, 0, 0, ballRadius, 0, 0, ballRadius * 3, [
+        [0, `rgba(100, 200, 255, ${opa * 0.6})`],
+        [0.5, `rgba(100, 200, 255, ${opa * 0.3})`],
+        [1, "rgba(100, 200, 255, 0)"],
+      ]);
       // releaseGlow
-      getCachedRadialGradient(
-        ctx, `releaseGlow_${opaBucket}_${roundedR}`,
-        0, 0, ballRadius, 0, 0, ballRadius * 4,
-        [
-          [0, `rgba(255, 220, 100, ${opa * 0.8})`],
-          [0.4, `rgba(100, 255, 255, ${opa * 0.5})`],
-          [1, "rgba(100, 200, 255, 0)"],
-        ],
-      );
+      getCachedRadialGradient(ctx, `releaseGlow_${opaBucket}_${roundedR}`, 0, 0, ballRadius, 0, 0, ballRadius * 4, [
+        [0, `rgba(255, 220, 100, ${opa * 0.8})`],
+        [0.4, `rgba(100, 255, 255, ${opa * 0.5})`],
+        [1, "rgba(100, 200, 255, 0)"],
+      ]);
     }
   }
 
@@ -178,44 +162,32 @@ export function warmUpGradients(ctx: CanvasRenderingContext2D): void {
   // chaosGlowOpacity = (chaosLevel - 0.2) * 0.875, max ≈ 0.7 → bucket 0-7.
   for (let opaBucket = 0; opaBucket <= 9; opaBucket++) {
     const opa = opaBucket / 10;
-    getCachedRadialGradient(
-      ctx, `chaosGlow_${opaBucket}`,
-      0, 0, 4, 0, 0, 32,
-      [
-        [0, `rgba(150, 230, 255, ${opa})`],
-        [0.5, `rgba(100, 200, 255, ${opa * 0.5})`],
-        [1, "rgba(80, 180, 255, 0)"],
-      ],
-    );
+    getCachedRadialGradient(ctx, `chaosGlow_${opaBucket}`, 0, 0, 4, 0, 0, 32, [
+      [0, `rgba(150, 230, 255, ${opa})`],
+      [0.5, `rgba(100, 200, 255, ${opa * 0.5})`],
+      [1, "rgba(80, 180, 255, 0)"],
+    ]);
   }
 
   // ─── Power-up metallic background ───────────────────────────
   // POWERUP_SIZE = 61 (non-Mac) or 61 * 0.9 = 54.9 (Mac).
   for (const size of [54.9, 61]) {
     const padding = 4;
-    getCachedLinearGradient(
-      ctx, `pu_metal_${size}`,
-      -padding, -padding, -padding, size + padding,
-      [
-        [0, "hsl(220,10%,65%)"],
-        [0.3, "hsl(220,8%,50%)"],
-        [0.5, "hsl(220,10%,60%)"],
-        [0.7, "hsl(220,8%,45%)"],
-        [1, "hsl(220,10%,35%)"],
-      ],
-    );
+    getCachedLinearGradient(ctx, `pu_metal_${size}`, -padding, -padding, -padding, size + padding, [
+      [0, "hsl(220,10%,65%)"],
+      [0.3, "hsl(220,8%,50%)"],
+      [0.5, "hsl(220,10%,60%)"],
+      [0.7, "hsl(220,8%,45%)"],
+      [1, "hsl(220,10%,35%)"],
+    ]);
   }
 
   // pu_rivet — single fixed key, radius = 3.
-  getCachedRadialGradient(
-    ctx, "pu_rivet",
-    -0.5, -0.5, 0, 0, 0, 3,
-    [
-      [0, "hsl(220,8%,70%)"],
-      [0.4, "hsl(220,8%,50%)"],
-      [1, "hsl(220,10%,30%)"],
-    ],
-  );
+  getCachedRadialGradient(ctx, "pu_rivet", -0.5, -0.5, 0, 0, 0, 3, [
+    [0, "hsl(220,8%,70%)"],
+    [0.4, "hsl(220,8%,50%)"],
+    [1, "hsl(220,10%,30%)"],
+  ]);
 
   // ─── Bullet impact flashes ───────────────────────────────────
   // fadeBucket = Math.floor(fadeOut * 10), 0-10.
@@ -225,26 +197,18 @@ export function warmUpGradients(ctx: CanvasRenderingContext2D): void {
   for (let fadeBucket = 0; fadeBucket <= 10; fadeBucket++) {
     const fadeOut = fadeBucket / 10;
     for (let fsb = 10; fsb <= 20; fsb++) {
-      getCachedRadialGradient(
-        ctx, `bulletImpactFlash_super_${fadeBucket}_${fsb}`,
-        0, 0, 0, 0, 0, fsb,
-        [
-          [0, `rgba(255, 255, 200, ${fadeOut})`],
-          [0.5, `rgba(255, 220, 50, ${fadeOut * 0.7})`],
-          [1, "rgba(255, 180, 0, 0)"],
-        ],
-      );
+      getCachedRadialGradient(ctx, `bulletImpactFlash_super_${fadeBucket}_${fsb}`, 0, 0, 0, 0, 0, fsb, [
+        [0, `rgba(255, 255, 200, ${fadeOut})`],
+        [0.5, `rgba(255, 220, 50, ${fadeOut * 0.7})`],
+        [1, "rgba(255, 180, 0, 0)"],
+      ]);
     }
     for (let fsb = 6; fsb <= 12; fsb++) {
-      getCachedRadialGradient(
-        ctx, `bulletImpactFlash_norm_${fadeBucket}_${fsb}`,
-        0, 0, 0, 0, 0, fsb,
-        [
-          [0, `rgba(200, 255, 255, ${fadeOut})`],
-          [0.5, `rgba(50, 200, 255, ${fadeOut * 0.7})`],
-          [1, "rgba(0, 150, 255, 0)"],
-        ],
-      );
+      getCachedRadialGradient(ctx, `bulletImpactFlash_norm_${fadeBucket}_${fsb}`, 0, 0, 0, 0, 0, fsb, [
+        [0, `rgba(200, 255, 255, ${fadeOut})`],
+        [0.5, `rgba(50, 200, 255, ${fadeOut * 0.7})`],
+        [1, "rgba(0, 150, 255, 0)"],
+      ]);
     }
   }
 
@@ -253,28 +217,20 @@ export function warmUpGradients(ctx: CanvasRenderingContext2D): void {
   // r1 = shieldWidth / 2 = (paddleWidth + 16) / 2 ≈ 63 (non-Mac) / 57.5 (Mac).
   for (let pulseBucket = 0; pulseBucket <= 10; pulseBucket++) {
     const pi = pulseBucket / 10;
-    getCachedRadialGradient(
-      ctx, `shieldEnergy_${pulseBucket}`,
-      0, 0, 0, 0, 0, 63,
-      [
-        [0, `rgba(255, 255, 150, ${0.15 * pi})`],
-        [1, "rgba(255, 220, 0, 0)"],
-      ],
-    );
+    getCachedRadialGradient(ctx, `shieldEnergy_${pulseBucket}`, 0, 0, 0, 0, 0, 63, [
+      [0, `rgba(255, 255, 150, ${0.15 * pi})`],
+      [1, "rgba(255, 220, 0, 0)"],
+    ]);
   }
 
   // ─── Shield impact flash ──────────────────────────────────────
   for (let fadeBucket = 0; fadeBucket <= 10; fadeBucket++) {
     const fadeOut = fadeBucket / 10;
-    getCachedRadialGradient(
-      ctx, `shieldImpactFlash_${fadeBucket}`,
-      0, 0, 0, 0, 0, 8,
-      [
-        [0, `rgba(255, 255, 255, ${fadeOut * 0.9})`],
-        [0.5, `rgba(255, 220, 0, ${fadeOut * 0.6})`],
-        [1, "rgba(255, 220, 0, 0)"],
-      ],
-    );
+    getCachedRadialGradient(ctx, `shieldImpactFlash_${fadeBucket}`, 0, 0, 0, 0, 0, 8, [
+      [0, `rgba(255, 255, 255, ${fadeOut * 0.9})`],
+      [0.5, `rgba(255, 220, 0, ${fadeOut * 0.6})`],
+      [1, "rgba(255, 220, 0, 0)"],
+    ]);
   }
 
   // ─── Second-chance wave ───────────────────────────────────────
@@ -282,52 +238,46 @@ export function warmUpGradients(ctx: CanvasRenderingContext2D): void {
   for (let fadeBucket = 0; fadeBucket <= 10; fadeBucket++) {
     const fadeOut = fadeBucket / 10;
     for (let wrb = 20; wrb <= 100; wrb += 5) {
-      getCachedRadialGradient(
-        ctx, `scWave_${fadeBucket}_${wrb}`,
-        0, 0, 0, 0, 0, wrb,
-        [
-          [0, `rgba(0, 255, 255, ${fadeOut * 0.8})`],
-          [0.5, `rgba(0, 200, 255, ${fadeOut * 0.4})`],
-          [1, "rgba(0, 200, 255, 0)"],
-        ],
-      );
+      getCachedRadialGradient(ctx, `scWave_${fadeBucket}_${wrb}`, 0, 0, 0, 0, 0, wrb, [
+        [0, `rgba(0, 255, 255, ${fadeOut * 0.8})`],
+        [0.5, `rgba(0, 200, 255, ${fadeOut * 0.4})`],
+        [1, "rgba(0, 200, 255, 0)"],
+      ]);
     }
   }
 
   // ─── Reflect shield ───────────────────────────────────────────
   // paddle.width = 110 (non-Mac) or 99 (Mac, Math.round(110*0.9)).
   for (const paddleWidth of [99, 110]) {
-    getCachedLinearGradient(
-      ctx, `reflectShield_${paddleWidth}`,
-      0, 0, paddleWidth + 10, 0,
-      [
-        [0, "rgba(192, 192, 192, 0.3)"],
-        [0.5, "rgba(255, 255, 255, 0.6)"],
-        [1, "rgba(192, 192, 192, 0.3)"],
-      ],
-    );
+    getCachedLinearGradient(ctx, `reflectShield_${paddleWidth}`, 0, 0, paddleWidth + 10, 0, [
+      [0, "rgba(192, 192, 192, 0.3)"],
+      [0.5, "rgba(255, 255, 255, 0.6)"],
+      [1, "rgba(192, 192, 192, 0.3)"],
+    ]);
   }
 
   // ─── Super warning glow ───────────────────────────────────────
   for (let alphaBucket = 0; alphaBucket <= 10; alphaBucket++) {
     const alpha = alphaBucket / 10;
-    getCachedRadialGradient(
-      ctx, `superWarningGlow_${alphaBucket}`,
-      0, 0, 0, 0, 0, 30,
-      [
-        [0, `rgba(255, 200, 100, ${alpha * 0.8})`],
-        [0.5, `rgba(255, 100, 0, ${alpha * 0.4})`],
-        [1, "rgba(255, 50, 0, 0)"],
-      ],
-    );
+    getCachedRadialGradient(ctx, `superWarningGlow_${alphaBucket}`, 0, 0, 0, 0, 0, 30, [
+      [0, `rgba(255, 200, 100, ${alpha * 0.8})`],
+      [0.5, `rgba(255, 100, 0, ${alpha * 0.4})`],
+      [1, "rgba(255, 50, 0, 0)"],
+    ]);
   }
 
   // ─── Resurrected boss glow ────────────────────────────────────
   // baseHue = 0 (superAngry) or 280.  size = resurrectedBossWidth/2 = 25.
   for (const baseHue of [0, 280]) {
     getCachedRadialGradient(
-      ctx, `resBossGlow_${baseHue}`,
-      0, 0, 0, 0, 0, 40,   // 25 * 1.6
+      ctx,
+      `resBossGlow_${baseHue}`,
+      0,
+      0,
+      0,
+      0,
+      0,
+      40, // 25 * 1.6
       [
         [0, `hsla(${baseHue}, 100%, 65%, 0.45)`],
         [1, `hsla(${baseHue}, 100%, 60%, 0)`],
@@ -337,32 +287,24 @@ export function warmUpGradients(ctx: CanvasRenderingContext2D): void {
 
   // ─── Bonus letter glow ────────────────────────────────────────
   // letter.width = 30, so r1 = 30 * 0.85 = 25.5.
-  getCachedRadialGradient(
-    ctx, "bonusLetterGlow",
-    0, 0, 0, 0, 0, 25.5,
-    [
-      [0, "hsla(280, 90%, 65%, 0.55)"],
-      [1, "hsla(280, 90%, 60%, 0)"],
-    ],
-  );
+  getCachedRadialGradient(ctx, "bonusLetterGlow", 0, 0, 0, 0, 0, 25.5, [
+    [0, "hsla(280, 90%, 65%, 0.55)"],
+    [1, "hsla(280, 90%, 60%, 0)"],
+  ]);
 
   // ─── Sphere boss main gradient ────────────────────────────────
   // Boss sphere size = 90, radius = 45.
   // The cache key uses "0" (not angry, baseHue = 200) and "1" (angry, baseHue = 0)
   // because drawSphereBoss computes: angryKey = boss.isAngry ? "1" : "0".
   for (const angryKey of ["0", "1"] as const) {
-    const baseHue = angryKey === "1" ? 0 /* angry red */ : 200 /* calm blue */;
+    const baseHue = angryKey === "1" ? 0 /* angry red */ : 200; /* calm blue */
     const r = 45;
-    getCachedRadialGradient(
-      ctx, `bsphere_${angryKey}`,
-      -r * 0.3, -r * 0.3, r * 0.1, 0, 0, r,
-      [
-        [0, `hsl(${baseHue}, 80%, 75%)`],
-        [0.3, `hsl(${baseHue}, 70%, 55%)`],
-        [0.7, `hsl(${baseHue}, 60%, 35%)`],
-        [1, `hsl(${baseHue}, 50%, 15%)`],
-      ],
-    );
+    getCachedRadialGradient(ctx, `bsphere_${angryKey}`, -r * 0.3, -r * 0.3, r * 0.1, 0, 0, r, [
+      [0, `hsl(${baseHue}, 80%, 75%)`],
+      [0.3, `hsl(${baseHue}, 70%, 55%)`],
+      [0.7, `hsl(${baseHue}, 60%, 35%)`],
+      [1, `hsl(${baseHue}, 50%, 15%)`],
+    ]);
   }
 
   // ─── Enemy specular highlights ────────────────────────────────
@@ -371,24 +313,16 @@ export function warmUpGradients(ctx: CanvasRenderingContext2D): void {
   // Large sphere enemies: width = 55, radius = 27.5, specR = round(27.5*0.4) = 11.
   for (const radius of [15, 17.5, 27.5]) {
     const specR = radius * 0.4;
-    getCachedRadialGradient(
-      ctx, `enemy_spec_${radius}`,
-      0, 0, 0, 0, 0, specR,
-      [
-        [0, "rgba(255,255,255,0.9)"],
-        [1, "rgba(255,255,255,0)"],
-      ],
-    );
+    getCachedRadialGradient(ctx, `enemy_spec_${radius}`, 0, 0, 0, 0, 0, specR, [
+      [0, "rgba(255,255,255,0.9)"],
+      [1, "rgba(255,255,255,0)"],
+    ]);
   }
   for (const specR of [Math.round(15 * 0.4), Math.round(27.5 * 0.4)]) {
-    getCachedRadialGradient(
-      ctx, `enemy_sphere_spec_${specR}`,
-      0, 0, 0, 0, 0, specR,
-      [
-        [0, "rgba(255, 255, 255, 0.8)"],
-        [1, "rgba(255, 255, 255, 0)"],
-      ],
-    );
+    getCachedRadialGradient(ctx, `enemy_sphere_spec_${specR}`, 0, 0, 0, 0, 0, specR, [
+      [0, "rgba(255, 255, 255, 0.8)"],
+      [1, "rgba(255, 255, 255, 0)"],
+    ]);
   }
 
   _gradientCacheWarmedUp = true;
@@ -808,9 +742,14 @@ export function renderFrame(
       const glowRadius = ball.radius * 3;
       const opaBucket = Math.floor(getReadyGlow.opacity * 10);
       const glowGradient = getCachedRadialGradient(
-        ctx, `getReadyGlow_${opaBucket}_${Math.round(ball.radius)}`,
-        0, 0, ball.radius,
-        0, 0, glowRadius,
+        ctx,
+        `getReadyGlow_${opaBucket}_${Math.round(ball.radius)}`,
+        0,
+        0,
+        ball.radius,
+        0,
+        0,
+        glowRadius,
         [
           [0, `rgba(100, 200, 255, ${getReadyGlow.opacity * 0.6})`],
           [0.5, `rgba(100, 200, 255, ${getReadyGlow.opacity * 0.3})`],
@@ -843,9 +782,14 @@ export function renderFrame(
       const releaseGlowRadius = ball.radius * 4 * pulseIntensity;
       const opaBucket2 = Math.floor(glowOpacity * 10);
       const releaseGradient = getCachedRadialGradient(
-        ctx, `releaseGlow_${opaBucket2}_${Math.round(ball.radius)}`,
-        0, 0, ball.radius,
-        0, 0, releaseGlowRadius,
+        ctx,
+        `releaseGlow_${opaBucket2}_${Math.round(ball.radius)}`,
+        0,
+        0,
+        ball.radius,
+        0,
+        0,
+        releaseGlowRadius,
         [
           [0, `rgba(255, 220, 100, ${glowOpacity * 0.8})`],
           [0.4, `rgba(100, 255, 255, ${glowOpacity * 0.5})`],
@@ -899,9 +843,14 @@ export function renderFrame(
       const chaosGlowOpacity = (chaosLevel - 0.2) * 0.875;
       const opaBucket3 = Math.floor(chaosGlowOpacity * 10);
       const chaosGradient = getCachedRadialGradient(
-        ctx, `chaosGlow_${opaBucket3}`,
-        0, 0, visualRadius * 0.5,
-        0, 0, chaosGlowRadius,
+        ctx,
+        `chaosGlow_${opaBucket3}`,
+        0,
+        0,
+        visualRadius * 0.5,
+        0,
+        0,
+        chaosGlowRadius,
         [
           [0, `rgba(150, 230, 255, ${chaosGlowOpacity})`],
           [0.5, `rgba(100, 200, 255, ${chaosGlowOpacity * 0.5})`],
@@ -1295,8 +1244,14 @@ export function renderFrame(
     const flashSizeBucket = Math.round(flashSize);
     const flashGradient = impact.isSuper
       ? getCachedRadialGradient(
-          ctx, `bulletImpactFlash_super_${fadeBucket}_${flashSizeBucket}`,
-          0, 0, 0, 0, 0, flashSizeBucket,
+          ctx,
+          `bulletImpactFlash_super_${fadeBucket}_${flashSizeBucket}`,
+          0,
+          0,
+          0,
+          0,
+          0,
+          flashSizeBucket,
           [
             [0, `rgba(255, 255, 200, ${fadeOut})`],
             [0.5, `rgba(255, 220, 50, ${fadeOut * 0.7})`],
@@ -1304,8 +1259,14 @@ export function renderFrame(
           ],
         )
       : getCachedRadialGradient(
-          ctx, `bulletImpactFlash_norm_${fadeBucket}_${flashSizeBucket}`,
-          0, 0, 0, 0, 0, flashSizeBucket,
+          ctx,
+          `bulletImpactFlash_norm_${fadeBucket}_${flashSizeBucket}`,
+          0,
+          0,
+          0,
+          0,
+          0,
+          flashSizeBucket,
           [
             [0, `rgba(200, 255, 255, ${fadeOut})`],
             [0.5, `rgba(50, 200, 255, ${fadeOut * 0.7})`],
@@ -1365,7 +1326,7 @@ export function renderFrame(
       const time = now / 1000;
       const pulseIntensity = 0.5 + Math.sin(time * 4) * 0.3;
 
-      const layerCount = qualitySettings.level === 'high' ? 3 : 2;
+      const layerCount = qualitySettings.level === "high" ? 3 : 2;
       for (let layer = 0; layer < layerCount; layer++) {
         const layerOffset = layer * 2;
         const layerAlpha = (1 - layer * 0.3) * pulseIntensity;
@@ -1427,15 +1388,10 @@ export function renderFrame(
 
       // Inner energy fill
       const pulseBucket = Math.floor(pulseIntensity * 10);
-      const shieldGrad = getCachedRadialGradient(
-        ctx, `shieldEnergy_${pulseBucket}`,
-        0, 0, 0,
-        0, 0, shieldWidth / 2,
-        [
-          [0, `rgba(255, 255, 150, ${0.15 * pulseIntensity})`],
-          [1, "rgba(255, 220, 0, 0)"],
-        ],
-      );
+      const shieldGrad = getCachedRadialGradient(ctx, `shieldEnergy_${pulseBucket}`, 0, 0, 0, 0, 0, shieldWidth / 2, [
+        [0, `rgba(255, 255, 150, ${0.15 * pulseIntensity})`],
+        [1, "rgba(255, 220, 0, 0)"],
+      ]);
       ctx.save();
       ctx.translate(shieldX + shieldWidth / 2, shieldY + shieldHeight / 2);
       ctx.fillStyle = shieldGrad;
@@ -1464,7 +1420,7 @@ export function renderFrame(
       const progress = elapsed / impact.duration;
       const fadeOut = 1 - progress;
       const rippleRadius = 15 + progress * 40;
-      const rippleCount = qualitySettings.level === 'low' ? 1 : (qualitySettings.level === 'medium' ? 2 : 3);
+      const rippleCount = qualitySettings.level === "low" ? 1 : qualitySettings.level === "medium" ? 2 : 3;
 
       for (let i = 0; i < rippleCount; i++) {
         const offset = i * 10;
@@ -1482,9 +1438,14 @@ export function renderFrame(
         const flashSize = 8 * (1 - progress * 0.5);
         const fadeBucket = Math.floor(fadeOut * 10);
         const flashGradient = getCachedRadialGradient(
-          ctx, `shieldImpactFlash_${fadeBucket}`,
-          0, 0, 0,
-          0, 0, flashSize,
+          ctx,
+          `shieldImpactFlash_${fadeBucket}`,
+          0,
+          0,
+          0,
+          0,
+          0,
+          flashSize,
           [
             [0, `rgba(255, 255, 255, ${fadeOut * 0.9})`],
             [0.5, `rgba(255, 220, 0, ${fadeOut * 0.6})`],
@@ -1611,14 +1572,22 @@ export function renderFrame(
   if (secondChanceImpact) {
     const elapsed = now - secondChanceImpact.startTime;
     if (elapsed < 500) {
-      const progress = elapsed / 500;
+      // Clamp to avoid negative progress/radii when startTime is in the future
+      const clampedElapsed = Math.max(0, elapsed);
+      const progress = clampedElapsed / 500;
       const fadeOut = 1 - progress;
       const fadeBucket = Math.floor(fadeOut * 10);
       const waveRadius = 20 + progress * 80;
-      const waveRadiusBucket = Math.round(waveRadius / 5) * 5; // quantize to 5px steps
+      const waveRadiusBucket = Math.max(0, Math.round(waveRadius / 5) * 5); // quantize + guard
       const waveGradient = getCachedRadialGradient(
-        ctx, `scWave_${fadeBucket}_${waveRadiusBucket}`,
-        0, 0, 0, 0, 0, waveRadiusBucket,
+        ctx,
+        `scWave_${fadeBucket}_${waveRadiusBucket}`,
+        0,
+        0,
+        0,
+        0,
+        0,
+        waveRadiusBucket,
         [
           [0, `rgba(0, 255, 255, ${fadeOut * 0.8})`],
           [0.5, `rgba(0, 200, 255, ${fadeOut * 0.4})`],
@@ -1637,7 +1606,7 @@ export function renderFrame(
       ctx.fillStyle = `rgba(255, 255, 255, ${fadeOut * 0.9})`;
       // shadowBlur removed
       ctx.beginPath();
-      ctx.arc(secondChanceImpact.x, secondChanceImpact.y, 8 * fadeOut, 0, Math.PI * 2);
+      ctx.arc(secondChanceImpact.x, secondChanceImpact.y, Math.max(0, 8 * fadeOut), 0, Math.PI * 2);
       ctx.fill();
 
       if (qualitySettings.level !== "low") {
@@ -1665,8 +1634,12 @@ export function renderFrame(
   if (paddle?.hasReflectShield) {
     ctx.save();
     const rGrad = getCachedLinearGradient(
-      ctx, `reflectShield_${Math.round(paddle.width)}`,
-      0, 0, paddle.width + 10, 0,
+      ctx,
+      `reflectShield_${Math.round(paddle.width)}`,
+      0,
+      0,
+      paddle.width + 10,
+      0,
       [
         [0, "rgba(192, 192, 192, 0.3)"],
         [0.5, "rgba(255, 255, 255, 0.6)"],
@@ -1912,16 +1885,11 @@ export function renderFrame(
 
     // Center glow (cached)
     const alphaBucket = Math.floor(alpha * 10);
-    const cGrad = getCachedRadialGradient(
-      ctx, `superWarningGlow_${alphaBucket}`,
-      0, 0, 0,
-      0, 0, 30,
-      [
-        [0, `rgba(255, 200, 100, ${alpha * 0.8})`],
-        [0.5, `rgba(255, 100, 0, ${alpha * 0.4})`],
-        [1, "rgba(255, 50, 0, 0)"],
-      ],
-    );
+    const cGrad = getCachedRadialGradient(ctx, `superWarningGlow_${alphaBucket}`, 0, 0, 0, 0, 0, 30, [
+      [0, `rgba(255, 200, 100, ${alpha * 0.8})`],
+      [0.5, `rgba(255, 100, 0, ${alpha * 0.4})`],
+      [1, "rgba(255, 50, 0, 0)"],
+    ]);
     ctx.save();
     ctx.translate(warning.x, warning.y);
     ctx.fillStyle = cGrad;
@@ -2285,7 +2253,7 @@ function drawEnemies(
       const lightX = Math.cos(singleEnemy.rotationY) * radius * 0.4;
       const lightY = Math.sin(singleEnemy.rotationX) * radius * 0.4;
 
-      if (qualitySettings.level === 'low') {
+      if (qualitySettings.level === "low") {
         // Low quality: flat fill avoids per-frame gradient creation
         ctx.fillStyle = baseColor;
         ctx.beginPath();
@@ -2401,7 +2369,7 @@ function drawEnemies(
       if (qualitySettings.shadowsEnabled) {
         drawCircleShadow(ctx, centerX + 4, centerY + 4, radius);
       }
-      if (qualitySettings.level === 'low') {
+      if (qualitySettings.level === "low") {
         // Low quality: flat fill avoids per-frame gradient creation
         ctx.fillStyle = baseColor;
         ctx.beginPath();
@@ -2439,7 +2407,7 @@ function drawEnemies(
       }
 
       // Specular — skip on low quality, use cached gradient otherwise
-      if (qualitySettings.level !== 'low') {
+      if (qualitySettings.level !== "low") {
         const specR = Math.round(radius * 0.4);
         const specGrad = getCachedRadialGradient(ctx, `enemy_sphere_spec_${specR}`, 0, 0, 0, 0, 0, specR, [
           [0, "rgba(255, 255, 255, 0.8)"],
@@ -3137,12 +3105,22 @@ function drawSphereBoss(
   const oscillation = now / 500;
 
   const angryKey = boss.isAngry ? "1" : "0";
-  const mainGrad = getCachedRadialGradient(ctx, `bsphere_${angryKey}`, -radius * 0.3, -radius * 0.3, radius * 0.1, 0, 0, radius, [
-    [0, `hsl(${baseHue}, 80%, 75%)`],
-    [0.3, `hsl(${baseHue}, 70%, 55%)`],
-    [0.7, `hsl(${baseHue}, 60%, 35%)`],
-    [1, `hsl(${baseHue}, 50%, 15%)`],
-  ]);
+  const mainGrad = getCachedRadialGradient(
+    ctx,
+    `bsphere_${angryKey}`,
+    -radius * 0.3,
+    -radius * 0.3,
+    radius * 0.1,
+    0,
+    0,
+    radius,
+    [
+      [0, `hsl(${baseHue}, 80%, 75%)`],
+      [0.3, `hsl(${baseHue}, 70%, 55%)`],
+      [0.7, `hsl(${baseHue}, 60%, 35%)`],
+      [1, `hsl(${baseHue}, 50%, 15%)`],
+    ],
+  );
 
   if (qualitySettings.shadowsEnabled) {
     drawCircleShadow(ctx, 5, 5, radius);
