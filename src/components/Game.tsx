@@ -6233,78 +6233,44 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
               return prevBoss;
             }
             if (prevBoss.type === "cube") {
-              setTimeout(() => {
-                soundManager.playExplosion();
-                soundManager.playBossDefeatSound();
-                setScore((s) => s + BOSS_CONFIG.cube.points);
-                toast.success(`CUBE GUARDIAN DEFEATED! +${BOSS_CONFIG.cube.points} points`);
-                setExplosions((e) => [
-                  ...e,
-                  {
-                    x: prevBoss.x + prevBoss.width / 2,
-                    y: prevBoss.y + prevBoss.height / 2,
-                    frame: 0,
-                    maxFrames: 30,
-                    enemyType: "cube" as EnemyType,
-                    particles: createExplosionParticles(
-                      prevBoss.x + prevBoss.width / 2,
-                      prevBoss.y + prevBoss.height / 2,
-                      "cube" as EnemyType,
-                    ),
-                  },
-                ]);
-                setBossesKilled((k) => k + 1);
-                setBossActive(false);
-                setBossDefeatedTransitioning(true);
-                setBalls([]);
-                clearAllEnemies();
-                setBossAttacks([]);
-                clearAllBombs();
-                world.bullets = [];
-                bulletPool.releaseAll();
-                soundManager.stopBossMusic();
-                soundManager.resumeBackgroundMusic();
-                setTimeout(() => nextLevel(), 3000);
-              }, 0);
+              soundManager.playExplosion();
+              soundManager.playBossDefeatSound();
+              setScore((s) => s + BOSS_CONFIG.cube.points);
+              toast.success(`CUBE GUARDIAN DEFEATED! +${BOSS_CONFIG.cube.points} points`);
+              setExplosions((e) => [
+                ...e,
+                {
+                  x: prevBoss.x + prevBoss.width / 2,
+                  y: prevBoss.y + prevBoss.height / 2,
+                  frame: 0,
+                  maxFrames: 30,
+                  enemyType: "cube" as EnemyType,
+                  particles: createExplosionParticles(
+                    prevBoss.x + prevBoss.width / 2,
+                    prevBoss.y + prevBoss.height / 2,
+                    "cube" as EnemyType,
+                  ),
+                },
+              ]);
+              setBossesKilled((k) => k + 1);
+              setBossActive(false);
+              setBossDefeatedTransitioning(true);
+              setBalls([]);
+              clearAllEnemies();
+              setBossAttacks([]);
+              clearAllBombs();
+              world.bullets = [];
+              bulletPool.releaseAll();
+              soundManager.stopBossMusic();
+              soundManager.resumeBackgroundMusic();
+              setTimeout(() => nextLevel(), 3000);
               return null;
             }
 
             if (prevBoss.type === "sphere") {
               if (prevBoss.currentStage === 1) {
-                setTimeout(() => {
-                  soundManager.playExplosion();
-                  toast.error("SPHERE PHASE 2: DESTROYER MODE!");
-                  setExplosions((e) => [
-                    ...e,
-                    {
-                      x: prevBoss.x + prevBoss.width / 2,
-                      y: prevBoss.y + prevBoss.height / 2,
-                      frame: 0,
-                      maxFrames: 30,
-                      enemyType: "sphere" as EnemyType,
-                      particles: createExplosionParticles(
-                        prevBoss.x + prevBoss.width / 2,
-                        prevBoss.y + prevBoss.height / 2,
-                        "sphere" as EnemyType,
-                      ),
-                    },
-                  ]);
-                }, 0);
-                return {
-                  ...prevBoss,
-                  currentHealth: BOSS_CONFIG.sphere.healthPhase2,
-                  currentStage: 2,
-                  isAngry: true,
-                  speed: BOSS_CONFIG.sphere.angryMoveSpeed,
-                  lastHitAt: nowMs,
-                };
-              }
-
-              setTimeout(() => {
                 soundManager.playExplosion();
-                soundManager.playBossDefeatSound();
-                setScore((s) => s + BOSS_CONFIG.sphere.points);
-                toast.success(`SPHERE DESTROYER DEFEATED! +${BOSS_CONFIG.sphere.points} points`);
+                toast.error("SPHERE PHASE 2: DESTROYER MODE!");
                 setExplosions((e) => [
                   ...e,
                   {
@@ -6320,48 +6286,74 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                     ),
                   },
                 ]);
-                setBossesKilled((k) => k + 1);
-                setBossActive(false);
-                setBossDefeatedTransitioning(true);
-                setBalls([]);
-                clearAllEnemies();
-                setBossAttacks([]);
-                clearAllBombs();
-                world.bullets = [];
-                bulletPool.releaseAll();
-                soundManager.stopBossMusic();
-                soundManager.resumeBackgroundMusic();
-                setTimeout(() => nextLevel(), 3000);
-              }, 0);
+                return {
+                  ...prevBoss,
+                  currentHealth: BOSS_CONFIG.sphere.healthPhase2,
+                  currentStage: 2,
+                  isAngry: true,
+                  speed: BOSS_CONFIG.sphere.angryMoveSpeed,
+                  lastHitAt: nowMs,
+                };
+              }
+
+              soundManager.playExplosion();
+              soundManager.playBossDefeatSound();
+              setScore((s) => s + BOSS_CONFIG.sphere.points);
+              toast.success(`SPHERE DESTROYER DEFEATED! +${BOSS_CONFIG.sphere.points} points`);
+              setExplosions((e) => [
+                ...e,
+                {
+                  x: prevBoss.x + prevBoss.width / 2,
+                  y: prevBoss.y + prevBoss.height / 2,
+                  frame: 0,
+                  maxFrames: 30,
+                  enemyType: "sphere" as EnemyType,
+                  particles: createExplosionParticles(
+                    prevBoss.x + prevBoss.width / 2,
+                    prevBoss.y + prevBoss.height / 2,
+                    "sphere" as EnemyType,
+                  ),
+                },
+              ]);
+              setBossesKilled((k) => k + 1);
+              setBossActive(false);
+              setBossDefeatedTransitioning(true);
+              setBalls([]);
+              clearAllEnemies();
+              setBossAttacks([]);
+              clearAllBombs();
+              world.bullets = [];
+              bulletPool.releaseAll();
+              soundManager.stopBossMusic();
+              soundManager.resumeBackgroundMusic();
+              setTimeout(() => nextLevel(), 3000);
               return null;
             }
 
             if (prevBoss.type === "pyramid") {
               if (prevBoss.currentStage === 1) {
-                setTimeout(() => {
-                  soundManager.playExplosion();
-                  toast.error("PYRAMID LORD SPLITS INTO 3!");
-                  setExplosions((e) => [
-                    ...e,
-                    {
-                      x: prevBoss.x + prevBoss.width / 2,
-                      y: prevBoss.y + prevBoss.height / 2,
-                      frame: 0,
-                      maxFrames: 30,
-                      enemyType: "pyramid" as EnemyType,
-                      particles: createExplosionParticles(
-                        prevBoss.x + prevBoss.width / 2,
-                        prevBoss.y + prevBoss.height / 2,
-                        "pyramid" as EnemyType,
-                      ),
-                    },
-                  ]);
-                  const resurrected: Boss[] = [];
-                  for (let i = 0; i < 3; i++) {
-                    resurrected.push(createResurrectedPyramid(prevBoss, i, SCALED_CANVAS_WIDTH, SCALED_CANVAS_HEIGHT));
-                  }
-                  setResurrectedBosses(resurrected);
-                }, 0);
+                soundManager.playExplosion();
+                toast.error("PYRAMID LORD SPLITS INTO 3!");
+                setExplosions((e) => [
+                  ...e,
+                  {
+                    x: prevBoss.x + prevBoss.width / 2,
+                    y: prevBoss.y + prevBoss.height / 2,
+                    frame: 0,
+                    maxFrames: 30,
+                    enemyType: "pyramid" as EnemyType,
+                    particles: createExplosionParticles(
+                      prevBoss.x + prevBoss.width / 2,
+                      prevBoss.y + prevBoss.height / 2,
+                      "pyramid" as EnemyType,
+                    ),
+                  },
+                ]);
+                const resurrected: Boss[] = [];
+                for (let i = 0; i < 3; i++) {
+                  resurrected.push(createResurrectedPyramid(prevBoss, i, SCALED_CANVAS_WIDTH, SCALED_CANVAS_HEIGHT));
+                }
+                setResurrectedBosses(resurrected);
                 return null;
               }
             }
