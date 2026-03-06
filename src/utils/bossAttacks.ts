@@ -2,7 +2,6 @@ import type { Boss, BossAttack, BossAttackType } from "@/types/game";
 import { BOSS_CONFIG, ATTACK_PATTERNS } from "@/constants/bossConfig";
 import { soundManager } from "@/utils/sounds";
 import { debugToast as toast } from "@/utils/debugToast";
-import { world } from "@/engine/state";
 
 export function performBossAttack(
   boss: Boss,
@@ -189,7 +188,7 @@ export function performBossAttack(
     // Create 3 shots in a cone pattern
     const coneSpread = (ATTACK_PATTERNS.cross.coneAngle * Math.PI) / 180;
     const offsets = [-coneSpread / 2, 0, coneSpread / 2];
-    const now = world.simTimeMs; // sim-time, not wall-clock
+    const now = Date.now();
     
     offsets.forEach(offset => {
       const angle = baseAngle + offset;

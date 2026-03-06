@@ -437,7 +437,7 @@ function performBossFirstSweep(
 
       // Cooldown check (millisecond-based)
       const lastHitMs = bossTarget.lastHitAt || 0;
-      const nowMs = world.simTimeMs; // sim-time, not wall-clock
+      const nowMs = Date.now();
       const canDamage = nowMs - lastHitMs >= BOSS_HIT_COOLDOWN_MS;
 
       if (debugSettings.enableBossLogging) {
@@ -494,10 +494,6 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
 
   const { dtSeconds, frameTick, level, debugSettings, maxTotalSpeed, isBossRush } = config;
 
-  // ═══ Advance simulation clock ═══
-  world.simTimeSeconds += dtSeconds;
-  world.simTimeMs = Math.floor(world.simTimeSeconds * 1000);
-
   // ═══ Phase 0: Store previousY ═══
   for (const ball of balls) {
     ball.previousY = ball.y;
@@ -537,13 +533,8 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
         )
       : null;
 
-  const ballResults = balls.map((ball) => {
-    // Skip CCD for balls waiting to launch — they are pinned to the paddle by the
-    // game loop and must not be moved by the physics engine while in that state.
-    if (ball.waitingToLaunch) {
-      return { ball, events: [], substepsUsed: 0, maxIterations: 0, collisionCount: 0, toiIterationsUsed: 0 };
-    }
-    return processBallWithCCD(ball, dtSeconds, frameTick, {
+  const ballResults = balls.map((ball) =>
+    processBallWithCCD(ball, dtSeconds, frameTick, {
       bricks,
       paddle,
       canvasSize: config.canvasSize,
@@ -553,8 +544,8 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
       resurrectedBosses: [],
       enemies,
       qualityLevel: config.qualityLevel,
-    });
-  });
+    }),
+  );
 
   // CCD performance data
   if (ballResults.length > 0 && ballResults[0].performance) {
@@ -585,7 +576,7 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
   let enemiesKilledIncrease = 0;
 
   // Process pending chain explosions from previous frames
-  const now = world.simTimeMs; // sim-time, not wall-clock
+  const now = Date.now();
   result.updatedPendingChainExplosions = config.pendingChainExplosions.filter(
     (p) => now < p.triggerTime,
   );
@@ -1125,7 +1116,7 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
             if (!alreadyPending) {
               result.updatedPendingChainExplosions.push({
                 brick: otherBrick,
-                triggerTime: world.simTimeMs + 200,
+                triggerTime: Date.now() + 200,
               });
             }
           } else {

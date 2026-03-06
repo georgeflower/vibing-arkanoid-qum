@@ -167,12 +167,12 @@ export const usePowerUps = (
     });
   }, [currentLevel, extraLifeUsedLevels, difficulty, powerUpAssignments, dualChoiceAssignments]);
 
-  const updatePowerUps = useCallback((deltaTimeSeconds: number) => {
+  const updatePowerUps = useCallback(() => {
     setPowerUps(prev => {
       // In-place mutation: update positions
       for (let i = prev.length - 1; i >= 0; i--) {
         const p = prev[i];
-        p.y += p.speed * deltaTimeSeconds * 60; // scale by normalized dt (speed is in pixels/60fps-frame)
+        p.y += p.speed;
         
         // Release back to pool if off-screen or inactive
         if (p.y >= CANVAS_HEIGHT || !p.active) {

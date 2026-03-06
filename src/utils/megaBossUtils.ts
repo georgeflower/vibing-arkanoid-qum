@@ -85,7 +85,7 @@ export function createMegaBoss(canvasWidth: number, canvasHeight: number): MegaB
     positions: positions,
     waitTimeAtPosition: 0,
     attackCooldown: config.attackInterval,
-    lastAttackTime: 0,
+    lastAttackTime: Date.now(),
     isCharging: false,
     lastHitAt: 0,
     

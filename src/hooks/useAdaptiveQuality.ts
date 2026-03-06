@@ -82,43 +82,18 @@ export { QUALITY_PRESETS };
 
 // ─── GPU Hardware Detection ──────────────────────────────────
 
-let cachedGPUDetection: boolean | null = null;
-
 function detectIntegratedGPU(): boolean {
-  if (cachedGPUDetection !== null) {
-    return cachedGPUDetection;
-  }
-
   try {
     const canvas = document.createElement("canvas");
-    const webglCtx = canvas.getContext("webgl");
-    const gl = (webglCtx ?? (canvas.getContext("experimental-webgl") as WebGLRenderingContext | null)) as WebGLRenderingContext | null;
-
-    if (!gl) {
-      cachedGPUDetection = false;
-      return false;
-    }
-
-    const debugInfo = gl.getExtension("WEBGL_debug_renderer_info");
-
-    if (!debugInfo) {
-      const loseContext = gl.getExtension("WEBGL_lose_context");
-      if (loseContext) loseContext.loseContext();
-      cachedGPUDetection = false;
-      return false;
-    }
-
-    const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL).toLowerCase();
+    const gl = canvas.getContext("webgl") || (canvas.getContext("experimental-webgl") as WebGLRenderingContext | null);
+    if (!gl) return false;
+    const glCtx = gl as WebGLRenderingContext;
+    const debugInfo = glCtx.getExtension("WEBGL_debug_renderer_info");
+    if (!debugInfo) return false;
+    const renderer = glCtx.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL).toLowerCase();
     const integratedIndicators = ["intel", "uhd", "iris", "arc", "integrated"];
-    const isIntegrated = integratedIndicators.some((indicator) => renderer.includes(indicator));
-
-    const loseContext = gl.getExtension("WEBGL_lose_context");
-    if (loseContext) loseContext.loseContext();
-
-    cachedGPUDetection = isIntegrated;
-    return isIntegrated;
+    return integratedIndicators.some((indicator) => renderer.includes(indicator));
   } catch {
-    cachedGPUDetection = false;
     return false;
   }
 }

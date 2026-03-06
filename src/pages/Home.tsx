@@ -132,7 +132,7 @@ const Home = () => {
             level: r.level,
             difficulty: r.difficulty || undefined,
             gameMode: r.game_mode || undefined,
-          })),
+          }))
         );
       } catch {
         setScores([]);
@@ -225,9 +225,8 @@ const Home = () => {
               authentic retro Amiga aesthetic — all running in your browser.
             </p>
             <p className="retro-pixel-text">
-              The original Arkanoid's DNA is everywhere: the satisfying physics, the strategic power-up choices —
-              including dual drops where you pick one of two power-ups — the "just one more level" pull. We hope Taito
-              would approve.
+              The original Arkanoid's DNA is everywhere: the satisfying physics, the strategic power-up choices — including
+              dual drops where you pick one of two power-ups — the "just one more level" pull. We hope Taito would approve.
             </p>
           </div>
         </section>
@@ -463,7 +462,10 @@ const Home = () => {
           </div>
 
           {/* Scores list */}
-          <div className="rounded p-3" style={{ background: "hsl(210,20%,12%)", border: "2px inset hsl(210,15%,40%)" }}>
+          <div
+            className="rounded p-3"
+            style={{ background: "hsl(210,20%,12%)", border: "2px inset hsl(210,15%,40%)" }}
+          >
             {scoresLoading ? (
               <p className="retro-pixel-text text-center" style={{ fontSize: "9px", color: "hsl(0,0%,50%)" }}>
                 Loading...
@@ -497,7 +499,10 @@ const Home = () => {
                         <span style={{ fontSize: "7px", color: "hsl(30,100%,60%)" }}>BOSS RUSH</span>
                       )}
                     </span>
-                    <span className="retro-pixel-text" style={{ fontSize: "9px", color: "hsl(45,90%,60%)" }}>
+                    <span
+                      className="retro-pixel-text"
+                      style={{ fontSize: "9px", color: "hsl(45,90%,60%)" }}
+                    >
                       {entry.score.toLocaleString()}
                     </span>
                     <span
@@ -571,7 +576,7 @@ const Home = () => {
           </div>
 
           <a
-            href="https://github.com/georgeflower/vibing-arkanoid-qum"
+            href="https://github.com/georgeflower/vibing-arkanoid"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-3 retro-pixel-text retro-button mt-6 px-6 py-3 rounded"
