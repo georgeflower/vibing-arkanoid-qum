@@ -1495,7 +1495,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     renderState.debugEnabled = ENABLE_DEBUG_FEATURES;
     renderState.isMobile = isMobileDevice;
     renderState.getReadyGlow = isMobileDevice ? getReadyGlow : null;
-    renderState.secondChanceImpact = secondChanceImpact;
+    // secondChanceImpact is written directly to renderState (not via React state)
     renderState.ballReleaseHighlight = ballReleaseHighlight;
 
     // Sync render loop FPS target with quality level
