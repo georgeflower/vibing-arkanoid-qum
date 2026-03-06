@@ -687,10 +687,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   // Fireball timer state
   const [fireballEndTime, setFireballEndTime] = useState<number | null>(null);
 
-  // Second chance impact effect state
-  const [secondChanceImpact, setSecondChanceImpact] = useState<{ x: number; y: number; startTime: number } | null>(
-    null,
-  );
+  // Second chance impact effect — written directly to renderState (no React state to avoid re-render freeze)
 
   // Audio toggle state (for UI reactivity)
   const [musicEnabled, setMusicEnabled] = useState(() => soundManager.getMusicEnabled());
