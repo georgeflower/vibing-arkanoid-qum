@@ -1,5 +1,8 @@
 // Renders boss and enemy shapes for tutorial highlights
 
+// Defensive helper for canvas arc calls (prevents DOMException on negative/non-finite radius)
+const safeArcRadius = (r: number): number => (Number.isFinite(r) ? Math.max(0.001, r) : 0.001);
+
 export type EntityType = 'cube' | 'sphere' | 'pyramid' | 'mega' | 'enemy';
 
 interface RenderOptions {
@@ -127,7 +130,7 @@ function renderSphereBoss(
   // Shape-matched circle shadow (light from top-left)
   ctx.fillStyle = "rgba(0, 0, 0, 0.35)";
   ctx.beginPath();
-  ctx.arc(5, 5, radius, 0, Math.PI * 2);
+  ctx.arc(5, 5, safeArcRadius(radius), 0, Math.PI * 2);
   ctx.fill();
 
   const gradient = ctx.createRadialGradient(-radius * 0.3, -radius * 0.3, 0, 0, 0, radius);
@@ -137,7 +140,7 @@ function renderSphereBoss(
   
   ctx.fillStyle = gradient;
   ctx.beginPath();
-  ctx.arc(0, 0, radius, 0, Math.PI * 2);
+  ctx.arc(0, 0, safeArcRadius(radius), 0, Math.PI * 2);
   ctx.fill();
 }
 

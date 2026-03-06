@@ -15,6 +15,9 @@ import { isMegaBoss, type MegaBoss } from "@/utils/megaBossUtils";
 import { brickRenderer } from "@/utils/brickLayerCache";
 import { particlePool } from "@/utils/particlePool";
 
+// Defensive helper for canvas arc calls (prevents DOMException on negative/non-finite radius)
+const safeArcRadius = (r: number): number => (Number.isFinite(r) ? Math.max(0.001, r) : 0.001);
+
 // ─── Module-level animation state (previously useRef) ────────
 
 let dashOffset = 0;
@@ -2856,7 +2859,7 @@ function drawBossAttacks(
       }
       ctx.fillStyle = fillColor;
       ctx.beginPath();
-      ctx.arc(0, 0, attack.width / 2, 0, Math.PI * 2);
+      ctx.arc(0, 0, safeArcRadius(attack.width / 2), 0, Math.PI * 2);
       ctx.fill();
       const pulse = Math.abs(Math.sin(now / 100));
       ctx.strokeStyle = `rgba(255, 255, 255, ${0.5 + pulse * 0.5})`;
@@ -2864,7 +2867,7 @@ function drawBossAttacks(
       ctx.stroke();
       ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
       ctx.beginPath();
-      ctx.arc(-3, -3, attack.width / 5, 0, Math.PI * 2);
+      ctx.arc(-3, -3, safeArcRadius(attack.width / 5), 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
 
@@ -2904,7 +2907,7 @@ function drawBossAttacks(
       }
       ctx.fillStyle = attack.type === "super" ? "hsl(280, 80%, 60%)" : "hsl(25, 85%, 50%)";
       ctx.beginPath();
-      ctx.arc(0, 0, attack.width / 2, 0, Math.PI * 2);
+      ctx.arc(0, 0, safeArcRadius(attack.width / 2), 0, Math.PI * 2);
       ctx.fill();
       const projectilePulse = Math.abs(Math.sin(now / 100));
       ctx.strokeStyle = `rgba(255, 255, 255, ${0.5 + projectilePulse * 0.5})`;
@@ -2912,7 +2915,7 @@ function drawBossAttacks(
       ctx.stroke();
       ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
       ctx.beginPath();
-      ctx.arc(-2, -2, attack.width / 4, 0, Math.PI * 2);
+      ctx.arc(-2, -2, safeArcRadius(attack.width / 4), 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
     }

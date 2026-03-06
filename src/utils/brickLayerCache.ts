@@ -6,6 +6,9 @@
 import type { Brick } from "@/types/game";
 import type { QualitySettings } from "@/hooks/useAdaptiveQuality";
 
+// Defensive helper for canvas arc calls (prevents DOMException on negative/non-finite radius)
+const safeArcRadius = (r: number): number => (Number.isFinite(r) ? Math.max(0.001, r) : 0.001);
+
 interface BrickLayerCacheData {
   canvas: OffscreenCanvas | HTMLCanvasElement;
   ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
@@ -174,7 +177,7 @@ export class BrickRenderer {
       for (let py = brick.y + spacing / 2; py < brick.y + brick.height; py += spacing) {
         for (let px = brick.x + spacing / 2; px < brick.x + brick.width; px += spacing) {
           ctx.beginPath();
-          ctx.arc(px, py, rivetSize, 0, Math.PI * 2);
+          ctx.arc(px, py, safeArcRadius(rivetSize), 0, Math.PI * 2);
           ctx.fill();
         }
       }
