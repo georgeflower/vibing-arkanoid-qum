@@ -1225,21 +1225,24 @@ export function renderFrame(
   // Bullet impacts
   bulletImpacts.forEach((impact) => {
     const elapsed = now - impact.startTime;
-    if (elapsed >= 500) return;
-    const progress = elapsed / 500;
-    const fadeOut = 1 - progress;
+    if (!Number.isFinite(elapsed) || elapsed >= 500) return;
+    const progressRaw = elapsed / 500;
+    const progress = Math.min(1, Math.max(0, progressRaw));
+    const fadeOut = Math.min(1, Math.max(0, 1 - progress));
 
     const ringCount = impact.isSuper ? 4 : 2;
     for (let i = 0; i < ringCount; i++) {
-      const ringRadius = 10 + progress * 50 + i * 10;
-      const ringAlpha = fadeOut * (1 - i * 0.2);
+      const ringRadius = safeArcRadius(10 + progress * 50 + i * 10);
+      const ringAlpha = Math.min(1, Math.max(0, fadeOut * (1 - i * 0.2)));
       const color = impact.isSuper ? `hsla(45, 100%, 60%, ${ringAlpha})` : `hsla(200, 100%, 60%, ${ringAlpha})`;
       ctx.strokeStyle = color;
       ctx.lineWidth = 3 - i * 0.5;
       // shadowBlur removed — colored stroke rings + gradient flash are sufficient
-      ctx.beginPath();
-      ctx.arc(impact.x, impact.y, ringRadius, 0, Math.PI * 2);
-      ctx.stroke();
+      if (ringRadius > 0) {
+        ctx.beginPath();
+        ctx.arc(impact.x, impact.y, ringRadius, 0, Math.PI * 2);
+        ctx.stroke();
+      }
     }
 
     const flashSize = (impact.isSuper ? 20 : 12) * (1 - progress * 0.5);
