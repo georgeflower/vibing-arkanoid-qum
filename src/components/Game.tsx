@@ -1871,10 +1871,10 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
             // Check if all letters collected
             if (newCollected.size === 6) {
-              setScore((s) => s + 500000);
+              setScore((s) => s + 125000);
               setLives((l) => l + 5);
               soundManager.playBonusComplete();
-              toast.success("QUMRAN Complete! +5 Lives & +500,000 Points!", {
+              toast.success("QUMRAN Complete! +5 Lives & +125,000 Points!", {
                 duration: 5000,
               });
               // Long flash and screen shake for all letters
@@ -3811,7 +3811,9 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       // Physics already set world.paddle.hasSecondChance = false — no setPaddle spread needed
       renderState.secondChanceImpact = { x: save.x, y: save.y, startTime: Date.now() };
       toast.success("Second Chance saved you!");
-      setTimeout(() => { renderState.secondChanceImpact = null; }, 500);
+      setTimeout(() => {
+        renderState.secondChanceImpact = null;
+      }, 500);
     }
 
     // ═══ All balls lost — life loss ═══
@@ -6415,7 +6417,12 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
             soundManager.playBossHitSound();
             if (boss.currentHealth <= 0 && boss.type !== "mega") {
               if (boss.type === "cube") {
-                handleBossDefeat("cube", boss, BOSS_CONFIG.cube.points, `CUBE GUARDIAN DEFEATED! +${BOSS_CONFIG.cube.points} points + BONUS LIFE!`);
+                handleBossDefeat(
+                  "cube",
+                  boss,
+                  BOSS_CONFIG.cube.points,
+                  `CUBE GUARDIAN DEFEATED! +${BOSS_CONFIG.cube.points} points + BONUS LIFE!`,
+                );
                 world.boss = null;
                 setBoss(null);
               } else if (boss.type === "sphere") {
@@ -6428,7 +6435,12 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                   boss.speed = BOSS_CONFIG.sphere.angryMoveSpeed;
                   boss.lastHitAt = world.simTimeMs;
                 } else {
-                  handleBossDefeat("sphere", boss, BOSS_CONFIG.sphere.points, `SPHERE DESTROYER DEFEATED! +${BOSS_CONFIG.sphere.points} points + BONUS LIFE!`);
+                  handleBossDefeat(
+                    "sphere",
+                    boss,
+                    BOSS_CONFIG.sphere.points,
+                    `SPHERE DESTROYER DEFEATED! +${BOSS_CONFIG.sphere.points} points + BONUS LIFE!`,
+                  );
                   world.boss = null;
                   setBoss(null);
                 }
@@ -6451,7 +6463,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         } else {
           // Resurrected boss — mutate in-place
           const resBosses = world.resurrectedBosses;
-          const resBoss = resBosses.find(b => b.id === hit.bossId);
+          const resBoss = resBosses.find((b) => b.id === hit.bossId);
           if (resBoss) {
             resBoss.currentHealth = Math.max(0, resBoss.currentHealth - hit.damage);
             soundManager.playBossHitSound();
@@ -6462,7 +6474,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
               soundManager.playBossDefeatSound();
               soundManager.playExplosion();
               // Remove from world array
-              world.resurrectedBosses = resBosses.filter(b => b.id !== resBoss.id);
+              world.resurrectedBosses = resBosses.filter((b) => b.id !== resBoss.id);
               // Enrage last one
               if (world.resurrectedBosses.length === 1) {
                 toast.error("FINAL PYRAMID ENRAGED!");
@@ -6471,7 +6483,9 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
               }
               if (world.resurrectedBosses.length === 0) {
                 if (settings.difficulty !== "godlike") setLives((prev) => prev + 1);
-                toast.success(settings.difficulty === "godlike" ? "ALL PYRAMIDS DEFEATED!" : "ALL PYRAMIDS DEFEATED! + BONUS LIFE!");
+                toast.success(
+                  settings.difficulty === "godlike" ? "ALL PYRAMIDS DEFEATED!" : "ALL PYRAMIDS DEFEATED! + BONUS LIFE!",
+                );
                 setBossActive(false);
                 setBossesKilled((k) => k + 1);
                 setBossDefeatedTransitioning(true);
