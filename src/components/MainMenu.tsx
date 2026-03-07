@@ -202,40 +202,32 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
           </h2>
 
           <div className="space-y-2 sm:space-y-3 text-white">
+            {/* Faster, Smoother Engine */}
             <div className="bg-gradient-to-r from-[hsl(45,100%,50%)]/20 to-[hsl(30,100%,60%)]/20 p-2 sm:p-3 rounded-lg border-2 border-[hsl(45,100%,50%)]/50">
               <h3 className="font-bold text-xs sm:text-sm mb-1 text-[hsl(45,100%,50%)]">⚡ Faster, Smoother Engine</h3>
               <ul className="list-disc list-inside space-y-0.5 text-[10px] sm:text-xs">
                 <li>
-                  The entire game engine has been{" "}
-                  <span className="text-[hsl(45,100%,50%)] font-bold">rebuilt under the hood</span>
+                  The game now runs on a{" "}
+                  <span className="text-[hsl(45,100%,50%)] font-bold">fixed‑timestep simulation</span>, keeping gameplay
+                  speed identical on all devices — no more “fast PC = fast game”.
                 </li>
-                <li>All game objects (ball, paddle, bricks, bosses) now run in a dedicated high-speed engine</li>
+                <li>Unified timing system removes jitter and cooldown drift for rock‑solid consistency.</li>
                 <li>
-                  Result:{" "}
-                  <span className="text-[hsl(120,60%,50%)] font-bold">
-                    less lag, fewer frame drops, and more responsive controls
-                  </span>
+                  Pause/resume is now perfectly stable —{" "}
+                  <span className="text-[hsl(120,60%,50%)] font-bold">no more cooldown jumps</span>.
                 </li>
-                <li>Heavy glow and shadow effects trimmed for consistently smooth gameplay</li>
+                <li>timeScale finally behaves correctly across all movement and logic.</li>
               </ul>
             </div>
 
+            {/* Performance Boost */}
             <div className="bg-gradient-to-r from-[hsl(200,70%,50%)]/20 to-[hsl(120,60%,50%)]/20 p-2 sm:p-3 rounded-lg border-2 border-[hsl(120,60%,50%)]/50">
-              <h3 className="font-bold text-xs sm:text-sm mb-1 text-[hsl(120,60%,50%)]">
-                🔥 New Boss Hit Streak System
-              </h3>
+              <h3 className="font-bold text-xs sm:text-sm mb-1 text-[hsl(120,60%,50%)]">🚀 Performance Boost</h3>
               <ul className="list-disc list-inside space-y-0.5 text-[10px] sm:text-xs">
-                <li>
-                  A brand‑new, fast‑paced streak mechanic lets you compete with yourself to push for even higher scores!
-                </li>
-                <li>
-                  Consecutive hits on bosses and spawned enemies now award 100 pts + a streak bonus percentage (e.g., x5
-                  streak = +5% bonus).
-                </li>
-                <li>
-                  Reach a x10+ streak to activate music‑reactive background hue blinking on all boss levels for an
-                  amped‑up visual experience.
-                </li>
+                <li>Batched particle rendering and fewer heavy arc draws = smoother FPS on all quality levels.</li>
+                <li>Gradients and shaders now pre‑warm to eliminate first‑use GPU stalls.</li>
+                <li>Improved GPU detection for both mobile and integrated GPUs.</li>
+                <li>Rendering math is now crash‑proofed with new safety guards.</li>
               </ul>
             </div>
           </div>
