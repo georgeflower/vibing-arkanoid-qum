@@ -302,10 +302,10 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         return BOSS_RUSH_CONFIG.speedMultipliers[bossLevel];
       }
 
-      // 105% base for normal, 137.5% for godlike
-      const baseMultiplier = difficulty === "godlike" ? 1.375 : 1.05;
-      // Level-based caps (before brick hit bonuses): 155% godlike, 140% normal
-      const maxSpeedMultiplier = difficulty === "godlike" ? 1.55 : 1.4;
+      // 105% base for normal, ~117% for godlike (reduced 15% from 137.5%)
+      const baseMultiplier = difficulty === "godlike" ? 1.169 : 1.05;
+      // Level-based caps (before brick hit bonuses): ~132% godlike (reduced 15%), 140% normal
+      const maxSpeedMultiplier = difficulty === "godlike" ? 1.318 : 1.4;
 
       let speedMult: number;
       if (difficulty === "godlike") {
