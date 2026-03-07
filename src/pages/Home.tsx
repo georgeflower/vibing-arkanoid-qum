@@ -313,7 +313,7 @@ const Home = () => {
             ))}
           </div>
           <p className="retro-pixel-text text-center mt-2" style={{ fontSize: "8px", color: "hsl(0,0%,60%)" }}>
-            Collect all 6 letters for 5 extra lives!
+            Collect all 6 letters for 5 extra lives! Letters drop from the first killed enemy on each level.
           </p>
         </section>
 
