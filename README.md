@@ -2,7 +2,7 @@
 
 A loving tribute to the legendary **Arkanoid** (Taito, 1986) — rebuilt from scratch as a modern browser game with retro Amiga aesthetics, epic boss battles, and a high-performance canvas engine.
 
-**[▶ Play Now](https://vibing-arkanoid.lovable.app)** · **v0.9.973**
+**[▶ Play Now](https://vibing-arkanoid.lovable.app)** · **v0.9.974**
 
 ![Vibing Arkanoid](src/assets/start-screen-new.webp)
 
