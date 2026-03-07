@@ -1,20 +1,20 @@
 export const GAME_VERSION = "0.9.974";
 
 export const CHANGELOG = [
-{
-  "version": "0.9.974",
-  "changes": [
-    "Gameplay speed is now fully FPS‑independent — fixed‑timestep simulation keeps the game running at the same pace on all devices",
-    "Unified timing system removes jitter and weird cooldown drift; all logic now uses stable simulation time",
-    "Pause/resume timing bugs fixed — cooldowns and chain reactions no longer jump or desync",
-    "timeScale now works correctly across all movement and logic",
-    "Performance boost: batched particle rendering and fewer heavy arc draws on lower quality settings",
-    "No more first‑use GPU stalls — gradients and shaders are pre‑warmed",
-    "Improved GPU detection and WebGL stability, especially on mobile and integrated GPUs",
-    "Reduced performance‑monitor overhead for smoother FPS",
-    "Crash‑proofed rendering by guarding against invalid radius/math edge cases"
-  ]
-}
+  {
+    version: "0.9.974",
+    changes: [
+      "Gameplay speed is now fully FPS‑independent — fixed‑timestep simulation keeps the game running at the same pace on all devices",
+      "Unified timing system removes jitter and weird cooldown drift; all logic now uses stable simulation time",
+      "Pause/resume timing bugs fixed — cooldowns and chain reactions no longer jump or desync",
+      "timeScale now works correctly across all movement and logic",
+      "Performance boost: batched particle rendering and fewer heavy arc draws on lower quality settings",
+      "No more first‑use GPU stalls — gradients and shaders are pre‑warmed",
+      "Improved GPU detection and WebGL stability, especially on mobile and integrated GPUs",
+      "Reduced performance‑monitor overhead for smoother FPS",
+      "Crash‑proofed rendering by guarding against invalid radius/math edge cases",
+    ],
+  },
   {
     version: "0.9.973",
     changes: [
@@ -104,7 +104,6 @@ export const CHANGELOG = [
       "Static gradients cached for power-up backgrounds, ball surfaces, and other reused visual elements",
       "Background animation driven by frame timestamp directly — removed backgroundPhase React state updates from the render loop",
       "Entity object pooling expanded — PowerUps, Bullets, Bombs, Enemies, and BonusLetters use cached active arrays to prevent per-frame allocations",
-      
     ],
   },
   {
