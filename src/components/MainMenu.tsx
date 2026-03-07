@@ -618,7 +618,7 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
                 </li>
                 <li>
                   <span className="text-[hsl(0,85%,55%)]">Godlike</span> - No extra lives (power-ups or boss defeat), 1
-                  life, speed cap 175%, faster enemies, more enemy fire
+                  life, speed cap ~149%, faster enemies, more enemy fire
                 </li>
               </ul>
             </div>
