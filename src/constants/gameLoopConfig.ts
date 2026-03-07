@@ -14,11 +14,8 @@ export const MIN_TIME_SCALE = 0.1;
 /** Maximum allowed time scale (used by debug speed controls) */
 export const MAX_TIME_SCALE = 3.0;
 
-/** FPS cap for dedicated GPUs (frames per second) */
-export const FPS_CAP = 144;
-
-/** FPS cap for integrated GPUs (frames per second) */
-export const FPS_CAP_IGPU = 120;
+/** FPS cap for high-end computers (frames per second) */
+export const FPS_CAP = 120;
 
 /** Maximum delta time in milliseconds (prevents large jumps after tab switches etc.) */
 export const MAX_DELTA_MS = 250;

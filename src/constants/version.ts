@@ -1,16 +1,6 @@
-export const GAME_VERSION = "0.9.974";
+export const GAME_VERSION = "0.9.973";
 
 export const CHANGELOG = [
-  {
-    version: "0.9.974",
-    changes: [
-      "Frame-rate independent physics — game now runs at consistent speed regardless of monitor refresh rate (60Hz, 120Hz, 144Hz, etc.)",
-      "Increased FPS cap to 144 FPS for dedicated GPUs, 120 FPS for integrated GPUs — smoother gameplay on high-refresh displays",
-      "Godlike difficulty rebalanced: ball speed cap reduced to ~149% (from 175%), starting speed multiplier lowered to ~117%",
-      "QUMRAN bonus letters now drop from the first killed enemy on each level instead of from specific bricks",
-      "Updated instructions and homepage to reflect new Godlike speed values and bonus letter mechanics",
-    ],
-  },
   {
     version: "0.9.973",
     changes: [
