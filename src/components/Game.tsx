@@ -1462,7 +1462,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   );
 
   // Adaptive quality system
-  const { quality, qualitySettings, updateFps, setQuality, toggleAutoAdjust, autoAdjustEnabled, resetQualityLockout, isIntegratedGPU } =
+  const { quality, qualitySettings, updateFps, setQuality, toggleAutoAdjust, autoAdjustEnabled, resetQualityLockout, isIntegratedGPU, isIntegratedGPU } =
     useAdaptiveQuality({
       initialQuality: ENABLE_HIGH_QUALITY ? "high" : "medium",
       autoAdjust: true,
@@ -1492,7 +1492,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     renderState.ballReleaseHighlight = ballReleaseHighlight;
 
     // Sync render loop FPS target with quality level
-    setRenderTargetFps(qualitySettings.level);
+    setRenderTargetFps(qual, isIntegratedGPUitySettings.level);
   }, [
     gameState,
     level,
