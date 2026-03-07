@@ -59,7 +59,7 @@ const tips = [
     tip: "Hit the ball with paddle edges for sharp angles — great for reaching tricky corners.",
   },
   { title: "Boss Patterns", tip: "Learn each boss's attack pattern. Dodge first, attack when safe." },
-  { title: "Q-U-M-R-A-N", tip: "Collect all 6 bonus letters for 5 extra lives. They fall from certain bricks!" },
+  { title: "Q-U-M-R-A-N", tip: "Collect all 6 bonus letters for 5 extra lives. They drop from the first killed enemy on each level!" },
   { title: "Save Turrets", tip: "Turrets persist across levels and stack ammo. Use them wisely on bosses." },
   { title: "Reflect Shield", tip: "Reflect Shield turns boss attacks against them. Devastating on later bosses." },
   { title: "Boss Rush", tip: "Practice Boss Rush mode to master all 4 bosses back-to-back." },
@@ -313,7 +313,7 @@ const Home = () => {
             ))}
           </div>
           <p className="retro-pixel-text text-center mt-2" style={{ fontSize: "8px", color: "hsl(0,0%,60%)" }}>
-            Collect all 6 letters for 5 extra lives!
+            Collect all 6 letters for 5 extra lives! Letters drop from the first killed enemy on each level.
           </p>
         </section>
 

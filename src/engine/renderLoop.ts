@@ -18,14 +18,16 @@ import { renderFrame } from "@/engine/canvasRenderer";
 // Adaptive render cap — 120 FPS target for high-end, scales down for low quality
 // This prevents GPU exhaustion on high-refresh displays with integrated graphics
 // while allowing smoother rendering on capable hardware.
-const TARGET_FPS_HIGH = 120;
+const TARGET_FPS_DEDICATED = 144;
+const TARGET_FPS_IGPU = 120;
 const TARGET_FPS_LOW = 60;
-let currentTargetFps = TARGET_FPS_HIGH;
+let currentTargetFps = TARGET_FPS_DEDICATED;
 let minFrameInterval = 1000 / currentTargetFps;
 
-/** Update the render target FPS based on quality level */
-export function setRenderTargetFps(qualityLevel: "low" | "medium" | "high"): void {
-  const newTarget = qualityLevel === "low" ? TARGET_FPS_LOW : TARGET_FPS_HIGH;
+/** Update the render target FPS based on quality level and GPU type */
+export function setRenderTargetFps(qualityLevel: "low" | "medium" | "high", isIntegratedGPU: boolean = false): void {
+  const highTarget = isIntegratedGPU ? TARGET_FPS_IGPU : TARGET_FPS_DEDICATED;
+  const newTarget = qualityLevel === "low" ? TARGET_FPS_LOW : highTarget;
   if (newTarget !== currentTargetFps) {
     currentTargetFps = newTarget;
     minFrameInterval = 1000 / currentTargetFps;

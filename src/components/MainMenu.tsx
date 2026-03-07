@@ -492,7 +492,7 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
               <ul className="list-disc list-inside space-y-1 text-xs sm:text-sm">
                 <li>Break all bricks to advance to the next level</li>
                 <li>Collect power-ups for special abilities</li>
-                <li>Collect bonus letters Q-U-M-R-A-N for massive rewards (5 extra lives)</li>
+                <li>Collect bonus letters Q-U-M-R-A-N for massive rewards (5 extra lives) — letters drop from the first killed enemy on each level</li>
                 <li>Watch out for enemies and their projectiles</li>
                 <li>
                   <span className="text-[hsl(30,100%,60%)] font-bold">
@@ -618,7 +618,7 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
                 </li>
                 <li>
                   <span className="text-[hsl(0,85%,55%)]">Godlike</span> - No extra lives (power-ups or boss defeat), 1
-                  life, speed cap ~149%, faster enemies, more enemy fire
+                  life, ~149% ball speed cap, ~117% starting speed, faster enemies, more enemy fire
                 </li>
               </ul>
             </div>
