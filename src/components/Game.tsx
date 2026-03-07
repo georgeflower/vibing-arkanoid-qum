@@ -1462,7 +1462,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   );
 
   // Adaptive quality system
-  const { quality, qualitySettings, updateFps, setQuality, toggleAutoAdjust, autoAdjustEnabled, resetQualityLockout } =
+  const { quality, qualitySettings, updateFps, setQuality, toggleAutoAdjust, autoAdjustEnabled, resetQualityLockout, isIntegratedGPU } =
     useAdaptiveQuality({
       initialQuality: ENABLE_HIGH_QUALITY ? "high" : "medium",
       autoAdjust: true,
