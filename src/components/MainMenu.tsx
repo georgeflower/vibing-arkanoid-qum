@@ -219,7 +219,25 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
                 <li>timeScale finally behaves correctly across all movement and logic.</li>
               </ul>
             </div>
-
+<div className="bg-gradient-to-r from-[hsl(200,70%,50%)]/20 to-[hsl(120,60%,50%)]/20 p-2 sm:p-3 rounded-lg border-2 border-[hsl(120,60%,50%)]/50">
+          <h3 className="font-bold text-xs sm:text-sm mb-1 text-[hsl(120,60%,50%)]">
+            🔥 New Boss Hit Streak System
+          </h3>
+          <ul className="list-disc list-inside space-y-0.5 text-[10px] sm:text-xs">
+            <li>
+              A brand‑new, fast‑paced streak mechanic lets you compete with yourself to push for even higher scores!
+            </li>
+            <li>
+              Consecutive hits on bosses and spawned enemies now award 100 pts + a streak bonus percentage (e.g., x5
+              streak = +5% bonus).
+            </li>
+            <li>
+              Reach a x10+ streak to activate music‑reactive background hue blinking on all boss levels for an
+              amped‑up visual experience.
+            </li>
+          </ul>
+        </div>
+      </div>
             {/* Performance Boost */}
             <div className="bg-gradient-to-r from-[hsl(200,70%,50%)]/20 to-[hsl(120,60%,50%)]/20 p-2 sm:p-3 rounded-lg border-2 border-[hsl(120,60%,50%)]/50">
               <h3 className="font-bold text-xs sm:text-sm mb-1 text-[hsl(120,60%,50%)]">🚀 Performance Boost</h3>
