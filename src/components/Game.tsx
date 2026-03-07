@@ -327,8 +327,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       world.speedMultiplier = BOSS_RUSH_CONFIG.speedMultipliers[5];
     } else {
       const startLevel = settings.startingLevel;
-      const baseMultiplier = settings.difficulty === "godlike" ? 1.375 : 1.05;
-      const maxSpeedMultiplier = settings.difficulty === "godlike" ? 1.55 : 1.4;
+      const baseMultiplier = settings.difficulty === "godlike" ? 1.169 : 1.05;
+      const maxSpeedMultiplier = settings.difficulty === "godlike" ? 1.318 : 1.4;
       let speedMult: number;
       if (settings.difficulty === "godlike") {
         speedMult = baseMultiplier + (startLevel - 1) * 0.05;
