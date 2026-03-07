@@ -7172,8 +7172,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
     // Keep the current level
     const currentLevel = level;
-    const maxSpeedMultiplier = settings.difficulty === "godlike" ? 1.75 : 1.5;
-    const baseMultiplier = settings.difficulty === "godlike" ? 1.25 : 1.0;
+    const maxSpeedMultiplier = settings.difficulty === "godlike" ? 1.4875 : 1.5;
+    const baseMultiplier = settings.difficulty === "godlike" ? 1.0625 : 1.0;
     const levelSpeedMultiplier = Math.min(maxSpeedMultiplier, baseMultiplier + (currentLevel - 1) * 0.05);
     setSpeedMultiplier(levelSpeedMultiplier);
 
