@@ -221,8 +221,8 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
             </div>
 
             {/* Boss Hit Streak System */}
-            <div className="bg-gradient-to-r from-[hsl(200,70%,50%)]/20 to-[hsl(120,60%,50%)]/20 p-2 sm:p-3 rounded-lg border-2 border-[hsl(120,60%,50%)]/50">
-              <h3 className="font-bold text-xs sm:text-sm mb-1 text-[hsl(120,60%,50%)]">
+            <div className="bg-gradient-to-r from-[hsl(270,80%,60%)]/20 to-[hsl(290,80%,60%)]/20 p-2 sm:p-3 rounded-lg border-2 border-[hsl(280,80%,60%)]/50">
+              <h3 className="font-bold text-xs sm:text-sm mb-1 text-[hsl(280,80%,60%)]">
                 🔥 New Boss Hit Streak System
               </h3>
               <ul className="list-disc list-inside space-y-0.5 text-[10px] sm:text-xs">
