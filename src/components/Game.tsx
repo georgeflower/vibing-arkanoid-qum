@@ -290,9 +290,9 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     }
   }, []);
   // Helper function to calculate speed multiplier for any level
-  // Max total speed caps (including brick hit bonuses): 150% normal, 175% godlike
+  // Max total speed caps (including brick hit bonuses): 150% normal, ~149% godlike (was 175%, reduced by 15%)
   const MAX_TOTAL_SPEED_NORMAL = 1.5;
-  const MAX_TOTAL_SPEED_GODLIKE = 1.75;
+  const MAX_TOTAL_SPEED_GODLIKE = 1.49;
 
   const calculateSpeedForLevel = useCallback(
     (levelNum: number, difficulty: string, gameMode?: string, rushIndex?: number) => {
