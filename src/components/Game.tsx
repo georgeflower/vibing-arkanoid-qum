@@ -366,6 +366,16 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   const [beatLevel50Completed, setBeatLevel50Completed] = useState(false);
   const [timer, setTimer] = useState(0);
   const [totalPlayTime, setTotalPlayTime] = useState(0);
+
+  // Daily Challenge state
+  const [dailyChallengeData] = useState<DailyChallenge | null>(() =>
+    isDailyChallenge ? getDailyChallenge() : null
+  );
+  const [showDailyChallengeResult, setShowDailyChallengeResult] = useState(false);
+  const [dailyChallengeResult, setDailyChallengeResult] = useState<DailyChallengeResult | null>(null);
+  const [dailyChallengeStreak, setDailyChallengeStreak] = useState(0);
+  const dailyChallengeLivesLostRef = useRef(0);
+  const dailyChallengePowerUpsRef = useRef(0);
   // ═══ PHASE 1: enemies lives in world.enemies (engine/state.ts) ═══
   const enemies = world.enemies;
   const setEnemies = useCallback((updater: Enemy[] | ((prev: Enemy[]) => Enemy[])) => {
