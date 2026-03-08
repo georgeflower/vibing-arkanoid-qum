@@ -3,7 +3,7 @@
 // Defensive helper for canvas arc calls (prevents DOMException on negative/non-finite radius)
 const safeArcRadius = (r: number): number => (Number.isFinite(r) ? Math.max(0.001, r) : 0.001);
 
-export type EntityType = 'cube' | 'sphere' | 'pyramid' | 'mega' | 'enemy';
+export type EntityType = 'cube' | 'sphere' | 'pyramid' | 'mega' | 'enemy' | 'star';
 
 interface RenderOptions {
   isAngry?: boolean;

@@ -98,6 +98,10 @@ export interface Enemy {
   isCrossBall?: boolean; // Created from merged cross projectiles
   isLargeSphere?: boolean; // Created from merged crossBall enemies (3 hits)
   spawnTime?: number; // Time when enemy was spawned (for merge cooldown)
+  // Star enemy build fields
+  buildTarget?: { row: number; col: number };
+  buildProgress?: number; // ms accumulated toward building a brick (0→5000)
+  isBuilding?: boolean;
 }
 
 export type ProjectileType = "bomb" | "rocket" | "pyramidBullet";
