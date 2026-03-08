@@ -7723,7 +7723,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     // Set to ready state
     setGameState("ready");
 
-    toast.info(`Retrying Level ${currentLevel}`);
+    toast.info(isDailyChallenge ? `Retrying Daily Challenge` : `Retrying Level ${currentLevel}`);
   }, [
     level,
     settings.startingLives,

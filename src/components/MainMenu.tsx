@@ -129,7 +129,7 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
     const settings: GameSettings = {
       startingLives: challenge.startingLives,
       difficulty,
-      startingLevel: 0,
+      startingLevel: 21,
       gameMode: "dailyChallenge",
       dailyChallengeConfig: config,
     };
