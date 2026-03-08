@@ -939,6 +939,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
             coreExposedTime: mb.coreExposedTime ? mb.coreExposedTime + pauseDuration : null,
             hatchOpenStartTime: mb.hatchOpenStartTime ? mb.hatchOpenStartTime + pauseDuration : null,
             lastTrapTime: mb.lastTrapTime ? mb.lastTrapTime + pauseDuration : mb.lastTrapTime,
+            nextCannonFireTime: mb.nextCannonFireTime > 0 ? mb.nextCannonFireTime + pauseDuration : 0,
           } as unknown as Boss;
         });
       }
