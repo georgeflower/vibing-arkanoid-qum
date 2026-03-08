@@ -1618,14 +1618,14 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     // Submit lifetime stats to player profile (skip if debug mode is active)
     if (!isDebugModeActive(debugSettings)) {
       submitGameStats({
-        bricksDestroyed: totalBricksDestroyed,
-        enemiesKilled,
-        bossesKilled,
-        powerUpsCollected: powerUpsCollectedTypes.size,
-        powerUpTypes: Array.from(powerUpsCollectedTypes),
-        timePlayed: totalPlayTime,
+        bricksDestroyed: totalBricksDestroyedRef.current,
+        enemiesKilled: world.enemiesKilled,
+        bossesKilled: bossesKilledRef.current,
+        powerUpsCollected: powerUpsCollectedTypesRef.current.size,
+        powerUpTypes: Array.from(powerUpsCollectedTypesRef.current),
+        timePlayed: totalPlayTimeRef.current,
         score: scoreRef.current,
-        level,
+        level: levelRef.current,
         comboStreak: hitStreakRef.current,
         difficulty: settings.difficulty,
         isVictory: false,
