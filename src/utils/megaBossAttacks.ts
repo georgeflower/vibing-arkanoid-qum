@@ -54,21 +54,26 @@ export function spawnDangerBall(boss: MegaBoss): DangerBall {
   };
 }
 
-// Update danger ball position and animation, with wall bouncing
+// Update danger ball position and animation, with wall and ceiling bouncing
 export function updateDangerBall(ball: DangerBall, canvasWidth: number = 800, deltaTimeSeconds: number = 1 / 60): DangerBall {
   let newX = ball.x + ball.dx * deltaTimeSeconds;
   let newY = ball.y + ball.dy * deltaTimeSeconds;
   let newDx = ball.dx;
+  let newDy = ball.dy;
   
-  // Bounce off side walls (only for non-reflected balls to keep them catchable)
-  if (!ball.isReflected) {
-    if (newX - ball.radius < 0) {
-      newX = ball.radius;
-      newDx = Math.abs(ball.dx); // Bounce right
-    } else if (newX + ball.radius > canvasWidth) {
-      newX = canvasWidth - ball.radius;
-      newDx = -Math.abs(ball.dx); // Bounce left
-    }
+  // Bounce off side walls (all danger balls bounce like player balls)
+  if (newX - ball.radius < 0) {
+    newX = ball.radius;
+    newDx = Math.abs(ball.dx);
+  } else if (newX + ball.radius > canvasWidth) {
+    newX = canvasWidth - ball.radius;
+    newDx = -Math.abs(ball.dx);
+  }
+  
+  // Bounce off ceiling
+  if (newY - ball.radius < 0) {
+    newY = ball.radius;
+    newDy = Math.abs(ball.dy);
   }
   
   return {
@@ -76,7 +81,8 @@ export function updateDangerBall(ball: DangerBall, canvasWidth: number = 800, de
     x: newX,
     y: newY,
     dx: newDx,
-    flashPhase: (ball.flashPhase + 9 * deltaTimeSeconds) % (Math.PI * 2) // 9 rad/s = 0.15 rad/frame at 60fps
+    dy: newDy,
+    flashPhase: (ball.flashPhase + 9 * deltaTimeSeconds) % (Math.PI * 2)
   };
 }
 

@@ -4867,6 +4867,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       // Check if all danger balls caught - release ball and transition phase
       if (shouldReleaseBall(megaBoss)) {
         const { boss: updatedBoss, releasedBall, isDefeated } = releaseBallAndNextPhase(megaBoss);
+        soundManager.resetDangerBallReflectCount();
 
         if (isDefeated) {
           // MEGA BOSS DEFEATED! Victory with confetti!

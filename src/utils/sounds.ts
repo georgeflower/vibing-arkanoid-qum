@@ -588,7 +588,28 @@ class SoundManager {
     }
   }
 
-  private playAudioBuffer(buffer: AudioBuffer, volume: number): void {
+  // Danger ball reflect pitch tracking
+  private dangerBallReflectCount = 0;
+
+  // C-D-E-F#-G pitch ratios (one note per ball)
+  private dangerBallPitchRatios = [1.0, 1.125, 1.25, 1.406, 1.5];
+
+  resetDangerBallReflectCount() {
+    this.dangerBallReflectCount = 0;
+  }
+
+  playDangerBallReflectSound() {
+    if (!this.sfxEnabled) return;
+    const buffer = this.audioBuffers['/reflecting.mp3'];
+    if (buffer) {
+      const pitchIndex = Math.min(this.dangerBallReflectCount, this.dangerBallPitchRatios.length - 1);
+      const rate = this.dangerBallPitchRatios[pitchIndex];
+      this.playAudioBuffer(buffer, 0.6, rate);
+      this.dangerBallReflectCount++;
+    }
+  }
+
+  private playAudioBuffer(buffer: AudioBuffer, volume: number, playbackRate: number = 1.0): void {
     if (!buffer) return;
 
     const ctx = this.getAudioContext();
@@ -596,6 +617,7 @@ class SoundManager {
     const gainNode = ctx.createGain();
 
     source.buffer = buffer;
+    source.playbackRate.value = playbackRate;
     source.connect(gainNode);
     gainNode.connect(ctx.destination);
 
