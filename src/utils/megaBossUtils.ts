@@ -249,33 +249,19 @@ export function releaseBallAndNextPhase(boss: MegaBoss): { boss: MegaBoss; relea
   const canvasHeight = boss.y + boss.height + 200; // Estimate canvas height from boss position
   const isInTopThird = boss.y < canvasHeight / 3;
   
-  let releasedBall: Ball;
-  
-  if (isInTopThird) {
-    // Release downward with random angle to avoid getting stuck
-    const randomAngle = (Math.random() - 0.5) * Math.PI / 3; // Random angle ±30 degrees from vertical
-    const speed = 4;
-    releasedBall = {
-      ...boss.trappedBall,
-      x: boss.x + boss.width / 2,
-      y: boss.y + boss.height + 15, // Release below the boss
-      dx: Math.sin(randomAngle) * speed,
-      dy: Math.cos(randomAngle) * speed, // Positive = downward
-      waitingToLaunch: false,
-      releasedFromBossTime: Date.now()
-    };
-  } else {
-    // Release upward normally
-    releasedBall = {
-      ...boss.trappedBall,
-      x: boss.x + boss.width / 2,
-      y: boss.y - 15, // Release above the boss
-      dx: 0,
-      dy: -4, // Release upwards
-      waitingToLaunch: false,
-      releasedFromBossTime: Date.now()
-    };
-  }
+  // Always release upward with random 180° angle and slow initial speed
+  const randomAngle = (Math.random() - 0.5) * Math.PI; // Random ±90° from vertical up
+  const initialSpeed = 1.5; // Slow start, will ramp up
+  const releasedBall: Ball = {
+    ...boss.trappedBall,
+    x: boss.x + boss.width / 2,
+    y: boss.y - 15, // Release above the boss
+    dx: Math.sin(randomAngle) * initialSpeed,
+    dy: -Math.abs(Math.cos(randomAngle)) * initialSpeed, // Always upward
+    waitingToLaunch: false,
+    releasedFromBossTime: Date.now(),
+    releaseSpeedScale: 0.3 // Start at 30% speed, ramp to 100%
+  };
   
   const nextPhase = (boss.corePhase + 1) as MegaBossCorePhase;
   
