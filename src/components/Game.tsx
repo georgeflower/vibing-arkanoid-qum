@@ -5091,7 +5091,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
             updatedBall = reflectDangerBall(updatedBall, paddle.x, paddle.width);
 
             toast.info(`↩️ Danger ball reflected!`, { duration: 1000 });
-            soundManager.playDangerBallCatch();
+            soundManager.playDangerBallReflectSound();
             updatedBalls.push(updatedBall);
             return;
           }
