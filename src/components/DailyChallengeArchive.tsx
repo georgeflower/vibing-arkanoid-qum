@@ -24,13 +24,14 @@ export const DailyChallengeArchive = ({ onPlay, onClose }: DailyChallengeArchive
 
   useEffect(() => {
     const loadArchive = async () => {
-      // Generate past 90 days of challenges
+      const LAUNCH_DATE = new Date(2026, 2, 8); // 2026-03-08 (month is 0-indexed)
       const today = new Date();
       const pastChallenges: ArchiveEntry[] = [];
 
-      for (let i = 1; i <= 90; i++) {
+      for (let i = 1; ; i++) {
         const date = new Date(today);
         date.setDate(date.getDate() - i);
+        if (date < LAUNCH_DATE) break;
         const challenge = getDailyChallenge(date);
         pastChallenges.push({
           date,
@@ -109,6 +110,10 @@ export const DailyChallengeArchive = ({ onPlay, onClose }: DailyChallengeArchive
             {loading ? (
               <div className="text-center py-8">
                 <p className="text-sm" style={{ color: "hsl(0,0%,50%)" }}>Loading challenges...</p>
+              </div>
+            ) : entries.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-sm" style={{ color: "hsl(0,0%,50%)" }}>No past challenges yet — come back tomorrow!</p>
               </div>
             ) : (
               entries.map((entry) => {
