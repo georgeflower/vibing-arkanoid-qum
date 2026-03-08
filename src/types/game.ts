@@ -251,4 +251,5 @@ export interface GameSettings {
   difficulty: Difficulty;
   startingLevel: number;
   gameMode: GameMode;
+  dailyChallengeConfig?: DailyChallengeConfig;
 }

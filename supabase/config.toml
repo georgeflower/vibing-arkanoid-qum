@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.update-profile-stats]
 verify_jwt = false
+
+[functions.submit-daily-challenge]
+verify_jwt = false
