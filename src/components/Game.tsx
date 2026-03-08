@@ -1585,7 +1585,31 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       });
     }
 
-    if (isBossRush) {
+    if (isDailyChallenge && dailyChallengeData) {
+      // Daily challenge game over — still evaluate objectives
+      const challengeResult = evaluateObjectives(dailyChallengeData, {
+        livesLost: dailyChallengeLivesLostRef.current,
+        timeSeconds: totalPlayTime,
+        allBricksDestroyed: false,
+        score: scoreRef.current,
+        powerUpsCollected: dailyChallengePowerUpsRef.current,
+        bestCombo: hitStreakRef.current,
+      });
+      setDailyChallengeResult(challengeResult);
+
+      submitDailyChallenge({
+        challengeDate: dailyChallengeData.dateString,
+        score: scoreRef.current,
+        timeSeconds: totalPlayTime,
+        objectivesMet: challengeResult.objectivesMet,
+        allObjectivesMet: challengeResult.allObjectivesMet,
+      }).then((res) => {
+        if (res.success) setDailyChallengeStreak(res.streak);
+        setShowDailyChallengeResult(true);
+      });
+
+      toast.error("Daily Challenge Over!");
+    } else if (isBossRush) {
       const currentBossLevel = BOSS_RUSH_CONFIG.bossOrder[bossRushIndex] || 5;
       setBossRushGameOverLevel(currentBossLevel);
       const completionTime = bossRushStartTime ? Date.now() - bossRushStartTime : 0;
@@ -1607,7 +1631,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         }
       });
     }
-  }, [isBossRush, bossRushIndex, bossRushStartTime, levelSkipped, getQualifiedLeaderboards]);
+  }, [isBossRush, isDailyChallenge, dailyChallengeData, bossRushIndex, bossRushStartTime, levelSkipped, getQualifiedLeaderboards]);
 
   /**
    * Survive-death branch: resets ball (with proper angle math), clears all power-up
