@@ -833,6 +833,18 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
             className="w-full border-[hsl(200,70%,50%)] text-[hsl(200,70%,50%)] hover:bg-[hsl(200,70%,50%)] hover:text-white"
           >
             About
+           </Button>
+
+          <Button
+            onClick={() => {
+              soundManager.playMenuClick();
+              navigate(isLoggedIn ? "/profile" : "/auth");
+            }}
+            onMouseEnter={() => soundManager.playMenuHover()}
+            variant="outline"
+            className="w-full border-[hsl(330,40%,50%)] text-[hsl(330,40%,50%)] hover:bg-[hsl(330,40%,50%)] hover:text-white"
+          >
+            {isLoggedIn ? "👤 Profile" : "🔑 Login"}
           </Button>
         </div>
       </Card>
