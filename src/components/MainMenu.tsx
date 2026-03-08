@@ -841,6 +841,8 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
             ⚡ Daily Challenge
           </Button>
 
+          <Button
+            onClick={() => {
               soundManager.playMenuClick();
               setShowInstructions(true);
             }}
