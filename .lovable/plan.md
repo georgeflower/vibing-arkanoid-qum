@@ -1,39 +1,38 @@
 
 
-## Plan: Improve Ball Release After Mega Boss Phase Transitions
+# Revert Game Area to Fixed Size (Pre-Expansion)
 
-### What the user wants
-1. **Highlight on miss too**: When a danger ball is missed and the player ball is released (fail path), apply the same `ballReleaseHighlight` effect as the success path
-2. **Slow-start speed ramp**: Released ball starts slow and ramps up to normal speed, so the player can locate it
-3. **Upward release with random 180°**: Always release the ball upward with a random angle within a 180° arc (not straight down)
+## Problem
+Two previous changes ("Expand game area to frame space" and "Expand game area to fill space") made the game canvas dynamically resize to fill all available space within the metal frame on desktop. The user wants the playable area to return to its original fixed size.
 
-### Changes
+## Current behavior
+- `useViewportFrame` makes the metal frame fill the entire viewport on desktop
+- `useCanvasResize` uses ResizeObserver to dynamically size the game canvas to fill the `metal-game-area` container
+- The canvas display size grows to match available space
 
-**1. `src/utils/megaBossUtils.ts` — Fix both release functions**
+## Desired behavior
+The game canvas stays at its logical size (850×650 scaled by `scaleFactor`) and is simply centered within the frame — no dynamic expansion.
 
-- **`releaseBallAndNextPhase()`** (success path, line 252-278): Change release to always go upward with random angle in 180° arc (-90° to +90° from vertical up). Start at reduced speed (e.g. 1.5) instead of 4. Add a `releasedFromBossTime` timestamp (already present).
+## Changes
 
-- **`resetMegaBossPhaseProgress()`** (fail path, line 427-435): Same change — release upward with random 180° angle and slow initial speed. Currently releases straight down (`dy: 4`). Change to upward with random spread.
+### 1. `src/components/Game.tsx`
+- **Remove** `useViewportFrame` import and hook call (lines 22, 1651-1654)
+- **Remove** `useCanvasResize` import and hook call (lines 23, 1657-1667), along with destructured `displayWidth`, `displayHeight`, `dynamicScale`
+- Remove `gameAreaRef` if only used for `useCanvasResize` (check first)
+- On desktop, set the `game-glow` div's width/height explicitly to `SCALED_CANVAS_WIDTH` × `SCALED_CANVAS_HEIGHT` (same as mobile path but without the scale transform), so the canvas is fixed-size and centered
 
-- Add a new ball property `releaseSpeedRampStart?: number` to track when speed ramping began, OR simply use the existing `releasedFromBossTime` for the ramp calculation.
+### 2. `src/hooks/useViewportFrame.ts`
+- Delete file (no longer used)
 
-**2. `src/types/game.ts` — Add `releaseSpeedScale` to Ball**
+### 3. `src/hooks/useCanvasResize.ts`
+- Delete file (no longer used)
 
-Add optional `releaseSpeedScale?: number` field to Ball interface. This represents the initial speed multiplier (starts at ~0.3, ramps to 1.0 over ~1.5 seconds).
+### 4. `src/index.css`
+- Remove the `.metal-frame.desktop-fullscreen` CSS block (lines ~265-290) since the class is no longer applied
+- Remove `max-width` constraint on `.metal-game-area` that references side panel widths — let it auto-size around the fixed canvas
+- Keep `.metal-frame` as `width: fit-content` so it wraps the fixed-size content naturally
 
-**3. `src/engine/physics.ts` — Apply speed ramp**
-
-In `runPhysicsFrame`, check if ball has `releasedFromBossTime` set and is within the ramp window (~1.5s). Scale ball velocity toward target speed gradually. After ramp completes, clear the flag.
-
-**4. `src/components/Game.tsx` — Add highlight on miss path**
-
-At line 5168, after `setBalls((prev) => [...prev, releasedBall])`, add the same `setBallReleaseHighlight({ active: true, startTime: Date.now() })` + setTimeout cleanup that exists at line 4972.
-
-### Summary of changes
-| File | Change |
-|------|--------|
-| `src/types/game.ts` | Add optional `releaseSpeedScale` to Ball |
-| `src/utils/megaBossUtils.ts` | Both release functions: upward + random 180° + slow initial speed |
-| `src/engine/physics.ts` | Speed ramp logic for released balls |
-| `src/components/Game.tsx` | Add `ballReleaseHighlight` on miss path (line ~5168) |
+### 5. Verify
+- `gameAreaRef` usage — if it's only for `useCanvasResize`, remove the ref. If used elsewhere (e.g. click handlers), keep it.
+- `gameGlowRef` — same check; if only used by `useCanvasResize` for imperative sizing, it can be simplified but likely still needed for CRT overlay positioning.
 

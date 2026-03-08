@@ -34,6 +34,7 @@ export interface Ball {
   previousY?: number; // Y position before CCD pass (for anti-rescue check)
   lastPaddleHitTime?: number; // Timestamp (ms) of last paddle hit (for cooldown)
   releasedFromBossTime?: number; // Timestamp when ball was released from Mega Boss
+  releaseSpeedScale?: number; // Speed multiplier for slow-start ramp (0.3 → 1.0)
   lastGravityResetTime?: number; // Last collision time (paddle/brick/enemy) for gravity delay
 }
 

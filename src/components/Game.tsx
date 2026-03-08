@@ -5167,6 +5167,15 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
             if (releasedBall) {
               setBalls((prev) => [...prev, releasedBall]);
+              
+              // Highlight released ball (same as success path)
+              setBallReleaseHighlight({ active: true, startTime: Date.now() });
+              setTimeout(() => {
+                setBallReleaseHighlight(null);
+              }, 1500);
+              
+              // Play sound to alert player
+              soundManager.playReflectShieldSound();
             }
 
             return resetBoss as unknown as Boss;
