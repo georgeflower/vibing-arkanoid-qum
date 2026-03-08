@@ -62,10 +62,12 @@ export function updateDangerBall(ball: DangerBall, canvasWidth: number = 800, de
   let newDx = ball.dx;
   let newDy = ball.dy;
   
-  // Apply gravity after 2 seconds of existence
+  // Apply increasing gravity after 2 seconds of existence
   const ageSeconds = (performance.now() - ball.spawnTime) / 1000;
   if (ageSeconds > 2) {
-    newDy += BALL_GRAVITY;
+    const gravitySeconds = ageSeconds - 2;
+    const gravityMultiplier = 1 + gravitySeconds; // increases by 1x every second
+    newDy += BALL_GRAVITY * gravityMultiplier;
   }
   
   // Bounce off side walls (all danger balls bounce like player balls)
