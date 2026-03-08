@@ -4362,6 +4362,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                 world.bricks.push(newBrick);
               }
 
+              // Rebuild spatial hash so CCD detects the new/upgraded brick
+              brickSpatialHash.rebuild(world.bricks.filter(b => b.visible));
               // Invalidate brick render cache
               brickRenderer.invalidate();
 
