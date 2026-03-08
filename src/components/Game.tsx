@@ -24,6 +24,9 @@ import { useCanvasResize } from "@/hooks/useCanvasResize";
 import CRTOverlay from "./CRTOverlay";
 import { BOSS_RUSH_CONFIG, BossRushLevel } from "@/constants/bossRushConfig";
 import { submitGameStats } from "@/utils/profileStats";
+import { DailyChallengeResultOverlay } from "./DailyChallengeResultOverlay";
+import { getDailyChallenge, evaluateObjectives, type DailyChallenge, type DailyChallengeResult } from "@/utils/dailyChallenge";
+import { submitDailyChallenge } from "@/utils/dailyChallengeSubmit";
 
 // ═══════════════════════════════════════════════════════════════
 // ████████╗ DEBUG IMPORTS - REMOVE BEFORE PRODUCTION ████████╗
@@ -201,8 +204,9 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   const [lives, setLives] = useState(settings.startingLives);
   const [level, setLevel] = useState(settings.startingLevel);
 
-  // Boss Rush mode state
+  // Game mode flags
   const isBossRush = settings.gameMode === "bossRush";
+  const isDailyChallenge = settings.gameMode === "dailyChallenge";
   const [bossRushIndex, setBossRushIndex] = useState(0); // 0-3 for 4 bosses
   const [showBossRushVictory, setShowBossRushVictory] = useState(false);
   const [bossRushStartTime, setBossRushStartTime] = useState<number | null>(null);
@@ -362,6 +366,16 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   const [beatLevel50Completed, setBeatLevel50Completed] = useState(false);
   const [timer, setTimer] = useState(0);
   const [totalPlayTime, setTotalPlayTime] = useState(0);
+
+  // Daily Challenge state
+  const [dailyChallengeData] = useState<DailyChallenge | null>(() =>
+    isDailyChallenge ? getDailyChallenge() : null
+  );
+  const [showDailyChallengeResult, setShowDailyChallengeResult] = useState(false);
+  const [dailyChallengeResult, setDailyChallengeResult] = useState<DailyChallengeResult | null>(null);
+  const [dailyChallengeStreak, setDailyChallengeStreak] = useState(0);
+  const dailyChallengeLivesLostRef = useRef(0);
+  const dailyChallengePowerUpsRef = useRef(0);
   // ═══ PHASE 1: enemies lives in world.enemies (engine/state.ts) ═══
   const enemies = world.enemies;
   const setEnemies = useCallback((updater: Enemy[] | ((prev: Enemy[]) => Enemy[])) => {
@@ -1571,7 +1585,31 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       });
     }
 
-    if (isBossRush) {
+    if (isDailyChallenge && dailyChallengeData) {
+      // Daily challenge game over — still evaluate objectives
+      const challengeResult = evaluateObjectives(dailyChallengeData, {
+        livesLost: dailyChallengeLivesLostRef.current,
+        timeSeconds: totalPlayTime,
+        allBricksDestroyed: false,
+        score: scoreRef.current,
+        powerUpsCollected: dailyChallengePowerUpsRef.current,
+        bestCombo: hitStreakRef.current,
+      });
+      setDailyChallengeResult(challengeResult);
+
+      submitDailyChallenge({
+        challengeDate: dailyChallengeData.dateString,
+        score: scoreRef.current,
+        timeSeconds: totalPlayTime,
+        objectivesMet: challengeResult.objectivesMet,
+        allObjectivesMet: challengeResult.allObjectivesMet,
+      }).then((res) => {
+        if (res.success) setDailyChallengeStreak(res.streak);
+        setShowDailyChallengeResult(true);
+      });
+
+      toast.error("Daily Challenge Over!");
+    } else if (isBossRush) {
       const currentBossLevel = BOSS_RUSH_CONFIG.bossOrder[bossRushIndex] || 5;
       setBossRushGameOverLevel(currentBossLevel);
       const completionTime = bossRushStartTime ? Date.now() - bossRushStartTime : 0;
@@ -1593,7 +1631,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         }
       });
     }
-  }, [isBossRush, bossRushIndex, bossRushStartTime, levelSkipped, getQualifiedLeaderboards]);
+  }, [isBossRush, isDailyChallenge, dailyChallengeData, bossRushIndex, bossRushStartTime, levelSkipped, getQualifiedLeaderboards]);
 
   /**
    * Survive-death branch: resets ball (with proper angle math), clears all power-up
@@ -1975,8 +2013,10 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       return []; // No bricks on boss levels
     }
 
-    const layoutIndex = Math.min(currentLevel - 1, levelLayouts.length - 1);
-    const layout = levelLayouts[layoutIndex];
+    // Daily Challenge mode: use the procedural layout
+    const layout = isDailyChallenge && settings.dailyChallengeConfig
+      ? settings.dailyChallengeConfig.layout
+      : levelLayouts[Math.min(currentLevel - 1, levelLayouts.length - 1)];
     const levelColors = getBrickColors(currentLevel);
     const newBricks: Brick[] = [];
     let nextBrickId = 1; // Monotonic ID counter for stable brick IDs
@@ -2203,6 +2243,11 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     setDroppedLettersThisLevel(new Set());
 
     // Boss Rush mode: progress through boss order
+    // Daily Challenge mode: single level, no progression
+    if (isDailyChallenge) {
+      return; // Should not reach here — daily challenge ends on allBricksCleared
+    }
+
     if (isBossRush) {
       const nextBossIndex = bossRushIndex + 1;
 
@@ -3686,7 +3731,38 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       const hasDestructible = bricks.some((b) => !b.isIndestructible);
 
       soundManager.playWin();
-      if (level >= FINAL_LEVEL) {
+
+      // Daily Challenge mode: evaluate objectives and show result
+      if (isDailyChallenge && dailyChallengeData) {
+        setGameState("won");
+        soundManager.stopBackgroundMusic();
+
+        const challengeResult = evaluateObjectives(dailyChallengeData, {
+          livesLost: dailyChallengeLivesLostRef.current,
+          timeSeconds: totalPlayTime,
+          allBricksDestroyed: true,
+          score: scoreRef.current,
+          powerUpsCollected: dailyChallengePowerUpsRef.current,
+          bestCombo: hitStreakRef.current,
+        });
+        setDailyChallengeResult(challengeResult);
+
+        // Submit to backend if logged in
+        submitDailyChallenge({
+          challengeDate: dailyChallengeData.dateString,
+          score: scoreRef.current,
+          timeSeconds: totalPlayTime,
+          objectivesMet: challengeResult.objectivesMet,
+          allObjectivesMet: challengeResult.allObjectivesMet,
+        }).then((res) => {
+          if (res.success) {
+            setDailyChallengeStreak(res.streak);
+          }
+          setShowDailyChallengeResult(true);
+        });
+
+        toast.success("⚡ Daily Challenge Complete!");
+      } else if (level >= FINAL_LEVEL) {
         setScore((prev) => prev + 1000000);
         setBeatLevel50Completed(true);
         setGameState("won");
@@ -3869,6 +3945,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
       setLives((prev) => {
         const newLives = prev - 1;
+        if (isDailyChallenge) dailyChallengeLivesLostRef.current++;
         soundManager.playLoseLife();
         if (newLives <= 0) {
           particlePool.acquireForGameOver(
@@ -8066,7 +8143,19 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                     showExtraLife={settings.difficulty !== "godlike" ? true : false}
                   />
 
-                  {/* Boss Rush Stats Overlay */}
+                  {/* Daily Challenge Result Overlay */}
+                  {showDailyChallengeResult && dailyChallengeData && dailyChallengeResult && (
+                    <DailyChallengeResultOverlay
+                      active={true}
+                      challenge={dailyChallengeData}
+                      result={dailyChallengeResult}
+                      score={score}
+                      timeSeconds={totalPlayTime}
+                      streak={dailyChallengeStreak}
+                      onReturnToMenu={onReturnToMenu}
+                    />
+                  )}
+
                   <BossRushStatsOverlay
                     active={bossRushStatsOverlayActive && isBossRush}
                     currentTime={

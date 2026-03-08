@@ -18,6 +18,9 @@ interface ProfileData {
   favorite_power_up: string | null;
   power_up_usage: Record<string, number>;
   achievements: Array<{ id: string; unlockedAt: string }>;
+  daily_challenge_streak: number;
+  best_daily_streak: number;
+  total_daily_challenges_completed: number;
 }
 
 const formatPlayTime = (seconds: number): string => {
@@ -81,6 +84,9 @@ const Profile = () => {
         favorite_power_up: data.favorite_power_up,
         power_up_usage: (data.power_up_usage as Record<string, number>) || {},
         achievements: (data.achievements as Array<{ id: string; unlockedAt: string }>) || [],
+        daily_challenge_streak: (data as any).daily_challenge_streak || 0,
+        best_daily_streak: (data as any).best_daily_streak || 0,
+        total_daily_challenges_completed: (data as any).total_daily_challenges_completed || 0,
       });
       setLoading(false);
     };
@@ -117,6 +123,8 @@ const Profile = () => {
     { label: "Best Score", value: profile.best_score.toLocaleString() },
     { label: "Best Level", value: String(profile.best_level) },
     { label: "Best Combo Streak", value: String(profile.best_combo_streak) },
+    { label: "Daily Challenges", value: profile.total_daily_challenges_completed.toLocaleString() },
+    { label: "Daily Streak", value: `${profile.daily_challenge_streak} (Best: ${profile.best_daily_streak})` },
   ];
 
   return (

@@ -41,6 +41,36 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_challenge_completions: {
+        Row: {
+          challenge_date: string
+          completed_at: string
+          id: string
+          objectives_met: Json
+          score: number
+          time_seconds: number
+          user_id: string
+        }
+        Insert: {
+          challenge_date: string
+          completed_at?: string
+          id?: string
+          objectives_met?: Json
+          score: number
+          time_seconds: number
+          user_id: string
+        }
+        Update: {
+          challenge_date?: string
+          completed_at?: string
+          id?: string
+          objectives_met?: Json
+          score?: number
+          time_seconds?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       high_scores: {
         Row: {
           beat_level_50: boolean | null
@@ -84,15 +114,19 @@ export type Database = {
         Row: {
           achievements: Json
           best_combo_streak: number
+          best_daily_streak: number
           best_level: number
           best_score: number
           created_at: string
+          daily_challenge_streak: number
           display_name: string
           favorite_power_up: string | null
           id: string
+          last_daily_challenge_date: string | null
           power_up_usage: Json
           total_bosses_killed: number
           total_bricks_destroyed: number
+          total_daily_challenges_completed: number
           total_enemies_killed: number
           total_games_played: number
           total_power_ups_collected: number
@@ -103,15 +137,19 @@ export type Database = {
         Insert: {
           achievements?: Json
           best_combo_streak?: number
+          best_daily_streak?: number
           best_level?: number
           best_score?: number
           created_at?: string
+          daily_challenge_streak?: number
           display_name: string
           favorite_power_up?: string | null
           id?: string
+          last_daily_challenge_date?: string | null
           power_up_usage?: Json
           total_bosses_killed?: number
           total_bricks_destroyed?: number
+          total_daily_challenges_completed?: number
           total_enemies_killed?: number
           total_games_played?: number
           total_power_ups_collected?: number
@@ -122,15 +160,19 @@ export type Database = {
         Update: {
           achievements?: Json
           best_combo_streak?: number
+          best_daily_streak?: number
           best_level?: number
           best_score?: number
           created_at?: string
+          daily_challenge_streak?: number
           display_name?: string
           favorite_power_up?: string | null
           id?: string
+          last_daily_challenge_date?: string | null
           power_up_usage?: Json
           total_bosses_killed?: number
           total_bricks_destroyed?: number
+          total_daily_challenges_completed?: number
           total_enemies_killed?: number
           total_games_played?: number
           total_power_ups_collected?: number

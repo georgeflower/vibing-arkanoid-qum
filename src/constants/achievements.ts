@@ -95,4 +95,40 @@ export const ACHIEVEMENTS: Achievement[] = [
     icon: "👑",
     check: (p) => p.best_level >= 20 && p.session_difficulty === "godlike",
   },
+  // Daily Challenge Achievements
+  {
+    id: "daily_warrior",
+    name: "Daily Warrior",
+    description: "Complete your first daily challenge",
+    icon: "📅",
+    check: () => false, // Server-side only
+  },
+  {
+    id: "streak_3",
+    name: "3-Day Streak",
+    description: "Complete daily challenges 3 days in a row",
+    icon: "🔥",
+    check: () => false,
+  },
+  {
+    id: "streak_7",
+    name: "Weekly Warrior",
+    description: "Complete daily challenges 7 days in a row",
+    icon: "⚡",
+    check: () => false,
+  },
+  {
+    id: "streak_30",
+    name: "Monthly Legend",
+    description: "Complete daily challenges 30 days in a row",
+    icon: "🏅",
+    check: () => false,
+  },
+  {
+    id: "daily_perfectionist",
+    name: "Daily Perfectionist",
+    description: "Complete all objectives in a daily challenge",
+    icon: "💎",
+    check: () => false,
+  },
 ];

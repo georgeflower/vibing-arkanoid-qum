@@ -5,7 +5,9 @@ import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import type { GameSettings, Difficulty, GameMode } from "@/types/game";
+import type { GameSettings, Difficulty, GameMode, DailyChallengeConfig } from "@/types/game";
+import { DailyChallengeOverlay } from "./DailyChallengeOverlay";
+import type { DailyChallenge } from "@/utils/dailyChallenge";
 import startScreenImg from "@/assets/start-screen-new.png";
 import startScreenWebp from "@/assets/start-screen-new.webp";
 import { HighScoreDisplay } from "./HighScoreDisplay";
@@ -40,6 +42,7 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
   const [showPressToStart, setShowPressToStart] = useState(true);
   const [showChangelog, setShowChangelog] = useState(false);
   const [showWhatsNew, setShowWhatsNew] = useState(false);
+  const [showDailyChallenge, setShowDailyChallenge] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
@@ -84,7 +87,8 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
         !showAbout &&
         !showChangelog &&
         !showWhatsNew &&
-        !showPressToStart
+        !showPressToStart &&
+        !showDailyChallenge
       ) {
         e.preventDefault();
         soundManager.playMenuClick();
@@ -94,7 +98,7 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [navigate, showInstructions, showHighScores, showAbout, showChangelog, showWhatsNew, showPressToStart]);
+  }, [navigate, showInstructions, showHighScores, showAbout, showChangelog, showWhatsNew, showPressToStart, showDailyChallenge]);
 
   const handleStart = () => {
     const settings: GameSettings = {
@@ -102,6 +106,25 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
       difficulty,
       startingLevel: gameMode === "bossRush" ? BOSS_RUSH_CONFIG.bossOrder[0] : startingLevel,
       gameMode,
+    };
+    onStartGame(settings);
+  };
+
+  const handleDailyChallengeStart = (challenge: DailyChallenge) => {
+    const config: DailyChallengeConfig = {
+      layout: challenge.layout,
+      dateString: challenge.dateString,
+      startingLives: challenge.startingLives,
+      targetScore: challenge.targetScore,
+      timeLimit: challenge.timeLimit,
+      objectiveIds: challenge.objectives.map((o) => o.id),
+    };
+    const settings: GameSettings = {
+      startingLives: challenge.startingLives,
+      difficulty,
+      startingLevel: 1,
+      gameMode: "dailyChallenge",
+      dailyChallengeConfig: config,
     };
     onStartGame(settings);
   };
@@ -163,12 +186,24 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
         } else if (showInstructions) {
           soundManager.playMenuClick();
           setShowInstructions(false);
+        } else if (showDailyChallenge) {
+          soundManager.playMenuClick();
+          setShowDailyChallenge(false);
         }
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [showHighScores, showChangelog, showWhatsNew, showAbout, showInstructions]);
+  }, [showHighScores, showChangelog, showWhatsNew, showAbout, showInstructions, showDailyChallenge]);
+
+  if (showDailyChallenge) {
+    return (
+      <DailyChallengeOverlay
+        onPlay={handleDailyChallengeStart}
+        onClose={() => setShowDailyChallenge(false)}
+      />
+    );
+  }
 
   if (showHighScores) {
     return (
@@ -790,6 +825,21 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
             }`}
           >
             {gameMode === "bossRush" ? "Start Boss Rush" : `Start Game${ENABLE_DEBUG_FEATURES ? " (DEBUG)" : ""}`}
+          </Button>
+
+          <Button
+            onClick={() => {
+              soundManager.playMenuClick();
+              setShowDailyChallenge(true);
+            }}
+            onMouseEnter={() => soundManager.playMenuHover()}
+            className="w-full relative bg-[hsl(45,100%,45%)] hover:bg-[hsl(45,100%,55%)] text-white"
+            style={{ textShadow: "0 1px 2px rgba(0,0,0,0.5)" }}
+          >
+            <span className="absolute -top-2 -right-2 bg-[hsl(0,85%,55%)] text-white text-xs px-2 py-0.5 rounded-full animate-pulse">
+              NEW
+            </span>
+            ⚡ Daily Challenge
           </Button>
 
           <Button
