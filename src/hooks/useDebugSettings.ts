@@ -69,7 +69,6 @@ export const useDebugSettings = () => {
     // Check if any actual debug visualization or logging feature is enabled
     // Excludes gameplay features like particles, screen shake, CRT effects
     return (
-      currentSettings.showDebugModeIndicator ||
       currentSettings.showGameLoopDebug ||
       currentSettings.showSubstepDebug ||
       currentSettings.showCCDPerformance ||
