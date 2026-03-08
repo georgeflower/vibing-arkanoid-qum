@@ -5185,6 +5185,16 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       }
     }
 
+    // ═══ Daily Challenge: always-on music-reactive background ═══
+    if (isDailyChallenge && settings.dailyChallengeConfig?.musicReactiveBackground) {
+      const bassEnergy = soundManager.getBassEnergy();
+      if (bassEnergy > 0.72) {
+        world.backgroundHue = Math.floor(Math.random() * 360);
+      } else if (bassEnergy < 0.3) {
+        world.backgroundHue = 0;
+      }
+    }
+
     // ═══ DANGER BALL UPDATE LOOP (with reflect + homing mechanic) ═══
     if (dangerBalls.length > 0 && paddle && boss && isMegaBoss(boss)) {
       const megaBoss = boss as MegaBoss;
