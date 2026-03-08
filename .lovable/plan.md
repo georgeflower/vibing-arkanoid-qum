@@ -1,56 +1,38 @@
 
 
-## Plan: Add Stereo VU/DB Meters to Left Side Panel
+# Revert Game Area to Fixed Size (Pre-Expansion)
 
-### Summary
+## Problem
+Two previous changes ("Expand game area to frame space" and "Expand game area to fill space") made the game canvas dynamically resize to fill all available space within the metal frame on desktop. The user wants the playable area to return to its original fixed size.
 
-Replace the decorative panel elements in the left side panel with vertical VU meters showing left and right audio channel levels. The meters use green-yellow-red color gradients. They only render when music is playing and the panel is visible (hidden on mobile/fullscreen).
+## Current behavior
+- `useViewportFrame` makes the metal frame fill the entire viewport on desktop
+- `useCanvasResize` uses ResizeObserver to dynamically size the game canvas to fill the `metal-game-area` container
+- The canvas display size grows to match available space
 
-### Audio Analysis
+## Desired behavior
+The game canvas stays at its logical size (850×650 scaled by `scaleFactor`) and is simply centered within the frame — no dynamic expansion.
 
-**Problem**: Background music currently plays via plain `HTMLAudioElement` without routing through Web Audio API (only boss music uses an AnalyserNode). We need stereo analysis for L/R channels.
+## Changes
 
-**Solution**: Add a `ChannelSplitter` + two `AnalyserNode`s to `SoundManager`:
-- When background music starts playing, connect the audio element through `createMediaElementSource` → `createChannelSplitter(2)` → two separate `AnalyserNode`s (left/right)
-- Expose `getLeftLevel(): number` and `getRightLevel(): number` methods (0-1 normalized RMS from frequency data)
-- Apply same pattern for boss music (reuse existing analyser, add stereo split)
-- Handle the `MediaElementSource` can-only-be-created-once constraint by tracking connected elements
+### 1. `src/components/Game.tsx`
+- **Remove** `useViewportFrame` import and hook call (lines 22, 1651-1654)
+- **Remove** `useCanvasResize` import and hook call (lines 23, 1657-1667), along with destructured `displayWidth`, `displayHeight`, `dynamicScale`
+- Remove `gameAreaRef` if only used for `useCanvasResize` (check first)
+- On desktop, set the `game-glow` div's width/height explicitly to `SCALED_CANVAS_WIDTH` × `SCALED_CANVAS_HEIGHT` (same as mobile path but without the scale transform), so the canvas is fixed-size and centered
 
-### Changes
+### 2. `src/hooks/useViewportFrame.ts`
+- Delete file (no longer used)
 
-**1. `src/utils/sounds.ts`**
-- Add private fields: `leftAnalyser`, `rightAnalyser`, `splitter`, `bgMusicSource`, `connectedElements: WeakSet`
-- New private method `connectStereoAnalyser(audioElement)`: creates `MediaElementAudioSource` → `ChannelSplitter(2)` → two `AnalyserNode`s → destination
-- Call it from `playBackgroundMusic()` and `playBossMusic()`
-- New public methods: `getLeftLevel(): number`, `getRightLevel(): number` — read frequency data from respective analysers, compute average amplitude, return 0-1
-- Clean up analysers in `stopBackgroundMusic()` and `stopBossMusic()`
+### 3. `src/hooks/useCanvasResize.ts`
+- Delete file (no longer used)
 
-**2. `src/components/VUMeter.tsx`** (new)
-- Standalone React component rendering a vertical bar meter
-- Props: `level: number` (0-1), `side: "left" | "right"`
-- Renders ~12 segments as stacked divs, bottom-to-top: green (0-60%), yellow (60-80%), red (80-100%)
-- Lit segments determined by `level` prop
-- Uses `useRef` + `requestAnimationFrame` to poll `soundManager.getLeftLevel()`/`getRightLevel()` at ~30fps
-- Retro pixel styling matching the metal frame aesthetic
+### 4. `src/index.css`
+- Remove the `.metal-frame.desktop-fullscreen` CSS block (lines ~265-290) since the class is no longer applied
+- Remove `max-width` constraint on `.metal-game-area` that references side panel widths — let it auto-size around the fixed canvas
+- Keep `.metal-frame` as `width: fit-content` so it wraps the fixed-size content naturally
 
-**3. `src/components/Game.tsx`**
-- Import `VUMeter`
-- Replace the 3 `panel-decoration` divs in `metal-side-panel-left` with two `VUMeter` components (left channel, right channel) displayed side-by-side vertically within the 60px panel
-
-**4. `src/index.css`**
-- Minor styling for VU meter segments to fit within the 60px left panel
-- Segments use hard-edged retro look (no gradients per the visual aesthetic rules)
-
-### Visibility Rules
-- Left panel is already hidden on mobile (`@media max-width: 768px`) and in fullscreen mode — no extra logic needed
-- Meters auto-stop polling when panel is hidden via CSS `display: none`
-
-### File Summary
-
-| File | Change |
-|------|--------|
-| `src/utils/sounds.ts` | Add stereo channel splitter + L/R analysers, expose `getLeftLevel()`/`getRightLevel()` |
-| `src/components/VUMeter.tsx` | New component — vertical segmented VU meter with green/yellow/red zones |
-| `src/components/Game.tsx` | Replace left panel decorations with two VU meters |
-| `src/index.css` | VU meter segment styles |
+### 5. Verify
+- `gameAreaRef` usage — if it's only for `useCanvasResize`, remove the ref. If used elsewhere (e.g. click handlers), keep it.
+- `gameGlowRef` — same check; if only used by `useCanvasResize` for imperative sizing, it can be simplified but likely still needed for CRT overlay positioning.
 
