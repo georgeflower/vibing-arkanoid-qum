@@ -409,15 +409,18 @@ export function resetMegaBossPhaseProgress(boss: MegaBoss): { boss: MegaBoss; re
     return { boss, releasedBall: null };
   }
   
-  // Release the ball
+  // Release the ball upward with random 180° angle and slow initial speed
+  const randomAngle = (Math.random() - 0.5) * Math.PI; // Random ±90° from vertical up
+  const initialSpeed = 1.5;
   const releasedBall: Ball = {
     ...boss.trappedBall,
     x: boss.x + boss.width / 2,
-    y: boss.y + boss.height + 15,
-    dx: 0,
-    dy: 4,
+    y: boss.y - 15, // Release above the boss
+    dx: Math.sin(randomAngle) * initialSpeed,
+    dy: -Math.abs(Math.cos(randomAngle)) * initialSpeed, // Always upward
     waitingToLaunch: false,
-    releasedFromBossTime: Date.now() // Track when ball was released for paddle collision grace period
+    releasedFromBossTime: Date.now(),
+    releaseSpeedScale: 0.3 // Start at 30% speed, ramp to 100%
   };
   
   // Reset shield HP for another attempt - use inner shield if outer is removed
