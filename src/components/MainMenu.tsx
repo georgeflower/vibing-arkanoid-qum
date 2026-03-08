@@ -289,6 +289,30 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
                 <li>Rendering math is now crash‑proofed with new safety guards.</li>
               </ul>
             </div>
+
+            {/* Player Profile System */}
+            <div className="bg-gradient-to-r from-[hsl(330,100%,65%)]/20 to-[hsl(200,70%,50%)]/20 p-2 sm:p-3 rounded-lg border-2 border-[hsl(330,100%,65%)]/50">
+              <h3 className="font-bold text-xs sm:text-sm mb-1 text-[hsl(330,100%,65%)]">👤 Player Profile System</h3>
+              <ul className="list-disc list-inside space-y-0.5 text-[10px] sm:text-xs">
+                <li>Create an account with a unique <span className="text-[hsl(200,70%,50%)] font-bold">username</span> and leaderboard initials.</li>
+                <li>Upload a custom <span className="text-[hsl(30,100%,60%)] font-bold">avatar</span> (256×256) to personalize your profile.</li>
+                <li>Track lifetime stats, achievements, and power-up usage across all sessions.</li>
+                <li>Public profiles are <span className="text-[hsl(120,60%,50%)] font-bold">linked from the leaderboard</span> — click any player to view their stats.</li>
+                <li>Full account deletion available — your scores remain on the board (unlinked).</li>
+              </ul>
+            </div>
+
+            {/* Daily Challenge Mode */}
+            <div className="bg-gradient-to-r from-[hsl(45,100%,50%)]/20 to-[hsl(0,85%,55%)]/20 p-2 sm:p-3 rounded-lg border-2 border-[hsl(45,100%,50%)]/50">
+              <h3 className="font-bold text-xs sm:text-sm mb-1 text-[hsl(45,100%,50%)]">📅 Daily Challenge Mode</h3>
+              <ul className="list-disc list-inside space-y-0.5 text-[10px] sm:text-xs">
+                <li>A <span className="text-[hsl(45,100%,50%)] font-bold">new challenge every day</span> with a unique procedural brick layout.</li>
+                <li>Special modifiers: 125% speed, enemy spawns every 10s, music-reactive backgrounds, no extra lives.</li>
+                <li>Complete objectives like No Deaths, Speed Run, Score Hunter, or Combo Master.</li>
+                <li>Build a <span className="text-[hsl(330,100%,65%)] font-bold">daily streak</span> by completing challenges on consecutive days.</li>
+                <li>Unlock exclusive daily challenge achievements!</li>
+              </ul>
+            </div>
           </div>
 
           <Button
