@@ -244,6 +244,10 @@ export interface DailyChallengeConfig {
   targetScore: number;
   timeLimit: number;
   objectiveIds: string[];
+  speedMultiplier: number;
+  enemySpawnInterval: number;
+  musicReactiveBackground: boolean;
+  noExtraLives: boolean;
 }
 
 export interface GameSettings {

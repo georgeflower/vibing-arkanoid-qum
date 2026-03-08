@@ -199,10 +199,8 @@ export function getDailyChallenge(date: Date = new Date()): DailyChallenge {
     timeLimit = 150 + Math.floor(rng() * 60);
   }
 
-  // Starting lives based on modifier
-  let startingLives = 3;
-  if (modifier.id === "one_life") startingLives = 1;
-  else if (modifier.id === "two_lives") startingLives = 2;
+  // Fixed starting lives (no extra lives)
+  const startingLives = 3;
 
   // Generate layout
   const layout = generateLayout(rng, modifier);
@@ -216,6 +214,10 @@ export function getDailyChallenge(date: Date = new Date()): DailyChallenge {
     startingLives,
     targetScore,
     timeLimit,
+    speedMultiplier: 1.25,
+    enemySpawnInterval: 10,
+    musicReactiveBackground: true,
+    noExtraLives: true,
   };
 }
 
