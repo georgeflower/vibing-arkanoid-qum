@@ -4376,8 +4376,17 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
               enemy.dy = Math.sin(roamAngle) * enemy.speed * 1.5;
             }
           } else if (!enemy.isBuilding) {
+            // Count up roam timer if still in cooldown
+            if ((enemy.buildProgress || 0) < 0) {
+              enemy.buildProgress = (enemy.buildProgress || 0) + dtMs;
+              // Random direction changes while roaming
+              if (Math.random() < 0.02) {
+                const roamAngle = Math.random() * Math.PI * 2;
+                enemy.dx = Math.cos(roamAngle) * enemy.speed * 1.5;
+                enemy.dy = Math.sin(roamAngle) * enemy.speed * 1.5;
+              }
+            } else {
             // Scan for build target every ~60 frames
-            if (Math.random() < 0.016) {
               const gridCols = 10;
               const gridRows = 8;
               let bestDist = Infinity;
