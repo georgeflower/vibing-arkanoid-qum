@@ -1,11 +1,16 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import CRTOverlay from "@/components/CRTOverlay";
 import { ACHIEVEMENTS } from "@/constants/achievements";
+import { validateUsername, validateInitials } from "@/utils/passwordValidation";
 
 interface ProfileData {
   display_name: string;
+  username: string | null;
+  initials: string;
+  bio: string | null;
+  is_public: boolean;
   total_bricks_destroyed: number;
   total_enemies_killed: number;
   total_bosses_killed: number;
@@ -26,37 +31,39 @@ interface ProfileData {
 const formatPlayTime = (seconds: number): string => {
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);
-  if (h > 0) return `${h}h ${m}m`;
-  return `${m}m`;
+  return h > 0 ? `${h}h ${m}m` : `${m}m`;
 };
 
 const POWER_UP_LABELS: Record<string, string> = {
-  multiball: "Multi-Ball",
-  turrets: "Turrets",
-  fireball: "Fireball",
-  life: "Extra Life",
-  slowdown: "Slow Down",
-  paddleExtend: "Extend",
-  paddleShrink: "Shrink",
-  shield: "Shield",
-  bossStunner: "Stunner",
-  reflectShield: "Reflect",
-  homingBall: "Homing",
-  secondChance: "2nd Chance",
+  multiball: "Multi-Ball", turrets: "Turrets", fireball: "Fireball", life: "Extra Life",
+  slowdown: "Slow Down", paddleExtend: "Extend", paddleShrink: "Shrink", shield: "Shield",
+  bossStunner: "Stunner", reflectShield: "Reflect", homingBall: "Homing", secondChance: "2nd Chance",
 };
 
 const Profile = () => {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
+  const [emailVerified, setEmailVerified] = useState(false);
+  const [userEmail, setUserEmail] = useState("");
+
+  // Edit form state
+  const [editDisplayName, setEditDisplayName] = useState("");
+  const [editUsername, setEditUsername] = useState("");
+  const [editInitials, setEditInitials] = useState("");
+  const [editBio, setEditBio] = useState("");
+  const [editIsPublic, setEditIsPublic] = useState(false);
 
   useEffect(() => {
     const loadProfile = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        navigate("/auth");
-        return;
-      }
+      if (!session) { navigate("/auth"); return; }
+
+      setEmailVerified(!!session.user.email_confirmed_at);
+      setUserEmail(session.user.email || "");
 
       const { data, error } = await supabase
         .from("player_profiles")
@@ -64,14 +71,14 @@ const Profile = () => {
         .eq("user_id", session.user.id)
         .single();
 
-      if (error || !data) {
-        console.error("Failed to load profile:", error);
-        navigate("/auth");
-        return;
-      }
+      if (error || !data) { navigate("/auth"); return; }
 
-      setProfile({
+      const p: ProfileData = {
         display_name: data.display_name,
+        username: data.username,
+        initials: data.initials || "AAA",
+        bio: data.bio,
+        is_public: data.is_public,
         total_bricks_destroyed: data.total_bricks_destroyed,
         total_enemies_killed: data.total_enemies_killed,
         total_bosses_killed: data.total_bosses_killed,
@@ -84,14 +91,73 @@ const Profile = () => {
         favorite_power_up: data.favorite_power_up,
         power_up_usage: (data.power_up_usage as Record<string, number>) || {},
         achievements: (data.achievements as Array<{ id: string; unlockedAt: string }>) || [],
-        daily_challenge_streak: (data as any).daily_challenge_streak || 0,
-        best_daily_streak: (data as any).best_daily_streak || 0,
-        total_daily_challenges_completed: (data as any).total_daily_challenges_completed || 0,
-      });
+        daily_challenge_streak: data.daily_challenge_streak || 0,
+        best_daily_streak: data.best_daily_streak || 0,
+        total_daily_challenges_completed: data.total_daily_challenges_completed || 0,
+      };
+      setProfile(p);
+      setEditDisplayName(p.display_name);
+      setEditUsername(p.username || "");
+      setEditInitials(p.initials);
+      setEditBio(p.bio || "");
+      setEditIsPublic(p.is_public);
       setLoading(false);
     };
     loadProfile();
   }, [navigate]);
+
+  const handleSave = async () => {
+    setSaving(true);
+    setSaveError("");
+
+    if (!editDisplayName.trim()) { setSaveError("Display name is required"); setSaving(false); return; }
+
+    if (editUsername) {
+      const uCheck = validateUsername(editUsername);
+      if (!uCheck.isValid) { setSaveError(`Username: ${uCheck.error}`); setSaving(false); return; }
+    }
+
+    const iCheck = validateInitials(editInitials);
+    if (!iCheck.isValid) { setSaveError(`Initials: ${iCheck.error}`); setSaving(false); return; }
+
+    // Check username uniqueness
+    if (editUsername && editUsername !== profile?.username) {
+      const { data: existing } = await supabase
+        .from("player_profiles")
+        .select("id")
+        .eq("username", editUsername.toLowerCase())
+        .maybeSingle();
+      if (existing) { setSaveError("Username is already taken"); setSaving(false); return; }
+    }
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { setSaving(false); return; }
+
+    const { error } = await supabase
+      .from("player_profiles")
+      .update({
+        display_name: editDisplayName.trim(),
+        username: editUsername.toLowerCase() || null,
+        initials: editInitials.toUpperCase(),
+        bio: editBio.trim() || null,
+        is_public: editIsPublic,
+      })
+      .eq("user_id", session.user.id);
+
+    if (error) { setSaveError("Failed to save: " + error.message); }
+    else {
+      setProfile((prev) => prev ? {
+        ...prev,
+        display_name: editDisplayName.trim(),
+        username: editUsername.toLowerCase() || null,
+        initials: editInitials.toUpperCase(),
+        bio: editBio.trim() || null,
+        is_public: editIsPublic,
+      } : prev);
+      setEditing(false);
+    }
+    setSaving(false);
+  };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -100,10 +166,7 @@ const Profile = () => {
 
   if (loading) {
     return (
-      <div
-        className="min-h-screen flex items-center justify-center"
-        style={{ background: "linear-gradient(180deg, hsl(220,25%,12%) 0%, hsl(220,30%,8%) 100%)" }}
-      >
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "linear-gradient(180deg, hsl(220,25%,12%) 0%, hsl(220,30%,8%) 100%)" }}>
         <p style={{ color: "hsl(200, 70%, 50%)" }} className="retro-pixel-text">LOADING...</p>
       </div>
     );
@@ -128,27 +191,111 @@ const Profile = () => {
   ];
 
   return (
-    <div
-      className="min-h-screen"
-      style={{
-        background: "linear-gradient(180deg, hsl(220,25%,12%) 0%, hsl(220,30%,8%) 100%)",
-        overflowY: "auto",
-        height: "100vh",
-        position: "fixed",
-        inset: 0,
-      }}
-    >
+    <div className="min-h-screen" style={{ background: "linear-gradient(180deg, hsl(220,25%,12%) 0%, hsl(220,30%,8%) 100%)", overflowY: "auto", height: "100vh", position: "fixed", inset: 0 }}>
       <CRTOverlay quality="medium" />
       <div className="relative z-10 max-w-2xl mx-auto px-4 py-8">
         {/* Header */}
-        <div className="amiga-box rounded-lg p-6 mb-6 text-center">
-          <h1
-            className="retro-pixel-text mb-2"
-            style={{ fontSize: "28px", color: "hsl(200, 70%, 50%)", textShadow: "0 0 10px hsl(200,70%,50%,0.5)" }}
-          >
-            {profile.display_name}
-          </h1>
-          <p style={{ color: "hsl(0,0%,60%)", fontSize: "12px" }}>PLAYER PROFILE</p>
+        <div className="amiga-box rounded-lg p-6 mb-6">
+          {editing ? (
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs mb-1" style={{ color: "hsl(0,0%,60%)" }}>DISPLAY NAME</label>
+                <input type="text" value={editDisplayName} onChange={(e) => setEditDisplayName(e.target.value.slice(0, 20))}
+                  className="w-full px-3 py-2 rounded text-sm" style={{ background: "hsl(0,0%,15%)", border: "1px solid hsl(0,0%,30%)", color: "hsl(0,0%,90%)" }} />
+              </div>
+              <div>
+                <label className="block text-xs mb-1" style={{ color: "hsl(0,0%,60%)" }}>USERNAME</label>
+                <input type="text" value={editUsername} onChange={(e) => setEditUsername(e.target.value.slice(0, 20).replace(/[^a-zA-Z0-9_]/g, ""))}
+                  className="w-full px-3 py-2 rounded text-sm" placeholder="your_username"
+                  style={{ background: "hsl(0,0%,15%)", border: "1px solid hsl(0,0%,30%)", color: "hsl(0,0%,90%)" }} />
+                <p className="text-[10px] mt-0.5" style={{ color: "hsl(0,0%,50%)" }}>Used for your public profile URL</p>
+              </div>
+              <div>
+                <label className="block text-xs mb-1" style={{ color: "hsl(0,0%,60%)" }}>INITIALS</label>
+                <input type="text" value={editInitials} maxLength={3}
+                  onChange={(e) => setEditInitials(e.target.value.toUpperCase().replace(/[^A-Z]/g, ""))}
+                  className="w-full px-3 py-2 rounded text-sm font-mono tracking-widest"
+                  style={{ background: "hsl(0,0%,15%)", border: "1px solid hsl(0,0%,30%)", color: "hsl(0,0%,90%)" }} />
+              </div>
+              <div>
+                <label className="block text-xs mb-1" style={{ color: "hsl(0,0%,60%)" }}>BIO</label>
+                <textarea value={editBio} onChange={(e) => setEditBio(e.target.value.slice(0, 200))}
+                  className="w-full px-3 py-2 rounded text-sm resize-none" rows={3} placeholder="Tell us about yourself..."
+                  style={{ background: "hsl(0,0%,15%)", border: "1px solid hsl(0,0%,30%)", color: "hsl(0,0%,90%)" }} />
+                <p className="text-[10px] mt-0.5 text-right" style={{ color: "hsl(0,0%,50%)" }}>{editBio.length}/200</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" checked={editIsPublic} onChange={(e) => setEditIsPublic(e.target.checked)}
+                    className="rounded" style={{ accentColor: "hsl(200,70%,50%)" }} />
+                  <span className="text-sm" style={{ color: "hsl(0,0%,75%)" }}>Public profile</span>
+                </label>
+                {editIsPublic && editUsername && (
+                  <span className="text-[10px]" style={{ color: "hsl(200,70%,50%)" }}>
+                    /player/{editUsername.toLowerCase()}
+                  </span>
+                )}
+              </div>
+              {saveError && <p className="text-sm" style={{ color: "hsl(0, 70%, 55%)" }}>{saveError}</p>}
+              <div className="flex gap-2">
+                <button onClick={handleSave} disabled={saving} className="px-4 py-2 rounded text-sm font-bold"
+                  style={{ background: "hsl(120, 50%, 40%)", color: "white", opacity: saving ? 0.6 : 1 }}>
+                  {saving ? "SAVING..." : "SAVE"}
+                </button>
+                <button onClick={() => { setEditing(false); setSaveError(""); }} className="px-4 py-2 rounded text-sm font-bold"
+                  style={{ background: "hsl(0,0%,25%)", color: "hsl(0,0%,80%)" }}>CANCEL</button>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center">
+              <h1 className="retro-pixel-text mb-1" style={{ fontSize: "28px", color: "hsl(200, 70%, 50%)", textShadow: "0 0 10px hsl(200,70%,50%,0.5)" }}>
+                {profile.display_name}
+              </h1>
+              {profile.username && (
+                <p style={{ color: "hsl(0,0%,50%)", fontSize: "12px" }}>@{profile.username}</p>
+              )}
+              <p className="mt-1" style={{ color: "hsl(0,0%,50%)", fontSize: "11px" }}>
+                Initials: <span style={{ color: "hsl(330,100%,65%)", fontFamily: "monospace", letterSpacing: "3px" }}>{profile.initials}</span>
+              </p>
+              {profile.bio && <p className="mt-2" style={{ color: "hsl(0,0%,65%)", fontSize: "12px" }}>{profile.bio}</p>}
+
+              {/* Status indicators */}
+              <div className="flex justify-center gap-3 mt-3">
+                <span className="text-[10px] px-2 py-0.5 rounded" style={{
+                  background: emailVerified ? "hsl(120,40%,20%)" : "hsl(0,40%,20%)",
+                  color: emailVerified ? "hsl(120,50%,60%)" : "hsl(0,50%,60%)",
+                  border: `1px solid ${emailVerified ? "hsl(120,50%,30%)" : "hsl(0,50%,30%)"}`,
+                }}>
+                  {emailVerified ? "✓ EMAIL VERIFIED" : "✗ EMAIL NOT VERIFIED"}
+                </span>
+                <span className="text-[10px] px-2 py-0.5 rounded" style={{
+                  background: profile.is_public ? "hsl(200,40%,20%)" : "hsl(0,0%,18%)",
+                  color: profile.is_public ? "hsl(200,70%,60%)" : "hsl(0,0%,55%)",
+                  border: `1px solid ${profile.is_public ? "hsl(200,50%,30%)" : "hsl(0,0%,30%)"}`,
+                }}>
+                  {profile.is_public ? "🌐 PUBLIC" : "🔒 PRIVATE"}
+                </span>
+              </div>
+
+              {profile.is_public && profile.username && (
+                <Link to={`/player/${profile.username}`} className="text-[10px] mt-2 inline-block underline" style={{ color: "hsl(200,70%,50%)" }}>
+                  View public profile →
+                </Link>
+              )}
+
+              <button onClick={() => setEditing(true)} className="mt-3 px-4 py-1.5 rounded text-xs font-bold"
+                style={{ background: "hsl(0,0%,20%)", color: "hsl(0,0%,80%)", border: "1px solid hsl(0,0%,35%)" }}>
+                ✏️ EDIT PROFILE
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Email info */}
+        <div className="amiga-box rounded-lg p-3 mb-6 text-center">
+          <p style={{ color: "hsl(0,0%,50%)", fontSize: "11px" }}>
+            Signed in as <span style={{ color: "hsl(0,0%,70%)" }}>{userEmail}</span>
+          </p>
         </div>
 
         {/* Favorite Power-Up */}
@@ -163,21 +310,12 @@ const Profile = () => {
 
         {/* Stats Grid */}
         <div className="amiga-box rounded-lg p-4 mb-6">
-          <h2
-            className="retro-pixel-text mb-4 text-center"
-            style={{ fontSize: "16px", color: "hsl(30, 75%, 55%)" }}
-          >
-            LIFETIME STATS
-          </h2>
+          <h2 className="retro-pixel-text mb-4 text-center" style={{ fontSize: "16px", color: "hsl(30, 75%, 55%)" }}>LIFETIME STATS</h2>
           <div className="grid grid-cols-3 gap-3">
             {statItems.map((stat) => (
               <div key={stat.label} className="text-center p-2 rounded" style={{ background: "hsl(0,0%,15%)" }}>
-                <p style={{ color: "hsl(0,0%,50%)", fontSize: "10px", letterSpacing: "1px" }}>
-                  {stat.label.toUpperCase()}
-                </p>
-                <p className="retro-pixel-text mt-1" style={{ color: "hsl(0,0%,90%)", fontSize: "16px" }}>
-                  {stat.value}
-                </p>
+                <p style={{ color: "hsl(0,0%,50%)", fontSize: "10px", letterSpacing: "1px" }}>{stat.label.toUpperCase()}</p>
+                <p className="retro-pixel-text mt-1" style={{ color: "hsl(0,0%,90%)", fontSize: "16px" }}>{stat.value}</p>
               </div>
             ))}
           </div>
@@ -185,30 +323,21 @@ const Profile = () => {
 
         {/* Achievements */}
         <div className="amiga-box rounded-lg p-4 mb-6">
-          <h2
-            className="retro-pixel-text mb-4 text-center"
-            style={{ fontSize: "16px", color: "hsl(30, 75%, 55%)" }}
-          >
+          <h2 className="retro-pixel-text mb-4 text-center" style={{ fontSize: "16px", color: "hsl(30, 75%, 55%)" }}>
             ACHIEVEMENTS ({profile.achievements.length}/{ACHIEVEMENTS.length})
           </h2>
           <div className="grid grid-cols-2 gap-2">
             {ACHIEVEMENTS.map((ach) => {
               const unlocked = unlockedIds.has(ach.id);
               return (
-                <div
-                  key={ach.id}
-                  className="flex items-center gap-2 p-2 rounded"
-                  style={{
-                    background: unlocked ? "hsl(200, 30%, 18%)" : "hsl(0,0%,12%)",
-                    opacity: unlocked ? 1 : 0.4,
-                    border: unlocked ? "1px solid hsl(200,70%,50%,0.3)" : "1px solid hsl(0,0%,20%)",
-                  }}
-                >
+                <div key={ach.id} className="flex items-center gap-2 p-2 rounded" style={{
+                  background: unlocked ? "hsl(200, 30%, 18%)" : "hsl(0,0%,12%)",
+                  opacity: unlocked ? 1 : 0.4,
+                  border: unlocked ? "1px solid hsl(200,70%,50%,0.3)" : "1px solid hsl(0,0%,20%)",
+                }}>
                   <span style={{ fontSize: "20px" }}>{ach.icon}</span>
                   <div>
-                    <p style={{ color: unlocked ? "hsl(0,0%,90%)" : "hsl(0,0%,50%)", fontSize: "12px", fontWeight: 600 }}>
-                      {ach.name}
-                    </p>
+                    <p style={{ color: unlocked ? "hsl(0,0%,90%)" : "hsl(0,0%,50%)", fontSize: "12px", fontWeight: 600 }}>{ach.name}</p>
                     <p style={{ color: "hsl(0,0%,45%)", fontSize: "10px" }}>{ach.description}</p>
                   </div>
                 </div>
@@ -219,36 +348,14 @@ const Profile = () => {
 
         {/* Navigation */}
         <div className="flex gap-3 justify-center">
-          <button
-            onClick={() => navigate("/")}
-            className="px-4 py-2 rounded text-sm font-bold"
-            style={{
-              background: "hsl(200, 70%, 50%)",
-              color: "white",
-            }}
-          >
-            HOME
-          </button>
-          <button
-            onClick={() => navigate("/play")}
-            className="px-4 py-2 rounded text-sm font-bold"
-            style={{
-              background: "hsl(120, 50%, 40%)",
-              color: "white",
-            }}
-          >
-            PLAY
-          </button>
-          <button
-            onClick={handleLogout}
-            className="px-4 py-2 rounded text-sm font-bold"
-            style={{
-              background: "hsl(0, 65%, 50%)",
-              color: "white",
-            }}
-          >
-            LOGOUT
-          </button>
+          <button onClick={() => navigate("/")} className="px-4 py-2 rounded text-sm font-bold" style={{ background: "hsl(200, 70%, 50%)", color: "white" }}>HOME</button>
+          <button onClick={() => navigate("/play")} className="px-4 py-2 rounded text-sm font-bold" style={{ background: "hsl(120, 50%, 40%)", color: "white" }}>PLAY</button>
+          <button onClick={handleLogout} className="px-4 py-2 rounded text-sm font-bold" style={{ background: "hsl(0, 65%, 50%)", color: "white" }}>LOGOUT</button>
+        </div>
+
+        <div className="mt-4 flex justify-center gap-4 text-[10px]">
+          <Link to="/privacy" style={{ color: "hsl(0,0%,45%)" }}>Privacy Policy</Link>
+          <Link to="/terms" style={{ color: "hsl(0,0%,45%)" }}>Terms of Service</Link>
         </div>
       </div>
     </div>

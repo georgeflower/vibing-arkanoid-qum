@@ -646,6 +646,10 @@ const Home = () => {
           >
             ▶ Launch Game
           </Link>
+          <div className="flex justify-center gap-4 mt-2">
+            <Link to="/privacy" className="retro-pixel-text" style={{ fontSize: "8px", color: "hsl(0,0%,45%)", textDecoration: "none" }}>Privacy Policy</Link>
+            <Link to="/terms" className="retro-pixel-text" style={{ fontSize: "8px", color: "hsl(0,0%,45%)", textDecoration: "none" }}>Terms of Service</Link>
+          </div>
         </footer>
       </div>
     </div>

@@ -83,6 +83,7 @@ export type Database = {
           player_name: string
           score: number
           starting_lives: number | null
+          user_id: string | null
         }
         Insert: {
           beat_level_50?: boolean | null
@@ -95,6 +96,7 @@ export type Database = {
           player_name: string
           score: number
           starting_lives?: number | null
+          user_id?: string | null
         }
         Update: {
           beat_level_50?: boolean | null
@@ -107,6 +109,7 @@ export type Database = {
           player_name?: string
           score?: number
           starting_lives?: number | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -117,11 +120,14 @@ export type Database = {
           best_daily_streak: number
           best_level: number
           best_score: number
+          bio: string | null
           created_at: string
           daily_challenge_streak: number
           display_name: string
           favorite_power_up: string | null
           id: string
+          initials: string | null
+          is_public: boolean
           last_daily_challenge_date: string | null
           power_up_usage: Json
           total_bosses_killed: number
@@ -133,6 +139,7 @@ export type Database = {
           total_time_played_seconds: number
           updated_at: string
           user_id: string
+          username: string | null
         }
         Insert: {
           achievements?: Json
@@ -140,11 +147,14 @@ export type Database = {
           best_daily_streak?: number
           best_level?: number
           best_score?: number
+          bio?: string | null
           created_at?: string
           daily_challenge_streak?: number
           display_name: string
           favorite_power_up?: string | null
           id?: string
+          initials?: string | null
+          is_public?: boolean
           last_daily_challenge_date?: string | null
           power_up_usage?: Json
           total_bosses_killed?: number
@@ -156,6 +166,7 @@ export type Database = {
           total_time_played_seconds?: number
           updated_at?: string
           user_id: string
+          username?: string | null
         }
         Update: {
           achievements?: Json
@@ -163,11 +174,14 @@ export type Database = {
           best_daily_streak?: number
           best_level?: number
           best_score?: number
+          bio?: string | null
           created_at?: string
           daily_challenge_streak?: number
           display_name?: string
           favorite_power_up?: string | null
           id?: string
+          initials?: string | null
+          is_public?: boolean
           last_daily_challenge_date?: string | null
           power_up_usage?: Json
           total_bosses_killed?: number
@@ -179,6 +193,7 @@ export type Database = {
           total_time_played_seconds?: number
           updated_at?: string
           user_id?: string
+          username?: string | null
         }
         Relationships: []
       }
