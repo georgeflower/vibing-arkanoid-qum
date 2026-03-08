@@ -13,6 +13,13 @@ class SoundManager {
   private frequencyData: Uint8Array | null = null;
   private bossMusicSource: MediaElementAudioSourceNode | null = null;
   private frequencyDataArray: Float64Array | null = null;
+
+  // Stereo VU meter analysers
+  private leftAnalyser: AnalyserNode | null = null;
+  private rightAnalyser: AnalyserNode | null = null;
+  private splitter: ChannelSplitterNode | null = null;
+  private connectedElements: WeakSet<HTMLAudioElement> = new WeakSet();
+  private stereoSource: MediaElementAudioSourceNode | null = null;
   private trackUrls = [
     '/Pixel_Frenzy-2.mp3',
     '/sound_2.mp3',
