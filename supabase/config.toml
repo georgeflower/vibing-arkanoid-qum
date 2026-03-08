@@ -2,3 +2,6 @@ project_id = "hndjtxesjymhmzfktpwk"
 
 [functions.submit-telemetry]
 verify_jwt = false
+
+[functions.update-profile-stats]
+verify_jwt = false
