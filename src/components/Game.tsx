@@ -1976,8 +1976,10 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       return []; // No bricks on boss levels
     }
 
-    const layoutIndex = Math.min(currentLevel - 1, levelLayouts.length - 1);
-    const layout = levelLayouts[layoutIndex];
+    // Daily Challenge mode: use the procedural layout
+    const layout = isDailyChallenge && settings.dailyChallengeConfig
+      ? settings.dailyChallengeConfig.layout
+      : levelLayouts[Math.min(currentLevel - 1, levelLayouts.length - 1)];
     const levelColors = getBrickColors(currentLevel);
     const newBricks: Brick[] = [];
     let nextBrickId = 1; // Monotonic ID counter for stable brick IDs
