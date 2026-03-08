@@ -296,6 +296,14 @@ const Home = () => {
               <span style={{ color: "hsl(30,100%,60%)" }}>Cracked</span> (3 hits), and{" "}
               <span style={{ color: "hsl(0,85%,55%)" }}>Explosive</span> (chain reactions).
             </p>
+            <p className="retro-pixel-text">
+              Watch out for <span style={{ color: "hsl(0,0%,60%)" }}>enemies</span> that spawn during levels!{" "}
+              <span style={{ color: "hsl(200,70%,50%)" }}>Cubes</span> bounce around randomly.{" "}
+              <span style={{ color: "hsl(120,50%,50%)" }}>Spheres</span> appear from level 3 with faster movement.{" "}
+              <span style={{ color: "hsl(270,70%,60%)" }}>Pyramids</span> from level 6 take 3 hits to destroy.{" "}
+              <span style={{ color: "hsl(50,100%,55%)" }}>Stars</span> ★ appear on levels 3, 6, 9, 12, 16, and 19 —
+              they build new bricks and upgrade existing ones, then roam around for a few seconds before building again. Destroy them fast!
+            </p>
           </div>
 
           {/* Power-ups grid */}
