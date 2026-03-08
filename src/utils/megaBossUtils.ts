@@ -30,6 +30,7 @@ export interface MegaBoss extends Boss {
   trappedBall: Ball | null;
   cannonExtended: boolean;
   cannonExtendedTime: number | null;
+  nextCannonFireTime: number; // When the next missile will fire (for pre-fire blink)
   
   // Danger ball tracking - now counts core HITS from reflected balls
   dangerBallsCaught: number; // Legacy - kept for compatibility
