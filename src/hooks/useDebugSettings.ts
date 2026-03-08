@@ -65,9 +65,37 @@ export const useDebugSettings = () => {
     setSettings(DEFAULT_SETTINGS);
   }, []);
 
+  const isDebugModeActive = useCallback((currentSettings: DebugSettings = settings): boolean => {
+    // Check if any actual debug visualization or logging feature is enabled
+    // Excludes gameplay features like particles, screen shake, CRT effects
+    return (
+      currentSettings.showDebugModeIndicator ||
+      currentSettings.showGameLoopDebug ||
+      currentSettings.showSubstepDebug ||
+      currentSettings.showCCDPerformance ||
+      currentSettings.showCollisionHistory ||
+      currentSettings.showFrameProfiler ||
+      currentSettings.showPowerUpWeights ||
+      currentSettings.showPoolStats ||
+      currentSettings.enableCollisionLogging ||
+      currentSettings.enablePowerUpLogging ||
+      currentSettings.enablePerformanceLogging ||
+      currentSettings.enableFPSLogging ||
+      currentSettings.enableDetailedFrameLogging ||
+      currentSettings.enablePaddleLogging ||
+      currentSettings.enableBossLogging ||
+      currentSettings.enableFrameProfilerLogging ||
+      currentSettings.enableScreenShakeLogging ||
+      currentSettings.enablePointerLockLogging ||
+      currentSettings.enableGCLogging ||
+      currentSettings.enableLagLogging
+    );
+  }, [settings]);
+
   return {
     settings,
     toggleSetting,
     resetSettings,
+    isDebugModeActive,
   };
 };
