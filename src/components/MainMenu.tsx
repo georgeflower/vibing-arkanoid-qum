@@ -829,6 +829,19 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
           <Button
             onClick={() => {
               soundManager.playMenuClick();
+              setShowDailyChallenge(true);
+            }}
+            onMouseEnter={() => soundManager.playMenuHover()}
+            className="w-full relative bg-[hsl(45,100%,45%)] hover:bg-[hsl(45,100%,55%)] text-white"
+            style={{ textShadow: "0 1px 2px rgba(0,0,0,0.5)" }}
+          >
+            <span className="absolute -top-2 -right-2 bg-[hsl(0,85%,55%)] text-white text-xs px-2 py-0.5 rounded-full animate-pulse">
+              NEW
+            </span>
+            ⚡ Daily Challenge
+          </Button>
+
+              soundManager.playMenuClick();
               setShowInstructions(true);
             }}
             onMouseEnter={() => soundManager.playMenuHover()}
