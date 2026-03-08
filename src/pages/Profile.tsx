@@ -18,6 +18,9 @@ interface ProfileData {
   favorite_power_up: string | null;
   power_up_usage: Record<string, number>;
   achievements: Array<{ id: string; unlockedAt: string }>;
+  daily_challenge_streak: number;
+  best_daily_streak: number;
+  total_daily_challenges_completed: number;
 }
 
 const formatPlayTime = (seconds: number): string => {
