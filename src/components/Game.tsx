@@ -8496,12 +8496,36 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                       <div className="right-stat-value">{lives}</div>
                     </div>
 
-                    {/* Timer */}
+                    {/* Timer — shows countdown for daily challenge with time limit */}
                     <div className="right-stat-box">
-                      <div className="right-stat-label" style={{ color: "hsl(210, 60%, 55%)" }}>
-                        TIMER
-                      </div>
-                      <div className="right-stat-value">{timer}s</div>
+                      {isDailyChallenge && settings.dailyChallengeConfig?.timeLimit && settings.dailyChallengeConfig.timeLimit > 0 ? (
+                        <>
+                          <div className="right-stat-label" style={{
+                            color: Math.max(0, settings.dailyChallengeConfig.timeLimit - totalPlayTime) <= 30
+                              ? "hsl(0, 80%, 60%)"
+                              : "hsl(45, 100%, 50%)"
+                          }}>
+                            TIME LEFT
+                          </div>
+                          <div
+                            className={`right-stat-value ${Math.max(0, settings.dailyChallengeConfig.timeLimit - totalPlayTime) <= 30 ? "animate-pulse" : ""}`}
+                            style={{
+                              color: Math.max(0, settings.dailyChallengeConfig.timeLimit - totalPlayTime) <= 30
+                                ? "hsl(0, 80%, 65%)"
+                                : "hsl(0, 0%, 85%)"
+                            }}
+                          >
+                            {Math.max(0, settings.dailyChallengeConfig.timeLimit - totalPlayTime)}s
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="right-stat-label" style={{ color: "hsl(210, 60%, 55%)" }}>
+                            TIMER
+                          </div>
+                          <div className="right-stat-value">{timer}s</div>
+                        </>
+                      )}
                     </div>
 
                     {/* Speed */}
