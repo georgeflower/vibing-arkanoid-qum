@@ -1,4 +1,4 @@
-export const GAME_VERSION = "0.9.974";
+export const GAME_VERSION = "0.9.975";
 
 export const CHANGELOG = [
   {

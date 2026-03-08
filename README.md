@@ -19,6 +19,9 @@ A loving tribute to the legendary **Arkanoid** (Taito, 1986) — rebuilt from sc
 - **Boss hit streak system** — chain consecutive boss hits for escalating score bonuses that carry across levels
 - **Two difficulty modes**: Normal (3 lives) and Godlike (1 life, faster speed)
 - **Online leaderboards** with difficulty filters (All / Normal / God-Mode) and Boss Rush times
+- **Player profiles** with unique usernames, custom avatars (256×256), public/private toggle, and leaderboard linking
+- **Daily Challenges** with procedural layouts, unique modifiers (125% speed, enemy spawns, no extra lives), objectives, and streak tracking
+- **Account system** with secure email-verified auth, lifetime stats, unlockable achievements, and full account deletion
 - **CRT overlay** and authentic retro pixel styling
 - **Adaptive quality** — automatically adjusts visual effects for smooth performance
 - **Mobile support** with touch controls and swipe gestures

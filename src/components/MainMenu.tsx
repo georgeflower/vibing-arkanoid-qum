@@ -717,6 +717,34 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
                 </li>
               </ul>
             </div>
+            <div>
+              <h3 className="font-bold text-sm sm:text-base md:text-lg mb-2 text-[hsl(330,100%,65%)]">
+                Player Profile
+              </h3>
+              <ul className="list-disc list-inside space-y-1 text-xs sm:text-sm">
+                <li>Create an account from the login screen with a unique username and 3-letter initials</li>
+                <li>Upload a custom avatar image (max 256×256 pixels) from your profile page</li>
+                <li>Toggle your profile between public and private visibility</li>
+                <li>Public profiles are linked from the leaderboard — click any player's initials to view their stats</li>
+                <li>View lifetime stats: bricks destroyed, bosses killed, total play time, best combo, and more</li>
+                <li>Unlock achievements by reaching milestones</li>
+              </ul>
+            </div>
+
+            <div>
+              <h3 className="font-bold text-sm sm:text-base md:text-lg mb-2 text-[hsl(45,100%,50%)]">
+                Daily Challenge
+              </h3>
+              <ul className="list-disc list-inside space-y-1 text-xs sm:text-sm">
+                <li>Access from the main menu — a new challenge is generated every day</li>
+                <li>Each challenge has a unique procedural brick layout with special modifiers</li>
+                <li>Modifiers include: 125% ball speed, enemy spawns every 10s, music-reactive backgrounds, no extra lives</li>
+                <li>Additional daily modifiers: One Life, Two Lives, Fast Ball, or Brick Wall</li>
+                <li>Complete objectives like No Deaths, Speed Run, Score Hunter, Purist, or Combo Master</li>
+                <li>Build a daily streak by completing challenges on consecutive days</li>
+                <li>Unlock exclusive daily challenge achievements</li>
+              </ul>
+            </div>
           </div>
 
           <Button
