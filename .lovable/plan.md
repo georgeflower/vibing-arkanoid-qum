@@ -1,82 +1,38 @@
 
 
-## Plan: Player Profile System with Lifetime Statistics
+# Revert Game Area to Fixed Size (Pre-Expansion)
 
-This is a large feature requiring authentication, a new database table, stat accumulation logic, achievement definitions, and a profile UI page. Here is the breakdown.
+## Problem
+Two previous changes ("Expand game area to frame space" and "Expand game area to fill space") made the game canvas dynamically resize to fill all available space within the metal frame on desktop. The user wants the playable area to return to its original fixed size.
 
-### Database
+## Current behavior
+- `useViewportFrame` makes the metal frame fill the entire viewport on desktop
+- `useCanvasResize` uses ResizeObserver to dynamically size the game canvas to fill the `metal-game-area` container
+- The canvas display size grows to match available space
 
-**New table: `player_profiles`**
-- `id` (uuid, PK, default gen_random_uuid)
-- `user_id` (uuid, references auth.users ON DELETE CASCADE, unique, not null)
-- `display_name` (text, not null)
-- `total_bricks_destroyed` (bigint, default 0)
-- `total_enemies_killed` (bigint, default 0)
-- `total_bosses_killed` (bigint, default 0)
-- `total_power_ups_collected` (bigint, default 0)
-- `total_games_played` (integer, default 0)
-- `total_time_played_seconds` (bigint, default 0)
-- `best_score` (integer, default 0)
-- `best_level` (integer, default 0)
-- `best_combo_streak` (integer, default 0)
-- `favorite_power_up` (text, nullable) — computed on update or stored as most-used
-- `power_up_usage` (jsonb, default '{}') — tracks count per power-up type for favorite calculation
-- `achievements` (jsonb, default '[]') — array of unlocked achievement IDs with timestamps
-- `created_at` (timestamptz, default now())
-- `updated_at` (timestamptz, default now())
+## Desired behavior
+The game canvas stays at its logical size (850×650 scaled by `scaleFactor`) and is simply centered within the frame — no dynamic expansion.
 
-RLS: Users can SELECT/UPDATE their own row. A trigger auto-creates a profile row on auth.users insert.
+## Changes
 
-### Authentication
+### 1. `src/components/Game.tsx`
+- **Remove** `useViewportFrame` import and hook call (lines 22, 1651-1654)
+- **Remove** `useCanvasResize` import and hook call (lines 23, 1657-1667), along with destructured `displayWidth`, `displayHeight`, `dynamicScale`
+- Remove `gameAreaRef` if only used for `useCanvasResize` (check first)
+- On desktop, set the `game-glow` div's width/height explicitly to `SCALED_CANVAS_WIDTH` × `SCALED_CANVAS_HEIGHT` (same as mobile path but without the scale transform), so the canvas is fixed-size and centered
 
-- Add simple email/password auth (signup + login) with email confirmation
-- Auth page at `/auth` route
-- Optional — users can play without logging in; stats just won't save
-- Login/signup button on Home page and MainMenu
+### 2. `src/hooks/useViewportFrame.ts`
+- Delete file (no longer used)
 
-### Stat Accumulation
+### 3. `src/hooks/useCanvasResize.ts`
+- Delete file (no longer used)
 
-- **`src/utils/profileStats.ts`** — new utility module
-  - `submitGameStats(stats)` function: after each game ends (game over or victory), call the edge function to atomically increment lifetime counters
-- **New edge function `update-profile-stats`** — receives game session stats, increments columns using SQL `UPDATE ... SET col = col + value`, updates `best_score`/`best_level` if higher, updates `power_up_usage` jsonb, recalculates `favorite_power_up`, checks and awards achievements
-- **`src/components/Game.tsx`** — at game-over/victory, call `submitGameStats()` with session totals (bricks, enemies, bosses, power-ups collected with types, time played, score, level, hit streak)
+### 4. `src/index.css`
+- Remove the `.metal-frame.desktop-fullscreen` CSS block (lines ~265-290) since the class is no longer applied
+- Remove `max-width` constraint on `.metal-game-area` that references side panel widths — let it auto-size around the fixed canvas
+- Keep `.metal-frame` as `width: fit-content` so it wraps the fixed-size content naturally
 
-### Achievements
-
-Defined as constants in `src/constants/achievements.ts`:
-- "First Blood" — destroy 1 brick (total)
-- "Brick Breaker" — 1,000 total bricks
-- "Demolition Expert" — 10,000 total bricks
-- "Boss Slayer" — kill 10 bosses
-- "Marathon" — 1 hour total play time
-- "High Roller" — score 100,000 in a single game
-- "Power Collector" — collect all power-up types
-- "Perfect Combo" — hit streak of 10+
-- "Victory Lap" — beat level 20
-- "Godlike" — beat level 20 on godlike difficulty
-
-Checked server-side in the edge function after stat update.
-
-### Profile Page
-
-- New route `/profile` with `src/pages/Profile.tsx`
-- Retro-styled page matching the game aesthetic
-- Sections: player name, lifetime stats grid, achievement badges, favorite power-up display
-- Link from Home page and MainMenu
-
-### Summary of Files
-
-| File | Change |
-|------|--------|
-| Migration SQL | Create `player_profiles` table + RLS + trigger |
-| `supabase/functions/update-profile-stats/index.ts` | New edge function for atomic stat updates + achievements |
-| `src/constants/achievements.ts` | New — achievement definitions |
-| `src/utils/profileStats.ts` | New — client helper to submit stats |
-| `src/pages/Profile.tsx` | New — profile page UI |
-| `src/pages/Auth.tsx` | New — login/signup page |
-| `src/App.tsx` | Add `/auth` and `/profile` routes |
-| `src/pages/Home.tsx` | Add login/profile buttons |
-| `src/components/MainMenu.tsx` | Add profile button |
-| `src/components/Game.tsx` | Call `submitGameStats()` on game end |
-| `supabase/config.toml` | Add `update-profile-stats` function config |
+### 5. Verify
+- `gameAreaRef` usage — if it's only for `useCanvasResize`, remove the ref. If used elsewhere (e.g. click handlers), keep it.
+- `gameGlowRef` — same check; if only used by `useCanvasResize` for imperative sizing, it can be simplified but likely still needed for CRT overlay positioning.
 

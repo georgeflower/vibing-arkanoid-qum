@@ -80,6 +80,66 @@ export type Database = {
         }
         Relationships: []
       }
+      player_profiles: {
+        Row: {
+          achievements: Json
+          best_combo_streak: number
+          best_level: number
+          best_score: number
+          created_at: string
+          display_name: string
+          favorite_power_up: string | null
+          id: string
+          power_up_usage: Json
+          total_bosses_killed: number
+          total_bricks_destroyed: number
+          total_enemies_killed: number
+          total_games_played: number
+          total_power_ups_collected: number
+          total_time_played_seconds: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          achievements?: Json
+          best_combo_streak?: number
+          best_level?: number
+          best_score?: number
+          created_at?: string
+          display_name: string
+          favorite_power_up?: string | null
+          id?: string
+          power_up_usage?: Json
+          total_bosses_killed?: number
+          total_bricks_destroyed?: number
+          total_enemies_killed?: number
+          total_games_played?: number
+          total_power_ups_collected?: number
+          total_time_played_seconds?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          achievements?: Json
+          best_combo_streak?: number
+          best_level?: number
+          best_score?: number
+          created_at?: string
+          display_name?: string
+          favorite_power_up?: string | null
+          id?: string
+          power_up_usage?: Json
+          total_bosses_killed?: number
+          total_bricks_destroyed?: number
+          total_enemies_killed?: number
+          total_games_played?: number
+          total_power_ups_collected?: number
+          total_time_played_seconds?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

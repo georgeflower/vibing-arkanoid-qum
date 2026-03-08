@@ -12,6 +12,7 @@ import { HighScoreDisplay } from "./HighScoreDisplay";
 import { Changelog } from "./Changelog";
 import CRTOverlay from "./CRTOverlay";
 import { soundManager } from "@/utils/sounds";
+import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { GAME_VERSION } from "@/constants/version";
 import { useServiceWorkerUpdate } from "@/hooks/useServiceWorkerUpdate";
@@ -39,6 +40,13 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
   const [showPressToStart, setShowPressToStart] = useState(true);
   const [showChangelog, setShowChangelog] = useState(false);
   const [showWhatsNew, setShowWhatsNew] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => setIsLoggedIn(!!session));
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => setIsLoggedIn(!!session));
+    return () => subscription.unsubscribe();
+  }, []);
 
   // Starting level state
   const [startingLevel, setStartingLevel] = useState(1);
@@ -833,6 +841,18 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
             className="w-full border-[hsl(200,70%,50%)] text-[hsl(200,70%,50%)] hover:bg-[hsl(200,70%,50%)] hover:text-white"
           >
             About
+           </Button>
+
+          <Button
+            onClick={() => {
+              soundManager.playMenuClick();
+              navigate(isLoggedIn ? "/profile" : "/auth");
+            }}
+            onMouseEnter={() => soundManager.playMenuHover()}
+            variant="outline"
+            className="w-full border-[hsl(330,40%,50%)] text-[hsl(330,40%,50%)] hover:bg-[hsl(330,40%,50%)] hover:text-white"
+          >
+            {isLoggedIn ? "👤 Profile" : "🔑 Login"}
           </Button>
         </div>
       </Card>

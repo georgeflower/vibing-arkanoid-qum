@@ -23,6 +23,7 @@ import { useViewportFrame } from "@/hooks/useViewportFrame";
 import { useCanvasResize } from "@/hooks/useCanvasResize";
 import CRTOverlay from "./CRTOverlay";
 import { BOSS_RUSH_CONFIG, BossRushLevel } from "@/constants/bossRushConfig";
+import { submitGameStats } from "@/utils/profileStats";
 
 // ═══════════════════════════════════════════════════════════════
 // ████████╗ DEBUG IMPORTS - REMOVE BEFORE PRODUCTION ████████╗
@@ -1551,6 +1552,21 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     soundManager.stopBackgroundMusic();
     setBossAttacks([]);
     setLaserWarnings([]);
+
+    // Submit lifetime stats to player profile
+    submitGameStats({
+      bricksDestroyed: totalBricksDestroyed,
+      enemiesKilled,
+      bossesKilled,
+      powerUpsCollected: powerUpsCollectedTypes.size,
+      powerUpTypes: Array.from(powerUpsCollectedTypes),
+      timePlayed: totalPlayTime,
+      score: scoreRef.current,
+      level,
+      comboStreak: hitStreakRef.current,
+      difficulty: settings.difficulty,
+      isVictory: false,
+    });
 
     if (isBossRush) {
       const currentBossLevel = BOSS_RUSH_CONFIG.bossOrder[bossRushIndex] || 5;
@@ -3674,6 +3690,21 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         setShowEndScreen(true);
         soundManager.stopBackgroundMusic();
         toast.success(`🎉 YOU WIN! Level ${level} Complete! Bonus: +1,000,000 points!`);
+
+        // Submit lifetime stats on victory
+        submitGameStats({
+          bricksDestroyed: totalBricksDestroyed,
+          enemiesKilled,
+          bossesKilled,
+          powerUpsCollected: powerUpsCollectedTypes.size,
+          powerUpTypes: Array.from(powerUpsCollectedTypes),
+          timePlayed: totalPlayTime,
+          score: scoreRef.current + 1000000,
+          level,
+          comboStreak: hitStreakRef.current,
+          difficulty: settings.difficulty,
+          isVictory: true,
+        });
       } else {
         setGameState("ready");
         toast.success(`Level ${level} Complete! Click to continue.`);
