@@ -28,7 +28,7 @@ export const DailyChallengeArchive = ({ onPlay, onClose }: DailyChallengeArchive
       const today = new Date();
       const pastChallenges: ArchiveEntry[] = [];
 
-      for (let i = 1; i <= 90; i++) {
+      for (let i = 1; i <== 90; i++) {
         const date = new Date(today);
         date.setDate(date.getDate() - i);
         const challenge = getDailyChallenge(date);
@@ -99,7 +99,7 @@ export const DailyChallengeArchive = ({ onPlay, onClose }: DailyChallengeArchive
             📜 PAST CHALLENGES
           </h2>
           <p className="text-xs mt-1" style={{ color: "hsl(0,0%,50%)" }}>
-            Last 90 days • Replay any challenge (no rewards)
+           Yesterday and earliers • Replay any challenge (no rewards)
           </p>
         </div>
 
