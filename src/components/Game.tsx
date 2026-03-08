@@ -6961,6 +6961,29 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
             hits: 0,
             isAngry: false,
           });
+        } else if (enemyType === "star") {
+          // Star enemy - builds/upgrades bricks, 2 hits to destroy
+          const angle = Math.random() * Math.PI * 2;
+          const speed = 1.5 * speedIncrease;
+          newEnemy = enemyPool.acquire({
+            id: enemyId,
+            type: "star",
+            x: Math.random() * (SCALED_CANVAS_WIDTH - 35),
+            y: 50 + Math.random() * 50,
+            width: 35,
+            height: 35,
+            rotation: 0,
+            rotationX: Math.random() * Math.PI,
+            rotationY: Math.random() * Math.PI,
+            rotationZ: Math.random() * Math.PI,
+            speed: speed,
+            dx: Math.cos(angle) * speed,
+            dy: Math.sin(angle) * speed,
+            hits: 0,
+            isAngry: false,
+            buildProgress: 0,
+            isBuilding: false,
+          });
         } else {
           // Cube enemy - straight line movement
           const angle = Math.random() * Math.PI * 2;
