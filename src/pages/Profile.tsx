@@ -123,6 +123,8 @@ const Profile = () => {
     { label: "Best Score", value: profile.best_score.toLocaleString() },
     { label: "Best Level", value: String(profile.best_level) },
     { label: "Best Combo Streak", value: String(profile.best_combo_streak) },
+    { label: "Daily Challenges", value: profile.total_daily_challenges_completed.toLocaleString() },
+    { label: "Daily Streak", value: `${profile.daily_challenge_streak} (Best: ${profile.best_daily_streak})` },
   ];
 
   return (

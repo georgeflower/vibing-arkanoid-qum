@@ -2243,6 +2243,11 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     setDroppedLettersThisLevel(new Set());
 
     // Boss Rush mode: progress through boss order
+    // Daily Challenge mode: single level, no progression
+    if (isDailyChallenge) {
+      return; // Should not reach here — daily challenge ends on allBricksCleared
+    }
+
     if (isBossRush) {
       const nextBossIndex = bossRushIndex + 1;
 
