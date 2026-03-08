@@ -109,6 +109,25 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
     onStartGame(settings);
   };
 
+  const handleDailyChallengeStart = (challenge: DailyChallenge) => {
+    const config: DailyChallengeConfig = {
+      layout: challenge.layout,
+      dateString: challenge.dateString,
+      startingLives: challenge.startingLives,
+      targetScore: challenge.targetScore,
+      timeLimit: challenge.timeLimit,
+      objectiveIds: challenge.objectives.map((o) => o.id),
+    };
+    const settings: GameSettings = {
+      startingLives: challenge.startingLives,
+      difficulty,
+      startingLevel: 1,
+      gameMode: "dailyChallenge",
+      dailyChallengeConfig: config,
+    };
+    onStartGame(settings);
+  };
+
   const handleLevelChange = (delta: number) => {
     const newLevel = startingLevel + delta;
     if (newLevel < 1 || newLevel > FINAL_LEVEL) return;
