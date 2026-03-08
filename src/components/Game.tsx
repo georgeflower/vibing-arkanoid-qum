@@ -4444,6 +4444,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                 enemy.dy = Math.sin(angle) * enemy.speed;
               }
             }
+            } // end roam cooldown else
           }
         }
 
