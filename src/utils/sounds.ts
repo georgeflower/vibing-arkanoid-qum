@@ -13,13 +13,6 @@ class SoundManager {
   private frequencyData: Uint8Array | null = null;
   private bossMusicSource: MediaElementAudioSourceNode | null = null;
   private frequencyDataArray: Float64Array | null = null;
-
-  // Stereo VU meter analysers
-  private leftAnalyser: AnalyserNode | null = null;
-  private rightAnalyser: AnalyserNode | null = null;
-  private splitter: ChannelSplitterNode | null = null;
-  private connectedElements: WeakSet<HTMLAudioElement> = new WeakSet();
-  private stereoSource: MediaElementAudioSourceNode | null = null;
   private trackUrls = [
     '/Pixel_Frenzy-2.mp3',
     '/sound_2.mp3',
@@ -45,53 +38,6 @@ class SoundManager {
     return this.audioContext;
   }
 
-  private connectStereoAnalyser(audioElement: HTMLAudioElement) {
-    // Only create MediaElementSource once per element
-    if (this.connectedElements.has(audioElement)) return;
-    try {
-      const ctx = this.getAudioContext();
-      this.stereoSource = ctx.createMediaElementSource(audioElement);
-      this.connectedElements.add(audioElement);
-      
-      this.splitter = ctx.createChannelSplitter(2);
-      this.leftAnalyser = ctx.createAnalyser();
-      this.rightAnalyser = ctx.createAnalyser();
-      this.leftAnalyser.fftSize = 256;
-      this.rightAnalyser.fftSize = 256;
-      this.leftAnalyser.smoothingTimeConstant = 0.6;
-      this.rightAnalyser.smoothingTimeConstant = 0.6;
-      
-      this.stereoSource.connect(this.splitter);
-      this.splitter.connect(this.leftAnalyser, 0);
-      this.splitter.connect(this.rightAnalyser, 1);
-      this.stereoSource.connect(ctx.destination);
-    } catch (e) {
-      this.leftAnalyser = null;
-      this.rightAnalyser = null;
-      this.splitter = null;
-    }
-  }
-
-  private getAnalyserLevel(analyser: AnalyserNode | null): number {
-    if (!analyser) return 0;
-    const data = new Uint8Array(analyser.frequencyBinCount);
-    analyser.getByteFrequencyData(data);
-    let sum = 0;
-    for (let i = 0; i < data.length; i++) {
-      sum += data[i];
-    }
-    return sum / (data.length * 255);
-  }
-
-  getLeftLevel(): number {
-    return this.getAnalyserLevel(this.leftAnalyser);
-  }
-
-  getRightLevel(): number {
-    return this.getAnalyserLevel(this.rightAnalyser);
-  }
-
-
   playBackgroundMusic(level: number = 1) {
     if (!this.musicEnabled) return;
 
@@ -111,12 +57,8 @@ class SoundManager {
       this.musicTracks[this.currentTrackIndex] = audio;
     }
 
-    // Connect stereo analyser for VU meters
-    const currentAudio = this.musicTracks[this.currentTrackIndex];
-    if (currentAudio) {
-      this.connectStereoAnalyser(currentAudio);
-      currentAudio.play().catch(() => {});
-    }
+    // Play current track
+    this.musicTracks[this.currentTrackIndex]?.play().catch(() => {});
   }
 
   private handleTrackEnd() {
@@ -1291,26 +1233,14 @@ class SoundManager {
     this.bossMusic.loop = true;
     this.bossMusic.volume = 0.3;
     
-    // Set up AnalyserNode for frequency analysis + stereo VU
+    // Set up AnalyserNode for frequency analysis
     try {
       const ctx = this.getAudioContext();
       this.bossMusicSource = ctx.createMediaElementSource(this.bossMusic);
-      this.connectedElements.add(this.bossMusic);
       this.analyser = ctx.createAnalyser();
       this.analyser.fftSize = 256;
       this.frequencyData = new Uint8Array(this.analyser.frequencyBinCount);
-      
-      // Set up stereo split for VU meters
-      this.splitter = ctx.createChannelSplitter(2);
-      this.leftAnalyser = ctx.createAnalyser();
-      this.rightAnalyser = ctx.createAnalyser();
-      this.leftAnalyser.fftSize = 256;
-      this.rightAnalyser.fftSize = 256;
-      
       this.bossMusicSource.connect(this.analyser);
-      this.bossMusicSource.connect(this.splitter);
-      this.splitter.connect(this.leftAnalyser, 0);
-      this.splitter.connect(this.rightAnalyser, 1);
       this.analyser.connect(ctx.destination);
     } catch (e) {
       // Fallback: play without analyser
@@ -1331,9 +1261,6 @@ class SoundManager {
     this.analyser = null;
     this.frequencyData = null;
     this.bossMusicSource = null;
-    this.leftAnalyser = null;
-    this.rightAnalyser = null;
-    this.splitter = null;
   }
 
   getBassEnergy(): number {
