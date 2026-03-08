@@ -6801,19 +6801,23 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
   // Enemy spawn at regular intervals
   useEffect(() => {
-    // Don't spawn normal enemies during boss fights
-    if (bossActive) return;
+    // Don't spawn normal enemies during boss fights (except daily challenge)
+    if (bossActive && !isDailyChallenge) return;
 
     if (gameState === "playing" && timer > 0) {
-      // Spawn interval decreases with level
-      // Normal: 30s at level 1, 20s at level 2, 15s at level 3+
-      // Godlike: 20s at level 1, 12s at level 2, 8s at level 3+
-      const baseInterval = settings.difficulty === "godlike" ? 20 : 30;
-      const minInterval = settings.difficulty === "godlike" ? 8 : 15;
-      const spawnInterval = Math.max(
-        minInterval,
-        baseInterval - (level - 1) * (settings.difficulty === "godlike" ? 4 : 5),
-      );
+      // Daily challenge: fixed 10-second spawn interval
+      // Normal: decreases with level
+      let spawnInterval: number;
+      if (isDailyChallenge && settings.dailyChallengeConfig) {
+        spawnInterval = settings.dailyChallengeConfig.enemySpawnInterval;
+      } else {
+        const baseInterval = settings.difficulty === "godlike" ? 20 : 30;
+        const minInterval = settings.difficulty === "godlike" ? 8 : 15;
+        spawnInterval = Math.max(
+          minInterval,
+          baseInterval - (level - 1) * (settings.difficulty === "godlike" ? 4 : 5),
+        );
+      }
       if (timer - lastEnemySpawnTime >= spawnInterval) {
         // Cap speed increase at 5 enemies (30% * 5 = 150%, so cap at 200%)
         const speedIncrease = Math.min(2.0, 1 + Math.min(enemySpawnCount, 5) * 0.3);
