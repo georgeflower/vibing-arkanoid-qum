@@ -84,6 +84,9 @@ const Profile = () => {
         favorite_power_up: data.favorite_power_up,
         power_up_usage: (data.power_up_usage as Record<string, number>) || {},
         achievements: (data.achievements as Array<{ id: string; unlockedAt: string }>) || [],
+        daily_challenge_streak: (data as any).daily_challenge_streak || 0,
+        best_daily_streak: (data as any).best_daily_streak || 0,
+        total_daily_challenges_completed: (data as any).total_daily_challenges_completed || 0,
       });
       setLoading(false);
     };
