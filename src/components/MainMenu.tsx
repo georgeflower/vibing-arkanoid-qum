@@ -195,6 +195,15 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [showHighScores, showChangelog, showWhatsNew, showAbout, showInstructions, showDailyChallenge]);
 
+  if (showDailyChallenge) {
+    return (
+      <DailyChallengeOverlay
+        onPlay={handleDailyChallengeStart}
+        onClose={() => setShowDailyChallenge(false)}
+      />
+    );
+  }
+
   if (showHighScores) {
     return (
       <div
