@@ -116,6 +116,7 @@ export type Database = {
       player_profiles: {
         Row: {
           achievements: Json
+          avatar_url: string | null
           best_combo_streak: number
           best_daily_streak: number
           best_level: number
@@ -143,6 +144,7 @@ export type Database = {
         }
         Insert: {
           achievements?: Json
+          avatar_url?: string | null
           best_combo_streak?: number
           best_daily_streak?: number
           best_level?: number
@@ -170,6 +172,7 @@ export type Database = {
         }
         Update: {
           achievements?: Json
+          avatar_url?: string | null
           best_combo_streak?: number
           best_daily_streak?: number
           best_level?: number
