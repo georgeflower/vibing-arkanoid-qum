@@ -24,26 +24,24 @@ export interface DangerBall {
 
 let nextDangerBallId = 3000;
 
-// Spawn a danger ball from the cannon (shoots downward toward paddle)
+// Spawn a danger ball from the boss center with a random direction
 export function spawnDangerBall(boss: MegaBoss): DangerBall {
   const config = MEGA_BOSS_CONFIG;
   
   // Pick random corner as general direction target
   const targetCorner = CORNER_TARGETS[Math.floor(Math.random() * CORNER_TARGETS.length)];
   
-  // Shoot mostly downward with some spread toward corners
+  // Spawn from boss center
   const bossX = boss.x + boss.width / 2;
-  const bossY = boss.y + boss.height;
+  const bossY = boss.y + boss.height / 2;
   
-  // Random angle between 60 and 120 degrees (downward spread)
-  const baseAngle = Math.PI / 2; // Straight down
-  const spread = (Math.random() - 0.5) * (Math.PI / 3); // ±30 degrees
-  const angle = baseAngle + spread;
+  // Random angle in full 360° — ball bounces off all walls like a player ball
+  const angle = Math.random() * Math.PI * 2;
   
   return {
     id: nextDangerBallId++,
     x: bossX,
-    y: bossY + 30, // Below cannon muzzle
+    y: bossY,
     dx: Math.cos(angle) * config.dangerBallSpeed,
     dy: Math.sin(angle) * config.dangerBallSpeed,
     radius: config.dangerBallSize,
@@ -56,21 +54,26 @@ export function spawnDangerBall(boss: MegaBoss): DangerBall {
   };
 }
 
-// Update danger ball position and animation, with wall bouncing
+// Update danger ball position and animation, with wall and ceiling bouncing
 export function updateDangerBall(ball: DangerBall, canvasWidth: number = 800, deltaTimeSeconds: number = 1 / 60): DangerBall {
   let newX = ball.x + ball.dx * deltaTimeSeconds;
   let newY = ball.y + ball.dy * deltaTimeSeconds;
   let newDx = ball.dx;
+  let newDy = ball.dy;
   
-  // Bounce off side walls (only for non-reflected balls to keep them catchable)
-  if (!ball.isReflected) {
-    if (newX - ball.radius < 0) {
-      newX = ball.radius;
-      newDx = Math.abs(ball.dx); // Bounce right
-    } else if (newX + ball.radius > canvasWidth) {
-      newX = canvasWidth - ball.radius;
-      newDx = -Math.abs(ball.dx); // Bounce left
-    }
+  // Bounce off side walls (all danger balls bounce like player balls)
+  if (newX - ball.radius < 0) {
+    newX = ball.radius;
+    newDx = Math.abs(ball.dx);
+  } else if (newX + ball.radius > canvasWidth) {
+    newX = canvasWidth - ball.radius;
+    newDx = -Math.abs(ball.dx);
+  }
+  
+  // Bounce off ceiling
+  if (newY - ball.radius < 0) {
+    newY = ball.radius;
+    newDy = Math.abs(ball.dy);
   }
   
   return {
@@ -78,7 +81,8 @@ export function updateDangerBall(ball: DangerBall, canvasWidth: number = 800, de
     x: newX,
     y: newY,
     dx: newDx,
-    flashPhase: (ball.flashPhase + 9 * deltaTimeSeconds) % (Math.PI * 2) // 9 rad/s = 0.15 rad/frame at 60fps
+    dy: newDy,
+    flashPhase: (ball.flashPhase + 9 * deltaTimeSeconds) % (Math.PI * 2)
   };
 }
 
