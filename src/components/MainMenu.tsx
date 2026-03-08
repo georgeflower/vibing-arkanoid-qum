@@ -118,6 +118,10 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
       targetScore: challenge.targetScore,
       timeLimit: challenge.timeLimit,
       objectiveIds: challenge.objectives.map((o) => o.id),
+      speedMultiplier: challenge.speedMultiplier,
+      enemySpawnInterval: challenge.enemySpawnInterval,
+      musicReactiveBackground: challenge.musicReactiveBackground,
+      noExtraLives: challenge.noExtraLives,
     };
     const settings: GameSettings = {
       startingLives: challenge.startingLives,

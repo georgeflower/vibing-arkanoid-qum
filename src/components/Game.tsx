@@ -330,6 +330,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   const [speedMultiplierInitialized] = useState(() => {
     if (settings.gameMode === "bossRush") {
       world.speedMultiplier = BOSS_RUSH_CONFIG.speedMultipliers[5];
+    } else if (isDailyChallenge && settings.dailyChallengeConfig) {
+      world.speedMultiplier = settings.dailyChallengeConfig.speedMultiplier;
     } else {
       const startLevel = settings.startingLevel;
       const baseMultiplier = settings.difficulty === "godlike" ? 1.169 : 1.05;
@@ -2088,6 +2090,15 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   const initPowerUpAssignments = useCallback(
     (bricks: Brick[], targetLevel: number, dropCounts: Partial<Record<PowerUpType, number>> = {}) => {
       const result = assignPowerUpsToBricks(bricks, extraLifeUsedLevels, targetLevel, settings.difficulty, dropCounts);
+      // Daily challenge: filter out life power-ups if noExtraLives
+      if (isDailyChallenge && settings.dailyChallengeConfig?.noExtraLives) {
+        for (const [id, type] of result.assignments) {
+          if (type === "life") result.assignments.delete(id);
+        }
+        for (const [id, type] of result.dualChoiceAssignments) {
+          if (type === "life") result.dualChoiceAssignments.delete(id);
+        }
+      }
       setPowerUpAssignments(result.assignments);
       setDualChoiceAssignments(result.dualChoiceAssignments);
       if (ENABLE_DEBUG_FEATURES && debugSettings.enablePowerUpLogging) {
@@ -5183,6 +5194,16 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       }
     }
 
+    // ═══ Daily Challenge: always-on music-reactive background ═══
+    if (isDailyChallenge && settings.dailyChallengeConfig?.musicReactiveBackground) {
+      const bassEnergy = soundManager.getBassEnergy();
+      if (bassEnergy > 0.72) {
+        world.backgroundHue = Math.floor(Math.random() * 360);
+      } else if (bassEnergy < 0.3) {
+        world.backgroundHue = 0;
+      }
+    }
+
     // ═══ DANGER BALL UPDATE LOOP (with reflect + homing mechanic) ═══
     if (dangerBalls.length > 0 && paddle && boss && isMegaBoss(boss)) {
       const megaBoss = boss as MegaBoss;
@@ -6799,19 +6820,23 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
   // Enemy spawn at regular intervals
   useEffect(() => {
-    // Don't spawn normal enemies during boss fights
-    if (bossActive) return;
+    // Don't spawn normal enemies during boss fights (except daily challenge)
+    if (bossActive && !isDailyChallenge) return;
 
     if (gameState === "playing" && timer > 0) {
-      // Spawn interval decreases with level
-      // Normal: 30s at level 1, 20s at level 2, 15s at level 3+
-      // Godlike: 20s at level 1, 12s at level 2, 8s at level 3+
-      const baseInterval = settings.difficulty === "godlike" ? 20 : 30;
-      const minInterval = settings.difficulty === "godlike" ? 8 : 15;
-      const spawnInterval = Math.max(
-        minInterval,
-        baseInterval - (level - 1) * (settings.difficulty === "godlike" ? 4 : 5),
-      );
+      // Daily challenge: fixed 10-second spawn interval
+      // Normal: decreases with level
+      let spawnInterval: number;
+      if (isDailyChallenge && settings.dailyChallengeConfig) {
+        spawnInterval = settings.dailyChallengeConfig.enemySpawnInterval;
+      } else {
+        const baseInterval = settings.difficulty === "godlike" ? 20 : 30;
+        const minInterval = settings.difficulty === "godlike" ? 8 : 15;
+        spawnInterval = Math.max(
+          minInterval,
+          baseInterval - (level - 1) * (settings.difficulty === "godlike" ? 4 : 5),
+        );
+      }
       if (timer - lastEnemySpawnTime >= spawnInterval) {
         // Cap speed increase at 5 enemies (30% * 5 = 150%, so cap at 200%)
         const speedIncrease = Math.min(2.0, 1 + Math.min(enemySpawnCount, 5) * 0.3);
