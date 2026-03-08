@@ -45,6 +45,53 @@ class SoundManager {
     return this.audioContext;
   }
 
+  private connectStereoAnalyser(audioElement: HTMLAudioElement) {
+    // Only create MediaElementSource once per element
+    if (this.connectedElements.has(audioElement)) return;
+    try {
+      const ctx = this.getAudioContext();
+      this.stereoSource = ctx.createMediaElementSource(audioElement);
+      this.connectedElements.add(audioElement);
+      
+      this.splitter = ctx.createChannelSplitter(2);
+      this.leftAnalyser = ctx.createAnalyser();
+      this.rightAnalyser = ctx.createAnalyser();
+      this.leftAnalyser.fftSize = 256;
+      this.rightAnalyser.fftSize = 256;
+      this.leftAnalyser.smoothingTimeConstant = 0.6;
+      this.rightAnalyser.smoothingTimeConstant = 0.6;
+      
+      this.stereoSource.connect(this.splitter);
+      this.splitter.connect(this.leftAnalyser, 0);
+      this.splitter.connect(this.rightAnalyser, 1);
+      this.stereoSource.connect(ctx.destination);
+    } catch (e) {
+      this.leftAnalyser = null;
+      this.rightAnalyser = null;
+      this.splitter = null;
+    }
+  }
+
+  private getAnalyserLevel(analyser: AnalyserNode | null): number {
+    if (!analyser) return 0;
+    const data = new Uint8Array(analyser.frequencyBinCount);
+    analyser.getByteFrequencyData(data);
+    let sum = 0;
+    for (let i = 0; i < data.length; i++) {
+      sum += data[i];
+    }
+    return sum / (data.length * 255);
+  }
+
+  getLeftLevel(): number {
+    return this.getAnalyserLevel(this.leftAnalyser);
+  }
+
+  getRightLevel(): number {
+    return this.getAnalyserLevel(this.rightAnalyser);
+  }
+
+
   playBackgroundMusic(level: number = 1) {
     if (!this.musicEnabled) return;
 
