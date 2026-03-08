@@ -4358,9 +4358,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
               }
 
               // Invalidate brick render cache
-              if ((window as any).__brickRenderer) {
-                (window as any).__brickRenderer.invalidate();
-              }
+              brickRenderer.invalidate();
 
               // Reset build state and steer toward area with most missing bricks
               enemy.isBuilding = false;
