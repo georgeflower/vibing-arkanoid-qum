@@ -104,6 +104,7 @@ export function createMegaBoss(canvasWidth: number, canvasHeight: number): MegaB
     trappedBall: null,
     cannonExtended: false,
     cannonExtendedTime: null,
+    nextCannonFireTime: 0,
     dangerBallsCaught: 0,
     coreHitsFromDangerBalls: 0,
     dangerBallsFired: 0,
