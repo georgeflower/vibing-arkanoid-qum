@@ -87,7 +87,8 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
         !showAbout &&
         !showChangelog &&
         !showWhatsNew &&
-        !showPressToStart
+        !showPressToStart &&
+        !showDailyChallenge
       ) {
         e.preventDefault();
         soundManager.playMenuClick();
@@ -97,7 +98,7 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [navigate, showInstructions, showHighScores, showAbout, showChangelog, showWhatsNew, showPressToStart]);
+  }, [navigate, showInstructions, showHighScores, showAbout, showChangelog, showWhatsNew, showPressToStart, showDailyChallenge]);
 
   const handleStart = () => {
     const settings: GameSettings = {
