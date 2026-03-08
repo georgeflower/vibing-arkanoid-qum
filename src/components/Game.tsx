@@ -8138,7 +8138,19 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                     showExtraLife={settings.difficulty !== "godlike" ? true : false}
                   />
 
-                  {/* Boss Rush Stats Overlay */}
+                  {/* Daily Challenge Result Overlay */}
+                  {showDailyChallengeResult && dailyChallengeData && dailyChallengeResult && (
+                    <DailyChallengeResultOverlay
+                      active={true}
+                      challenge={dailyChallengeData}
+                      result={dailyChallengeResult}
+                      score={score}
+                      timeSeconds={totalPlayTime}
+                      streak={dailyChallengeStreak}
+                      onReturnToMenu={onReturnToMenu}
+                    />
+                  )}
+
                   <BossRushStatsOverlay
                     active={bossRushStatsOverlayActive && isBossRush}
                     currentTime={
