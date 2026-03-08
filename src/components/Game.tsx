@@ -3916,6 +3916,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
       setLives((prev) => {
         const newLives = prev - 1;
+        if (isDailyChallenge) dailyChallengeLivesLostRef.current++;
         soundManager.playLoseLife();
         if (newLives <= 0) {
           particlePool.acquireForGameOver(
