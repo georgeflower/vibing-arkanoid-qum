@@ -23,6 +23,7 @@ import { useViewportFrame } from "@/hooks/useViewportFrame";
 import { useCanvasResize } from "@/hooks/useCanvasResize";
 import CRTOverlay from "./CRTOverlay";
 import { BOSS_RUSH_CONFIG, BossRushLevel } from "@/constants/bossRushConfig";
+import { submitGameStats } from "@/utils/profileStats";
 
 // ═══════════════════════════════════════════════════════════════
 // ████████╗ DEBUG IMPORTS - REMOVE BEFORE PRODUCTION ████████╗
