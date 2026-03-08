@@ -4386,65 +4386,63 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                 enemy.dy = Math.sin(roamAngle) * enemy.speed * 1.5;
               }
             } else {
-            // Scan for build target every ~60 frames
-              const gridCols = 10;
-              const gridRows = 8;
-              let bestDist = Infinity;
-              let bestTarget: { row: number; col: number } | undefined;
-              const enemyCX = enemy.x + enemy.width / 2;
-              const enemyCY = enemy.y + enemy.height / 2;
+              // Scan for build target every ~60 frames
+              if (Math.random() < 0.016) {
+                const gridCols = 10;
+                const gridRows = 8;
+                let bestDist = Infinity;
+                let bestTarget: { row: number; col: number } | undefined;
+                const enemyCX = enemy.x + enemy.width / 2;
+                const enemyCY = enemy.y + enemy.height / 2;
 
-              for (let r = 0; r < gridRows; r++) {
-                for (let c = 0; c < gridCols; c++) {
-                  const bx = SCALED_BRICK_OFFSET_LEFT + c * (SCALED_BRICK_WIDTH + SCALED_BRICK_PADDING);
-                  const by = SCALED_BRICK_OFFSET_TOP + r * (SCALED_BRICK_HEIGHT + SCALED_BRICK_PADDING);
-                  const bCX = bx + SCALED_BRICK_WIDTH / 2;
-                  const bCY = by + SCALED_BRICK_HEIGHT / 2;
+                for (let r = 0; r < gridRows; r++) {
+                  for (let c = 0; c < gridCols; c++) {
+                    const bx = SCALED_BRICK_OFFSET_LEFT + c * (SCALED_BRICK_WIDTH + SCALED_BRICK_PADDING);
+                    const by = SCALED_BRICK_OFFSET_TOP + r * (SCALED_BRICK_HEIGHT + SCALED_BRICK_PADDING);
+                    const bCX = bx + SCALED_BRICK_WIDTH / 2;
+                    const bCY = by + SCALED_BRICK_HEIGHT / 2;
 
-                  // Check if empty slot or upgradeable brick
-                  const existingBrick = world.bricks.find(
-                    (b) => b.visible && Math.abs(b.x - bx) < 2 && Math.abs(b.y - by) < 2
-                  );
+                    const existingBrick = world.bricks.find(
+                      (b) => b.visible && Math.abs(b.x - bx) < 2 && Math.abs(b.y - by) < 2
+                    );
 
-                  const isValidTarget = !existingBrick || (existingBrick.hitsRemaining < 3 && !existingBrick.isIndestructible);
+                    const isValidTarget = !existingBrick || (existingBrick.hitsRemaining < 3 && !existingBrick.isIndestructible);
 
-                  if (isValidTarget) {
-                    const dist = Math.sqrt((bCX - enemyCX) ** 2 + (bCY - enemyCY) ** 2);
-                    if (dist < bestDist) {
-                      bestDist = dist;
-                      bestTarget = { row: r, col: c };
+                    if (isValidTarget) {
+                      const dist = Math.sqrt((bCX - enemyCX) ** 2 + (bCY - enemyCY) ** 2);
+                      if (dist < bestDist) {
+                        bestDist = dist;
+                        bestTarget = { row: r, col: c };
+                      }
                     }
                   }
                 }
+
+                if (bestTarget) {
+                  enemy.buildTarget = bestTarget;
+                }
               }
 
-              if (bestTarget) {
-                enemy.buildTarget = bestTarget;
-              }
-            }
+              // Steer toward build target if we have one
+              if (enemy.buildTarget) {
+                const targetX = SCALED_BRICK_OFFSET_LEFT + enemy.buildTarget.col * (SCALED_BRICK_WIDTH + SCALED_BRICK_PADDING) + SCALED_BRICK_WIDTH / 2;
+                const targetY = SCALED_BRICK_OFFSET_TOP + enemy.buildTarget.row * (SCALED_BRICK_HEIGHT + SCALED_BRICK_PADDING) + SCALED_BRICK_HEIGHT / 2;
+                const dx = targetX - (enemy.x + enemy.width / 2);
+                const dy = targetY - (enemy.y + enemy.height / 2);
+                const dist = Math.sqrt(dx * dx + dy * dy);
 
-            // Steer toward build target if we have one
-            if (enemy.buildTarget) {
-              const targetX = SCALED_BRICK_OFFSET_LEFT + enemy.buildTarget.col * (SCALED_BRICK_WIDTH + SCALED_BRICK_PADDING) + SCALED_BRICK_WIDTH / 2;
-              const targetY = SCALED_BRICK_OFFSET_TOP + enemy.buildTarget.row * (SCALED_BRICK_HEIGHT + SCALED_BRICK_PADDING) + SCALED_BRICK_HEIGHT / 2;
-              const dx = targetX - (enemy.x + enemy.width / 2);
-              const dy = targetY - (enemy.y + enemy.height / 2);
-              const dist = Math.sqrt(dx * dx + dy * dy);
-
-              if (dist < 5) {
-                // Arrived at target - start building
-                enemy.isBuilding = true;
-                enemy.buildProgress = 0;
-                enemy.dx = 0;
-                enemy.dy = 0;
-              } else {
-                // Steer toward target
-                const angle = Math.atan2(dy, dx);
-                enemy.dx = Math.cos(angle) * enemy.speed;
-                enemy.dy = Math.sin(angle) * enemy.speed;
+                if (dist < 5) {
+                  enemy.isBuilding = true;
+                  enemy.buildProgress = 0;
+                  enemy.dx = 0;
+                  enemy.dy = 0;
+                } else {
+                  const angle = Math.atan2(dy, dx);
+                  enemy.dx = Math.cos(angle) * enemy.speed;
+                  enemy.dy = Math.sin(angle) * enemy.speed;
+                }
               }
             }
-            } // end roam cooldown else
           }
         }
 
