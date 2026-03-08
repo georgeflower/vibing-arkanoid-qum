@@ -1554,20 +1554,22 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     setBossAttacks([]);
     setLaserWarnings([]);
 
-    // Submit lifetime stats to player profile
-    submitGameStats({
-      bricksDestroyed: totalBricksDestroyed,
-      enemiesKilled,
-      bossesKilled,
-      powerUpsCollected: powerUpsCollectedTypes.size,
-      powerUpTypes: Array.from(powerUpsCollectedTypes),
-      timePlayed: totalPlayTime,
-      score: scoreRef.current,
-      level,
-      comboStreak: hitStreakRef.current,
-      difficulty: settings.difficulty,
-      isVictory: false,
-    });
+    // Submit lifetime stats to player profile (skip if debug mode is active)
+    if (!isDebugModeActive(debugSettings)) {
+      submitGameStats({
+        bricksDestroyed: totalBricksDestroyed,
+        enemiesKilled,
+        bossesKilled,
+        powerUpsCollected: powerUpsCollectedTypes.size,
+        powerUpTypes: Array.from(powerUpsCollectedTypes),
+        timePlayed: totalPlayTime,
+        score: scoreRef.current,
+        level,
+        comboStreak: hitStreakRef.current,
+        difficulty: settings.difficulty,
+        isVictory: false,
+      });
+    }
 
     if (isBossRush) {
       const currentBossLevel = BOSS_RUSH_CONFIG.bossOrder[bossRushIndex] || 5;
