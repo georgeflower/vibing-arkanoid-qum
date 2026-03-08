@@ -4345,8 +4345,12 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
               } else {
                 // Build new brick
                 const levelColors = getBrickColors(level);
+                const nextBrickId = world.bricks.reduce(
+                  (maxId, b) => (b.id > maxId && b.id > 0 && b.id < 100000 ? b.id : maxId),
+                  0,
+                ) + 1;
                 const newBrick: Brick = {
-                  id: Date.now() + Math.random() * 1000,
+                  id: nextBrickId,
                   x: targetX,
                   y: targetY,
                   width: SCALED_BRICK_WIDTH,
