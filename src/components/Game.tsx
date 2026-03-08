@@ -372,7 +372,15 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   } | null>(null);
   const [beatLevel50Completed, setBeatLevel50Completed] = useState(false);
   const [timer, setTimer] = useState(0);
-  const [totalPlayTime, setTotalPlayTime] = useState(0);
+  const [totalPlayTime, setTotalPlayTimeRaw] = useState(0);
+  const totalPlayTimeRef = useRef(0);
+  const setTotalPlayTime = useCallback((updater: number | ((prev: number) => number)) => {
+    setTotalPlayTimeRaw((prev) => {
+      const next = typeof updater === "function" ? updater(prev) : updater;
+      totalPlayTimeRef.current = next;
+      return next;
+    });
+  }, []);
 
   // Daily Challenge state
   const [dailyChallengeData] = useState<DailyChallenge | null>(() =>
