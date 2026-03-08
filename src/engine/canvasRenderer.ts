@@ -2442,6 +2442,108 @@ function drawEnemies(
         ctx.arc(centerX, centerY + 8, 6, 0.2 * Math.PI, 0.8 * Math.PI);
         ctx.stroke();
       }
+    } else if (singleEnemy.type === "star") {
+      // ── Star enemy: 5-pointed yellow star ──
+      const radius = singleEnemy.width / 2;
+      const points = 5;
+      const outerR = radius;
+      const innerR = radius * 0.45;
+      const rotation = singleEnemy.rotationZ || 0;
+
+      let hue = 50;
+      let saturation = 90;
+      let lightness = 50;
+
+      if (singleEnemy.isAngry) {
+        const bp = Math.floor(now / 100) % 2;
+        hue = bp === 0 ? 50 : 40;
+        lightness = bp === 0 ? 55 : 42;
+      }
+
+      if (qualitySettings.shadowsEnabled) {
+        ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
+        ctx.beginPath();
+        for (let i = 0; i < points * 2; i++) {
+          const r = i % 2 === 0 ? outerR : innerR;
+          const angle = (i * Math.PI) / points - Math.PI / 2 + rotation;
+          const x = centerX + Math.cos(angle) * r + 4;
+          const y = centerY + Math.sin(angle) * r + 4;
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      // Draw star polygon with per-point lightness variation
+      for (let p = 0; p < points; p++) {
+        const i1 = p * 2;
+        const i2 = p * 2 + 1;
+        const i3 = (p * 2 + 2) % (points * 2);
+        const faceLightness = lightness + (p - 2) * 5;
+
+        const a1 = (i1 * Math.PI) / points - Math.PI / 2 + rotation;
+        const a2 = (i2 * Math.PI) / points - Math.PI / 2 + rotation;
+        const a3 = (i3 * Math.PI) / points - Math.PI / 2 + rotation;
+
+        // Outer triangle (point of star)
+        ctx.fillStyle = `hsl(${hue}, ${saturation}%, ${faceLightness}%)`;
+        ctx.beginPath();
+        ctx.moveTo(centerX + Math.cos(a1) * outerR, centerY + Math.sin(a1) * outerR);
+        ctx.lineTo(centerX + Math.cos(a2) * innerR, centerY + Math.sin(a2) * innerR);
+        ctx.lineTo(centerX + Math.cos(a3) * outerR, centerY + Math.sin(a3) * outerR);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = `hsl(${hue}, 95%, 70%)`;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        // Inner triangle (body of star)
+        ctx.fillStyle = `hsl(${hue}, ${saturation - 10}%, ${faceLightness - 10}%)`;
+        ctx.beginPath();
+        ctx.moveTo(centerX + Math.cos(a2) * innerR, centerY + Math.sin(a2) * innerR);
+        ctx.lineTo(centerX, centerY);
+        ctx.lineTo(centerX + Math.cos(a3) * outerR, centerY + Math.sin(a3) * outerR);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      // Building particles
+      if (singleEnemy.isBuilding) {
+        for (let s = 0; s < 3; s++) {
+          const sparkAngle = now / 200 + (s * Math.PI * 2) / 3;
+          const sparkDist = radius + 5 + Math.sin(now / 100 + s) * 4;
+          const sx = centerX + Math.cos(sparkAngle) * sparkDist;
+          const sy = centerY + Math.sin(sparkAngle) * sparkDist;
+          ctx.fillStyle = `hsl(50, 100%, ${70 + Math.sin(now / 80 + s) * 20}%)`;
+          ctx.beginPath();
+          ctx.arc(sx, sy, 2.5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        // Build progress indicator
+        const progress = (singleEnemy.buildProgress || 0) / 5000;
+        ctx.strokeStyle = "hsl(50, 100%, 80%)";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius + 3, -Math.PI / 2, -Math.PI / 2 + progress * Math.PI * 2);
+        ctx.stroke();
+      }
+
+      // Angry eyes
+      if (singleEnemy.isAngry) {
+        ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.9)";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(centerX - 8, centerY - 5);
+        ctx.lineTo(centerX - 5, centerY);
+        ctx.moveTo(centerX + 8, centerY - 5);
+        ctx.lineTo(centerX + 5, centerY);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(centerX, centerY + 8, 6, 0.2 * Math.PI, 0.8 * Math.PI);
+        ctx.stroke();
+      }
     } else if (singleEnemy.type === "pyramid") {
       const size = singleEnemy.width;
       let baseHue = 280;
