@@ -12,6 +12,7 @@ import { HighScoreDisplay } from "./HighScoreDisplay";
 import { Changelog } from "./Changelog";
 import CRTOverlay from "./CRTOverlay";
 import { soundManager } from "@/utils/sounds";
+import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { GAME_VERSION } from "@/constants/version";
 import { useServiceWorkerUpdate } from "@/hooks/useServiceWorkerUpdate";
