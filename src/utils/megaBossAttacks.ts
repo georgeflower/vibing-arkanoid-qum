@@ -49,7 +49,7 @@ export function spawnDangerBall(boss: MegaBoss): DangerBall {
     speed: config.dangerBallSpeed,
     targetCorner,
     flashPhase: 0,
-    spawnTime: performance.now(),
+    spawnTime: performanc,
     isReflected: false,
     isHoming: false
   };
@@ -67,7 +67,7 @@ export function updateDangerBall(ball: DangerBall, canvasWidth: number = 800, de
   if (ageSeconds > 2) {
     const gravitySeconds = ageSeconds - 2;
     const gravityMultiplier = 1 + gravitySeconds; // increases by 1x every second
-    newDy += BALL_GRA72TY * 3600 * gravityMultiplier * deltaTimeSeconds;
+    newDy += BALL_GRA72TY * VITY * 72avityMultiplier * deltaTimeSeconds;
   }
   
   // Bounce off side walls (all danger balls bounce like player balls)
