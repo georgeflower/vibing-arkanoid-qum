@@ -433,37 +433,6 @@ function performBossFirstSweep(
       }
 
       // Mark ball to suppress paddle resolver
-
-  // ═══ Phase 4b: Speed ramp for balls released from Mega Boss ═══
-  const RAMP_DURATION_MS = 1500;
-  const TARGET_SPEED = 4;
-  const now = Date.now();
-  for (const ball of updatedBalls) {
-    if (ball.releaseSpeedScale != null && ball.releasedFromBossTime) {
-      const elapsed = now - ball.releasedFromBossTime;
-      if (elapsed >= RAMP_DURATION_MS) {
-        // Ramp complete — normalize to target speed
-        const currentSpeed = Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy);
-        if (currentSpeed > 0) {
-          ball.dx = (ball.dx / currentSpeed) * TARGET_SPEED;
-          ball.dy = (ball.dy / currentSpeed) * TARGET_SPEED;
-        }
-        delete ball.releaseSpeedScale;
-        delete ball.releasedFromBossTime;
-      } else {
-        // Lerp speed from initial scale to 1.0
-        const t = elapsed / RAMP_DURATION_MS;
-        const scale = ball.releaseSpeedScale + (1 - ball.releaseSpeedScale) * t;
-        const currentSpeed = Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy);
-        if (currentSpeed > 0) {
-          const desiredSpeed = TARGET_SPEED * scale;
-          ball.dx = (ball.dx / currentSpeed) * desiredSpeed;
-          ball.dy = (ball.dy / currentSpeed) * desiredSpeed;
-        }
-      }
-    }
-  }
-
       // Cooldown check (millisecond-based)
       const lastHitMs = bossTarget.lastHitAt || 0;
       const nowMs = world.simTimeMs; // sim-time, not wall-clock
