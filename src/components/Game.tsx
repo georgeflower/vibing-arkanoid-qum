@@ -6414,6 +6414,31 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
           // Main boss — mutate health in-place
           const boss = world.boss;
           if (boss) {
+            // ═══ MEGA BOSS: route damage to shield HP ═══
+            if (isMegaBoss(boss)) {
+              const megaBoss = boss as MegaBoss;
+              // Skip if core already exposed or ball is trapped
+              if (megaBoss.coreExposed || megaBoss.trappedBall) continue;
+
+              const { newOuterHP, newInnerHP, shouldExposeCore } = handleMegaBossOuterDamage(megaBoss, hit.damage);
+              megaBoss.outerShieldHP = newOuterHP;
+              megaBoss.innerShieldHP = newInnerHP;
+
+              const activeShieldHP = megaBoss.outerShieldRemoved ? newInnerHP : newOuterHP;
+              megaBoss.currentHealth = activeShieldHP;
+              megaBoss.lastHitAt = world.simTimeMs;
+
+              if (shouldExposeCore) {
+                Object.assign(megaBoss, exposeMegaBossCore(megaBoss));
+                megaBoss.currentHealth = 0;
+                world.screenShake = 12;
+                soundManager.playExplosion();
+              }
+
+              soundManager.playBossHitSound();
+              continue; // skip generic health reduction below
+            }
+
             boss.currentHealth = Math.max(0, boss.currentHealth - hit.damage);
             soundManager.playBossHitSound();
             if (boss.currentHealth <= 0 && boss.type !== "mega") {
