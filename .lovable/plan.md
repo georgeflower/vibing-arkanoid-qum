@@ -1,31 +1,38 @@
 
 
-## Plan: Spawn All 4 Enemy Types in Daily Challenge
+# Revert Game Area to Fixed Size (Pre-Expansion)
 
-Currently, enemy type selection is gated by level: cubes at all levels, spheres at level 3+, pyramids at level 6+. Since daily challenge uses level 0 (per the approved plan), only cubes would spawn.
+## Problem
+Two previous changes ("Expand game area to frame space" and "Expand game area to fill space") made the game canvas dynamically resize to fill all available space within the metal frame on desktop. The user wants the playable area to return to its original fixed size.
 
-### Change
+## Current behavior
+- `useViewportFrame` makes the metal frame fill the entire viewport on desktop
+- `useCanvasResize` uses ResizeObserver to dynamically size the game canvas to fill the `metal-game-area` container
+- The canvas display size grows to match available space
 
-**`src/components/Game.tsx`** (~line 6903–6911): Update the enemy type selection logic to check if the game mode is `dailyChallenge`. When it is, all 4 types (cube, sphere, pyramid, star) should be available regardless of level:
+## Desired behavior
+The game canvas stays at its logical size (850×650 scaled by `scaleFactor`) and is simply centered within the frame — no dynamic expansion.
 
-```
-// Before level-gating, check if daily challenge
-const isDailyMode = settings.gameMode === "dailyChallenge";
+## Changes
 
-let enemyType: EnemyType;
-if (isDailyMode) {
-  // All 4 types equally available in daily challenge
-  const allTypes: EnemyType[] = ["cube", "sphere", "pyramid", "star"];
-  enemyType = allTypes[Math.floor(Math.random() * allTypes.length)];
-} else {
-  // Existing level-gated logic (cube/sphere/pyramid/star)
-  ...
-}
-```
+### 1. `src/components/Game.tsx`
+- **Remove** `useViewportFrame` import and hook call (lines 22, 1651-1654)
+- **Remove** `useCanvasResize` import and hook call (lines 23, 1657-1667), along with destructured `displayWidth`, `displayHeight`, `dynamicScale`
+- Remove `gameAreaRef` if only used for `useCanvasResize` (check first)
+- On desktop, set the `game-glow` div's width/height explicitly to `SCALED_CANVAS_WIDTH` × `SCALED_CANVAS_HEIGHT` (same as mobile path but without the scale transform), so the canvas is fixed-size and centered
 
-This is a ~10-line change in one location. The star enemy type, spawning stats, rendering, and AI are handled by the already-approved star enemy plan — this change only ensures the daily challenge mode bypasses level gating.
+### 2. `src/hooks/useViewportFrame.ts`
+- Delete file (no longer used)
 
-| File | Change |
-|------|--------|
-| `src/components/Game.tsx` | Bypass level-gating for enemy types in daily challenge mode |
+### 3. `src/hooks/useCanvasResize.ts`
+- Delete file (no longer used)
+
+### 4. `src/index.css`
+- Remove the `.metal-frame.desktop-fullscreen` CSS block (lines ~265-290) since the class is no longer applied
+- Remove `max-width` constraint on `.metal-game-area` that references side panel widths — let it auto-size around the fixed canvas
+- Keep `.metal-frame` as `width: fit-content` so it wraps the fixed-size content naturally
+
+### 5. Verify
+- `gameAreaRef` usage — if it's only for `useCanvasResize`, remove the ref. If used elsewhere (e.g. click handlers), keep it.
+- `gameGlowRef` — same check; if only used by `useCanvasResize` for imperative sizing, it can be simplified but likely still needed for CRT overlay positioning.
 
