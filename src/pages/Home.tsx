@@ -432,6 +432,9 @@ const Home = () => {
                 <li className="retro-pixel-text">
                   <span style={{ color: "hsl(0,85%,55%)" }}>Boss Rush</span> — All 4 bosses back-to-back
                 </li>
+                <li className="retro-pixel-text">
+                  <span style={{ color: "hsl(45,100%,50%)" }}>Daily Challenge</span> — New challenge every day
+                </li>
               </ul>
             </div>
           </div>
