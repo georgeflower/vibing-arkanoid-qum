@@ -1098,7 +1098,15 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   const lastTurretDepleteSfxMs = useRef(0);
 
   // Game statistics tracking
-  const [totalBricksDestroyed, setTotalBricksDestroyed] = useState(0);
+  const [totalBricksDestroyed, setTotalBricksDestroyedRaw] = useState(0);
+  const totalBricksDestroyedRef = useRef(0);
+  const setTotalBricksDestroyed = useCallback((updater: number | ((prev: number) => number)) => {
+    setTotalBricksDestroyedRaw((prev) => {
+      const next = typeof updater === "function" ? updater(prev) : updater;
+      totalBricksDestroyedRef.current = next;
+      return next;
+    });
+  }, []);
   const [totalShots, setTotalShots] = useState(0);
   const [bricksHit, setBricksHit] = useState(0);
   const [levelSkipped, setLevelSkipped] = useState(false);
@@ -1114,9 +1122,25 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   // Dead refs removed: gameOverParticlesRef, highScoreParticlesRef, particleRenderTick
   // (particles are fully managed by particlePool)
   const [retryLevelData, setRetryLevelData] = useState<{ level: number; layout: any } | null>(null);
-  const [powerUpsCollectedTypes, setPowerUpsCollectedTypes] = useState<Set<string>>(new Set());
+  const [powerUpsCollectedTypes, setPowerUpsCollectedTypesRaw] = useState<Set<string>>(new Set());
+  const powerUpsCollectedTypesRef = useRef<Set<string>>(new Set());
+  const setPowerUpsCollectedTypes = useCallback((updater: Set<string> | ((prev: Set<string>) => Set<string>)) => {
+    setPowerUpsCollectedTypesRaw((prev) => {
+      const next = typeof updater === "function" ? updater(prev) : updater;
+      powerUpsCollectedTypesRef.current = next;
+      return next;
+    });
+  }, []);
   const [bricksDestroyedByTurrets, setBricksDestroyedByTurrets] = useState(0);
-  const [bossesKilled, setBossesKilled] = useState(0);
+  const [bossesKilled, setBossesKilledRaw] = useState(0);
+  const bossesKilledRef = useRef(0);
+  const setBossesKilled = useCallback((updater: number | ((prev: number) => number)) => {
+    setBossesKilledRaw((prev) => {
+      const next = typeof updater === "function" ? updater(prev) : updater;
+      bossesKilledRef.current = next;
+      return next;
+    });
+  }, []);
   const [powerUpAssignments, setPowerUpAssignments] = useState<Map<number, PowerUpType>>(new Map());
   const [dualChoiceAssignments, setDualChoiceAssignments] = useState<Map<number, PowerUpType>>(new Map());
   const [powerUpDropCounts, setPowerUpDropCounts] = useState<Partial<Record<PowerUpType, number>>>({});
