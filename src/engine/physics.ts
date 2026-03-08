@@ -1157,6 +1157,34 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
       }
     }
 
+    // Destroy nearby enemies within blast radius
+    for (let ei = 0; ei < enemies.length; ei++) {
+      const enemy = enemies[ei];
+      if (enemiesToDestroy.has(ei)) continue;
+      const enemyCenterX = enemy.x + enemy.width / 2;
+      const enemyCenterY = enemy.y + enemy.height / 2;
+      const dx = enemyCenterX - brickCenterX;
+      const dy = enemyCenterY - brickCenterY;
+      if (Math.sqrt(dx * dx + dy * dy) <= explosionRadius) {
+        enemiesToDestroy.add(ei);
+        result.explosionsToCreate.push({
+          x: enemyCenterX,
+          y: enemyCenterY,
+          type: enemy.type,
+        });
+        scoreIncrease += 150;
+        result.toastEvents.push({
+          level: "success",
+          message: `${enemy.type} enemy caught in explosion! +150`,
+          key: "enemy_destroyed",
+        });
+        result.soundsToPlay.push({ type: "explosion" });
+        enemiesKilledIncrease++;
+        result.bonusLetterDrops.push({ x: enemyCenterX, y: enemyCenterY });
+        if (enemy.id !== undefined) result.bombIntervalsToClean.push(enemy.id);
+      }
+    }
+
     result.soundsToPlay.push({ type: "explosiveBrick" });
     result.backgroundFlash = true;
   }
