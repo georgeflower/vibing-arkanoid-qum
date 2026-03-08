@@ -1,38 +1,38 @@
 
 
-# Revert Game Area to Fixed Size (Pre-Expansion)
+## Plan: Daily Challenge — 125% Speed, No Extra Lives, Enemy Spawns, Music-Reactive Background
 
-## Problem
-Two previous changes ("Expand game area to frame space" and "Expand game area to fill space") made the game canvas dynamically resize to fill all available space within the metal frame on desktop. The user wants the playable area to return to its original fixed size.
+### Changes
 
-## Current behavior
-- `useViewportFrame` makes the metal frame fill the entire viewport on desktop
-- `useCanvasResize` uses ResizeObserver to dynamically size the game canvas to fill the `metal-game-area` container
-- The canvas display size grows to match available space
+**1. `src/utils/dailyChallenge.ts`** — Hardcode daily challenge parameters:
+- Set `startingLives = 3` always (no extra lives from modifiers — remove `one_life`/`two_lives` modifiers or just override)
+- Actually, the user wants "no extra lives" meaning fixed at 3 (the default). Keep modifiers but override lives to always be 3.
+- Wait — re-reading: "no extra lives" likely means no life power-ups drop. Will add a flag for that.
 
-## Desired behavior
-The game canvas stays at its logical size (850×650 scaled by `scaleFactor`) and is simply centered within the frame — no dynamic expansion.
+**2. `src/types/game.ts`** — Add to `DailyChallengeConfig`:
+- `speedMultiplier: number` (1.25 for 125%)
+- `enemySpawnInterval: number` (10 seconds)
+- `musicReactiveBackground: boolean`
+- `noExtraLives: boolean` (prevent life power-ups)
 
-## Changes
+**3. `src/components/MainMenu.tsx`** — Pass new config fields from challenge data when building `DailyChallengeConfig`.
 
-### 1. `src/components/Game.tsx`
-- **Remove** `useViewportFrame` import and hook call (lines 22, 1651-1654)
-- **Remove** `useCanvasResize` import and hook call (lines 23, 1657-1667), along with destructured `displayWidth`, `displayHeight`, `dynamicScale`
-- Remove `gameAreaRef` if only used for `useCanvasResize` (check first)
-- On desktop, set the `game-glow` div's width/height explicitly to `SCALED_CANVAS_WIDTH` × `SCALED_CANVAS_HEIGHT` (same as mobile path but without the scale transform), so the canvas is fixed-size and centered
+**4. `src/components/Game.tsx`** — Three changes:
+- **Speed**: In the `speedMultiplierInitialized` block (~line 330), add a daily challenge branch: `world.speedMultiplier = 1.25` (or read from config).
+- **Enemy spawning** (~line 6800): When `isDailyChallenge`, use a fixed 10-second spawn interval instead of the level-based calculation. Remove the `if (bossActive) return` guard for daily challenge so enemies spawn regardless.
+- **Music-reactive background**: In the game loop (~line 5176 area), add a new condition: if `isDailyChallenge && dailyChallengeConfig.musicReactiveBackground`, apply the same `world.backgroundHue` logic that's used for mega boss phase 3 / hit streak x10.
+- **No extra lives**: When `isDailyChallenge`, filter out `"life"` from power-up drops (in the power-up assignment or wherever life power-ups are generated).
 
-### 2. `src/hooks/useViewportFrame.ts`
-- Delete file (no longer used)
+**5. `src/utils/dailyChallenge.ts`** — Update the generator:
+- Always set `startingLives = 3`
+- Add `speedMultiplier: 1.25`, `enemySpawnInterval: 10`, `musicReactiveBackground: true`, `noExtraLives: true` to the returned challenge object.
 
-### 3. `src/hooks/useCanvasResize.ts`
-- Delete file (no longer used)
+### File Summary
 
-### 4. `src/index.css`
-- Remove the `.metal-frame.desktop-fullscreen` CSS block (lines ~265-290) since the class is no longer applied
-- Remove `max-width` constraint on `.metal-game-area` that references side panel widths — let it auto-size around the fixed canvas
-- Keep `.metal-frame` as `width: fit-content` so it wraps the fixed-size content naturally
-
-### 5. Verify
-- `gameAreaRef` usage — if it's only for `useCanvasResize`, remove the ref. If used elsewhere (e.g. click handlers), keep it.
-- `gameGlowRef` — same check; if only used by `useCanvasResize` for imperative sizing, it can be simplified but likely still needed for CRT overlay positioning.
+| File | Change |
+|------|--------|
+| `src/types/game.ts` | Add `speedMultiplier`, `enemySpawnInterval`, `musicReactiveBackground`, `noExtraLives` to `DailyChallengeConfig` |
+| `src/utils/dailyChallenge.ts` | Set fixed values: speed 1.25, enemies every 10s, music bg on, no extra lives, lives=3 |
+| `src/components/MainMenu.tsx` | Pass new fields when building config |
+| `src/components/Game.tsx` | Apply 125% speed on init, 10s enemy spawns, music-reactive bg always on, filter life power-ups |
 
