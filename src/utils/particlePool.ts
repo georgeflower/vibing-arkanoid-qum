@@ -9,6 +9,7 @@ const COLOR_PALETTES: Record<EnemyType | 'brick' | 'default' | 'mega', string[]>
   pyramid: ["hsl(280, 100%, 60%)", "hsl(260, 100%, 65%)", "hsl(300, 100%, 55%)"],
   mega: ["hsl(30, 100%, 60%)", "hsl(50, 100%, 50%)", "hsl(10, 100%, 70%)"], // Orange/red theme
   crossBall: ["hsl(30, 100%, 60%)", "hsl(15, 100%, 55%)", "hsl(45, 100%, 65%)"],
+  star: ["hsl(50, 100%, 60%)", "hsl(45, 100%, 55%)", "hsl(60, 100%, 65%)"],
   brick: ["hsl(40, 100%, 60%)", "hsl(30, 100%, 55%)", "hsl(50, 100%, 65%)"],
   default: ["hsl(0, 0%, 100%)", "hsl(0, 0%, 80%)", "hsl(0, 0%, 90%)"]
 };
