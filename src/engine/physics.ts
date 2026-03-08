@@ -988,7 +988,7 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
                 if (enemy.id !== undefined) result.bombIntervalsToClean.push(enemy.id);
               }
             }
-            break;
+            if (enemy) break;
           }
 
           // ─── Brick collision ───
