@@ -3567,12 +3567,20 @@ function drawMegaBoss(
     ctx.fillRect(-cannonWidth / 2 - 3, cannonBaseY + cannonLength * 0.4, 3, 8);
     ctx.fillRect(cannonWidth / 2, cannonBaseY + cannonLength * 0.4, 3, 8);
 
-    // Blinking muzzle half-circle (only outward-facing half)
-    const muzzleBlink = Math.floor(now / 200) % 2 === 0;
+    // Blinking muzzle half-circle - blinks rapidly before firing
+    const timeToFire = megaBoss.nextCannonFireTime > 0 ? megaBoss.nextCannonFireTime - now : Infinity;
+    const isPreFireWarning = timeToFire > 0 && timeToFire < 800; // 800ms warning
+    const blinkRate = isPreFireWarning ? 50 : 200; // Very fast blink when about to fire
+    const muzzleBlink = Math.floor(now / blinkRate) % 2 === 0;
     const muzzleY = cannonBaseY + cannonLength;
     ctx.beginPath();
     ctx.arc(0, muzzleY, 10, 0, Math.PI);
-    ctx.fillStyle = muzzleBlink ? "hsl(40, 100%, 60%)" : "hsl(40, 80%, 35%)";
+    if (isPreFireWarning) {
+      // Bright warning colors when about to fire
+      ctx.fillStyle = muzzleBlink ? "hsl(0, 100%, 65%)" : "hsl(40, 100%, 70%)";
+    } else {
+      ctx.fillStyle = muzzleBlink ? "hsl(40, 100%, 60%)" : "hsl(40, 80%, 35%)";
+    }
     ctx.fill();
     ctx.strokeStyle = "hsl(40, 90%, 70%)";
     ctx.lineWidth = 2;

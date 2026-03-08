@@ -939,6 +939,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
             coreExposedTime: mb.coreExposedTime ? mb.coreExposedTime + pauseDuration : null,
             hatchOpenStartTime: mb.hatchOpenStartTime ? mb.hatchOpenStartTime + pauseDuration : null,
             lastTrapTime: mb.lastTrapTime ? mb.lastTrapTime + pauseDuration : mb.lastTrapTime,
+            nextCannonFireTime: mb.nextCannonFireTime > 0 ? mb.nextCannonFireTime + pauseDuration : 0,
           } as unknown as Boss;
         });
       }
@@ -4798,7 +4799,9 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
             soundManager.playCannonModeSound();
 
             // Initialize first cannon missile time (4-7 seconds from now)
-            setNextCannonMissileTime(Date.now() + 4000 + Math.random() * 3000);
+            const firstFireTime = Date.now() + 4000 + Math.random() * 3000;
+            setNextCannonMissileTime(firstFireTime);
+            megaBoss.nextCannonFireTime = firstFireTime;
           }
         });
       }
@@ -4860,7 +4863,9 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
           // Schedule next missile in 4-7 seconds
           const nextDelay = 4000 + Math.random() * 3000;
-          setNextCannonMissileTime(now + nextDelay);
+          const nextFireTime = now + nextDelay;
+          setNextCannonMissileTime(nextFireTime);
+          megaBoss.nextCannonFireTime = nextFireTime;
         }
       }
 
