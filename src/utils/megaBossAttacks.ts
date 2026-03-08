@@ -1,5 +1,6 @@
 // Mega Boss attack patterns and danger ball system
 import type { Boss, BossAttack, Ball } from "@/types/game";
+import { BALL_GRAVITY } from "@/engine/physics";
 import { MEGA_BOSS_CONFIG, CORNER_TARGETS } from "@/constants/megaBossConfig";
 import { ATTACK_PATTERNS } from "@/constants/bossConfig";
 import { MegaBoss, getMegaBossPhase, isMegaBoss } from "./megaBossUtils";
@@ -60,6 +61,12 @@ export function updateDangerBall(ball: DangerBall, canvasWidth: number = 800, de
   let newY = ball.y + ball.dy * deltaTimeSeconds;
   let newDx = ball.dx;
   let newDy = ball.dy;
+  
+  // Apply gravity after 2 seconds of existence
+  const ageSeconds = (performance.now() - ball.spawnTime) / 1000;
+  if (ageSeconds > 2) {
+    newDy += BALL_GRAVITY;
+  }
   
   // Bounce off side walls (all danger balls bounce like player balls)
   if (newX - ball.radius < 0) {
