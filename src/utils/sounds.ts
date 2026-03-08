@@ -600,13 +600,35 @@ class SoundManager {
 
   playDangerBallReflectSound() {
     if (!this.sfxEnabled) return;
-    const buffer = this.audioBuffers['/reflecting.mp3'];
-    if (buffer) {
-      const pitchIndex = Math.min(this.dangerBallReflectCount, this.dangerBallPitchRatios.length - 1);
-      const rate = this.dangerBallPitchRatios[pitchIndex];
-      this.playAudioBuffer(buffer, 0.6, rate);
-      this.dangerBallReflectCount++;
-    }
+    const ctx = this.getAudioContext();
+    const pitchIndex = Math.min(this.dangerBallReflectCount, this.dangerBallPitchRatios.length - 1);
+    const rate = this.dangerBallPitchRatios[pitchIndex];
+
+    // Deflection ping 1 (scaled by pitch)
+    const osc1 = ctx.createOscillator();
+    const gain1 = ctx.createGain();
+    osc1.connect(gain1);
+    gain1.connect(ctx.destination);
+    osc1.frequency.value = 900 * rate;
+    osc1.type = 'sine';
+    gain1.gain.setValueAtTime(0.1, ctx.currentTime);
+    gain1.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+    osc1.start(ctx.currentTime);
+    osc1.stop(ctx.currentTime + 0.1);
+
+    // Deflection ping 2 (scaled by pitch)
+    const osc2 = ctx.createOscillator();
+    const gain2 = ctx.createGain();
+    osc2.connect(gain2);
+    gain2.connect(ctx.destination);
+    osc2.frequency.value = 1100 * rate;
+    osc2.type = 'sine';
+    gain2.gain.setValueAtTime(0.15, ctx.currentTime);
+    gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+    osc2.start(ctx.currentTime);
+    osc2.stop(ctx.currentTime + 0.15);
+
+    this.dangerBallReflectCount++;
   }
 
   private playAudioBuffer(buffer: AudioBuffer, volume: number, playbackRate: number = 1.0): void {
