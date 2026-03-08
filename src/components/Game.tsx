@@ -3702,7 +3702,38 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       const hasDestructible = bricks.some((b) => !b.isIndestructible);
 
       soundManager.playWin();
-      if (level >= FINAL_LEVEL) {
+
+      // Daily Challenge mode: evaluate objectives and show result
+      if (isDailyChallenge && dailyChallengeData) {
+        setGameState("won");
+        soundManager.stopBackgroundMusic();
+
+        const challengeResult = evaluateObjectives(dailyChallengeData, {
+          livesLost: dailyChallengeLivesLostRef.current,
+          timeSeconds: totalPlayTime,
+          allBricksDestroyed: true,
+          score: scoreRef.current,
+          powerUpsCollected: dailyChallengePowerUpsRef.current,
+          bestCombo: hitStreakRef.current,
+        });
+        setDailyChallengeResult(challengeResult);
+
+        // Submit to backend if logged in
+        submitDailyChallenge({
+          challengeDate: dailyChallengeData.dateString,
+          score: scoreRef.current,
+          timeSeconds: totalPlayTime,
+          objectivesMet: challengeResult.objectivesMet,
+          allObjectivesMet: challengeResult.allObjectivesMet,
+        }).then((res) => {
+          if (res.success) {
+            setDailyChallengeStreak(res.streak);
+          }
+          setShowDailyChallengeResult(true);
+        });
+
+        toast.success("⚡ Daily Challenge Complete!");
+      } else if (level >= FINAL_LEVEL) {
         setScore((prev) => prev + 1000000);
         setBeatLevel50Completed(true);
         setGameState("won");
