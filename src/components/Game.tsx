@@ -6836,6 +6836,18 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     };
   }, [gameState, tutorialActive, bossRushStatsOverlayActive]);
 
+  // Daily Challenge countdown timer — auto game-over when time runs out
+  useEffect(() => {
+    if (!isDailyChallenge || !settings.dailyChallengeConfig?.timeLimit) return;
+    if (gameState !== "playing") return;
+    const timeLimit = settings.dailyChallengeConfig.timeLimit;
+    if (totalPlayTime >= timeLimit) {
+      toast.error("⏰ Time's Up!");
+      setLives(0);
+      handleGameOver();
+    }
+  }, [totalPlayTime, isDailyChallenge, gameState, settings.dailyChallengeConfig?.timeLimit, handleGameOver]);
+
   // Enemy spawn at regular intervals
   useEffect(() => {
     // Don't spawn normal enemies during boss fights (except daily challenge)
