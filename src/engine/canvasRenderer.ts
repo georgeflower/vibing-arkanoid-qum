@@ -2521,7 +2521,8 @@ function drawEnemies(
           ctx.fill();
         }
         // Build progress indicator
-        const progress = (singleEnemy.buildProgress || 0) / 5000;
+        const rawProgress = singleEnemy.buildProgress || 0;
+        const progress = rawProgress > 0 ? rawProgress / 5000 : 0;
         ctx.strokeStyle = "hsl(50, 100%, 80%)";
         ctx.lineWidth = 2;
         ctx.beginPath();
