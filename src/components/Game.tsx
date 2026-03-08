@@ -6431,7 +6431,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
               if (shouldExposeCore) {
                 Object.assign(megaBoss, exposeMegaBossCore(megaBoss));
                 megaBoss.currentHealth = 0;
-                world.screenShake = 12;
+                triggerScreenShake(12, 600);
                 soundManager.playExplosion();
               }
 
