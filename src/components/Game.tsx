@@ -7592,10 +7592,14 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
     // Keep the current level
     const currentLevel = level;
-    const maxSpeedMultiplier = settings.difficulty === "godlike" ? 1.4875 : 1.5;
-    const baseMultiplier = settings.difficulty === "godlike" ? 1.0625 : 1.0;
-    const levelSpeedMultiplier = Math.min(maxSpeedMultiplier, Math.max(baseMultiplier, baseMultiplier + (currentLevel - 1) * 0.05));
-    setSpeedMultiplier(levelSpeedMultiplier);
+    if (isDailyChallenge && settings.dailyChallengeConfig) {
+      setSpeedMultiplier(settings.dailyChallengeConfig.speedMultiplier);
+    } else {
+      const maxSpeedMultiplier = settings.difficulty === "godlike" ? 1.4875 : 1.5;
+      const baseMultiplier = settings.difficulty === "godlike" ? 1.0625 : 1.0;
+      const levelSpeedMultiplier = Math.min(maxSpeedMultiplier, Math.max(baseMultiplier, baseMultiplier + (currentLevel - 1) * 0.05));
+      setSpeedMultiplier(levelSpeedMultiplier);
+    }
 
     // Reset paddle
     const initialPaddleX = SCALED_CANVAS_WIDTH / 2 - SCALED_PADDLE_WIDTH / 2;
