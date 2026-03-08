@@ -201,8 +201,9 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   const [lives, setLives] = useState(settings.startingLives);
   const [level, setLevel] = useState(settings.startingLevel);
 
-  // Boss Rush mode state
+  // Game mode flags
   const isBossRush = settings.gameMode === "bossRush";
+  const isDailyChallenge = settings.gameMode === "dailyChallenge";
   const [bossRushIndex, setBossRushIndex] = useState(0); // 0-3 for 4 bosses
   const [showBossRushVictory, setShowBossRushVictory] = useState(false);
   const [bossRushStartTime, setBossRushStartTime] = useState<number | null>(null);
