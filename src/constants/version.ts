@@ -1,6 +1,22 @@
-export const GAME_VERSION = "0.9.974";
+export const GAME_VERSION = "0.9.975";
 
 export const CHANGELOG = [
+  {
+    version: "0.9.975",
+    changes: [
+      "NEW: Player Profile System — create an account with a unique username, 3-letter initials, and custom avatar (256×256)",
+      "Track lifetime stats: bricks destroyed, bosses killed, power-ups collected, total play time, best combo streaks",
+      "Unlockable achievements for reaching milestones across all game modes",
+      "Public/private profile toggle — public profiles are linked from the leaderboard",
+      "Secure authentication with email verification and full account deletion",
+      "Account deletion preserves leaderboard scores (unlinked) while removing all profile data",
+      "NEW: Daily Challenge Mode — a new procedurally generated challenge every day",
+      "Daily modifiers: 125% ball speed, enemy spawns every 10s, music-reactive backgrounds, no extra lives",
+      "Additional daily modifiers: One Life, Two Lives, Fast Ball, Brick Wall",
+      "Daily objectives: No Deaths, Speed Run, Total Destruction, Score Hunter, Purist, Combo Master",
+      "Daily streak tracking with exclusive achievements for consecutive completions",
+    ],
+  },
   {
     version: "0.9.974",
     changes: [

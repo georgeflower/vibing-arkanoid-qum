@@ -1,43 +1,38 @@
 
 
-## Plan: Update Home, About, Instructions, Changelog, What's New, and README with Player Profile & Daily Challenge Info
+# Revert Game Area to Fixed Size (Pre-Expansion)
 
-### Changes
+## Problem
+Two previous changes ("Expand game area to frame space" and "Expand game area to fill space") made the game canvas dynamically resize to fill all available space within the metal frame on desktop. The user wants the playable area to return to its original fixed size.
 
-**1. `src/pages/Home.tsx`** — Add two new sections before the High Scores section:
+## Current behavior
+- `useViewportFrame` makes the metal frame fill the entire viewport on desktop
+- `useCanvasResize` uses ResizeObserver to dynamically size the game canvas to fill the `metal-game-area` container
+- The canvas display size grows to match available space
 
-- **Player Profiles section** (new `amiga-box` section): Describes the account system — create a username, upload an avatar, track stats/achievements, toggle public/private profile, link from leaderboard. Mentions privacy (password hashing, email verification, account deletion).
-- **Daily Challenge section** (new `amiga-box` section): Describes the daily challenge mode — new challenge every day, unique modifiers (125% speed, enemy spawns every 10s, music-reactive backgrounds, no extra lives), objectives to complete, streak tracking, and leaderboard.
+## Desired behavior
+The game canvas stays at its logical size (850×650 scaled by `scaleFactor`) and is simply centered within the frame — no dynamic expansion.
 
-Also update the Game Modes subsection in the Rules area to mention Daily Challenge as a third mode.
+## Changes
 
-**2. `src/components/MainMenu.tsx` — About overlay (~line 321-436):**
-- Add a new card section for "Player Profiles" describing accounts, avatars, public profiles, and leaderboard linking.
-- Add a new card section for "Daily Challenge" describing the mode, modifiers, streaks, and objectives.
+### 1. `src/components/Game.tsx`
+- **Remove** `useViewportFrame` import and hook call (lines 22, 1651-1654)
+- **Remove** `useCanvasResize` import and hook call (lines 23, 1657-1667), along with destructured `displayWidth`, `displayHeight`, `dynamicScale`
+- Remove `gameAreaRef` if only used for `useCanvasResize` (check first)
+- On desktop, set the `game-glow` div's width/height explicitly to `SCALED_CANVAS_WIDTH` × `SCALED_CANVAS_HEIGHT` (same as mobile path but without the scale transform), so the canvas is fixed-size and centered
 
-**3. `src/components/MainMenu.tsx` — Instructions overlay (~line 469-690):**
-- Add a new "Player Profile" section explaining how to create an account, set username/initials, upload avatar, toggle public/private.
-- Add a new "Daily Challenge" section explaining the mode, how to access it, modifier effects, and streak rewards.
+### 2. `src/hooks/useViewportFrame.ts`
+- Delete file (no longer used)
 
-**4. `src/components/MainMenu.tsx` — What's New overlay (~line 228-318):**
-- Keep all existing sections (Engine, Boss Hit Streak, Performance).
-- Add two new sections after existing ones:
-  - **Player Profile System** — username-based accounts, avatar uploads, public profiles linked from leaderboard, account deletion with data safety.
-  - **Daily Challenge Mode** — daily generated challenges with modifiers, objectives, streak tracking.
+### 3. `src/hooks/useCanvasResize.ts`
+- Delete file (no longer used)
 
-**5. `src/constants/version.ts`** — Add a new changelog entry at the top for the profile system and daily challenge features.
+### 4. `src/index.css`
+- Remove the `.metal-frame.desktop-fullscreen` CSS block (lines ~265-290) since the class is no longer applied
+- Remove `max-width` constraint on `.metal-game-area` that references side panel widths — let it auto-size around the fixed canvas
+- Keep `.metal-frame` as `width: fit-content` so it wraps the fixed-size content naturally
 
-**6. `README.md`** — Add to Features list:
-- **Player profiles** with usernames, avatars, public/private toggle, and leaderboard linking
-- **Daily Challenges** with unique modifiers, objectives, and streak tracking
-- **Account system** with secure auth, email verification, and full account deletion
-
-### File Summary
-
-| File | Change |
-|------|--------|
-| `src/pages/Home.tsx` | Add Player Profiles + Daily Challenge sections, update Game Modes |
-| `src/components/MainMenu.tsx` | Add profile + daily challenge info to About, Instructions, and What's New overlays |
-| `src/constants/version.ts` | New changelog entry for profile system + daily challenge |
-| `README.md` | Add profile, daily challenge, and account features to Features list |
+### 5. Verify
+- `gameAreaRef` usage — if it's only for `useCanvasResize`, remove the ref. If used elsewhere (e.g. click handlers), keep it.
+- `gameGlowRef` — same check; if only used by `useCanvasResize` for imperative sizing, it can be simplified but likely still needed for CRT overlay positioning.
 
