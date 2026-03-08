@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useServiceWorkerUpdate } from "@/hooks/useServiceWorkerUpdate";
 import { Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import CRTOverlay from "@/components/CRTOverlay";
 import { GAME_VERSION } from "@/constants/version";
 import { CHANGELOG } from "@/constants/version";
