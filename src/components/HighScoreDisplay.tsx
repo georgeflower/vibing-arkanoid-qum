@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { Button } from "./ui/button";
 import { useHighScores, type LeaderboardType, type DifficultyFilter } from "@/hooks/useHighScores";
 import { useBossRushScores } from "@/hooks/useBossRushScores";
@@ -21,18 +22,14 @@ export const HighScoreDisplay = ({ onClose, leaderboardType = 'all-time', initia
   const { scores: bossRushScores, isLoading: bossRushLoading, formatTime } = useBossRushScores();
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Swipe gesture for mobile back navigation
   const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
     ("ontouchstart" in window && window.matchMedia("(max-width: 768px)").matches);
   
   useSwipeGesture(containerRef, onClose, { enabled: isMobileDevice });
 
-  // ESC key to close
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose();
-      }
+      if (e.key === 'Escape') onClose();
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
@@ -42,84 +39,37 @@ export const HighScoreDisplay = ({ onClose, leaderboardType = 'all-time', initia
     <div ref={containerRef} className="fixed inset-0 w-full h-screen overflow-hidden swipe-container animate-fade-in bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900">
       <div className="absolute inset-0 w-full h-full flex items-center justify-center p-4">
         <div className="relative z-10 bg-slate-900/90 backdrop-blur-md rounded-lg p-8 border-2 border-cyan-500/50 max-w-3xl w-full animate-scale-in">
-          <button
-            onClick={onClose}
-            className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors z-20"
-            title="Close"
-          >
+          <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors z-20" title="Close">
             <X size={24} />
           </button>
           
-          <h2 className="text-5xl font-bold text-center mb-4 text-cyan-400">
-            HIGH SCORES
-          </h2>
+          <h2 className="text-5xl font-bold text-center mb-4 text-cyan-400">HIGH SCORES</h2>
           
           {/* Tab switcher */}
           <div className="flex justify-center gap-2 mb-4">
-            <Button
-              onClick={() => setActiveTab('normal')}
-              variant={activeTab === 'normal' ? 'default' : 'outline'}
-              className={`px-6 py-2 text-sm font-bold ${activeTab === 'normal' ? 'bg-cyan-600 hover:bg-cyan-500' : ''}`}
-            >
+            <Button onClick={() => setActiveTab('normal')} variant={activeTab === 'normal' ? 'default' : 'outline'}
+              className={`px-6 py-2 text-sm font-bold ${activeTab === 'normal' ? 'bg-cyan-600 hover:bg-cyan-500' : ''}`}>
               CAMPAIGN
             </Button>
-            <Button
-              onClick={() => setActiveTab('bossRush')}
-              variant={activeTab === 'bossRush' ? 'default' : 'outline'}
-              className={`px-6 py-2 text-sm font-bold ${activeTab === 'bossRush' ? 'bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 border-0' : 'border-red-500/50 text-red-400 hover:bg-red-500/20'}`}
-            >
+            <Button onClick={() => setActiveTab('bossRush')} variant={activeTab === 'bossRush' ? 'default' : 'outline'}
+              className={`px-6 py-2 text-sm font-bold ${activeTab === 'bossRush' ? 'bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 border-0' : 'border-red-500/50 text-red-400 hover:bg-red-500/20'}`}>
               ⚔️ BOSS RUSH
             </Button>
           </div>
 
           {activeTab === 'normal' && (
             <>
-              {/* Time filter for normal mode */}
               <div className="flex justify-center gap-2 mb-6">
-                <Button
-                  onClick={() => setSelectedType('all-time')}
-                  variant={selectedType === 'all-time' ? 'default' : 'outline'}
-                  className="px-4 py-2 text-sm font-bold"
-                >
-                  ALL TIME
-                </Button>
-                <Button
-                  onClick={() => setSelectedType('weekly')}
-                  variant={selectedType === 'weekly' ? 'default' : 'outline'}
-                  className="px-4 py-2 text-sm font-bold"
-                >
-                  WEEKLY
-                </Button>
-                <Button
-                  onClick={() => setSelectedType('daily')}
-                  variant={selectedType === 'daily' ? 'default' : 'outline'}
-                  className="px-4 py-2 text-sm font-bold"
-                >
-                  DAILY
-                </Button>
+                <Button onClick={() => setSelectedType('all-time')} variant={selectedType === 'all-time' ? 'default' : 'outline'} className="px-4 py-2 text-sm font-bold">ALL TIME</Button>
+                <Button onClick={() => setSelectedType('weekly')} variant={selectedType === 'weekly' ? 'default' : 'outline'} className="px-4 py-2 text-sm font-bold">WEEKLY</Button>
+                <Button onClick={() => setSelectedType('daily')} variant={selectedType === 'daily' ? 'default' : 'outline'} className="px-4 py-2 text-sm font-bold">DAILY</Button>
               </div>
 
-              {/* Difficulty filter */}
               <div className="flex justify-center gap-2 mb-6">
-                <Button
-                  onClick={() => setDifficultyFilter('all')}
-                  variant={difficultyFilter === 'all' ? 'default' : 'outline'}
-                  className="px-3 py-1 text-xs font-bold"
-                >
-                  ALL
-                </Button>
-                <Button
-                  onClick={() => setDifficultyFilter('normal')}
-                  variant={difficultyFilter === 'normal' ? 'default' : 'outline'}
-                  className="px-3 py-1 text-xs font-bold"
-                >
-                  NORMAL
-                </Button>
-                <Button
-                  onClick={() => setDifficultyFilter('godlike')}
-                  variant={difficultyFilter === 'godlike' ? 'default' : 'outline'}
-                  className={`px-3 py-1 text-xs font-bold ${difficultyFilter === 'godlike' ? 'bg-red-600 hover:bg-red-500 border-0' : 'border-red-500/50 text-red-400 hover:bg-red-500/20'}`}
-                >
+                <Button onClick={() => setDifficultyFilter('all')} variant={difficultyFilter === 'all' ? 'default' : 'outline'} className="px-3 py-1 text-xs font-bold">ALL</Button>
+                <Button onClick={() => setDifficultyFilter('normal')} variant={difficultyFilter === 'normal' ? 'default' : 'outline'} className="px-3 py-1 text-xs font-bold">NORMAL</Button>
+                <Button onClick={() => setDifficultyFilter('godlike')} variant={difficultyFilter === 'godlike' ? 'default' : 'outline'}
+                  className={`px-3 py-1 text-xs font-bold ${difficultyFilter === 'godlike' ? 'bg-red-600 hover:bg-red-500 border-0' : 'border-red-500/50 text-red-400 hover:bg-red-500/20'}`}>
                   🔥 GOD-MODE
                 </Button>
               </div>
@@ -137,7 +87,13 @@ export const HighScoreDisplay = ({ onClose, leaderboardType = 'all-time', initia
                       <div className="flex flex-col min-w-0">
                         <span className="text-white font-bold flex items-center gap-1 truncate">
                           {entry.beatLevel50 && <span>👑</span>}
-                          <span className="truncate">{entry.name}</span>
+                          {entry.profileLink ? (
+                            <Link to={`/player/${entry.profileLink.username}`} className="truncate underline hover:text-cyan-300 transition-colors">
+                              {entry.name}
+                            </Link>
+                          ) : (
+                            <span className="truncate">{entry.name}</span>
+                          )}
                         </span>
                         {entry.difficulty === "godlike" && (
                           <span className="text-red-500 text-[8px] sm:text-[9px] md:text-[10px] font-bold leading-tight">GOD-MODE</span>
@@ -148,7 +104,6 @@ export const HighScoreDisplay = ({ onClose, leaderboardType = 'all-time', initia
                       </div>
                       
                       <span className="text-white font-bold text-right tabular-nums">{entry.score.toString().padStart(6, '0')}</span>
-                      
                       <span className="text-white text-right whitespace-nowrap">LVL{entry.level}</span>
                     </div>
                   ))
@@ -159,10 +114,7 @@ export const HighScoreDisplay = ({ onClose, leaderboardType = 'all-time', initia
 
           {activeTab === 'bossRush' && (
             <>
-              <div className="text-center text-orange-400 text-sm mb-4 font-mono">
-                🏆 BOSS RUSH SCORES 🏆
-              </div>
-              
+              <div className="text-center text-orange-400 text-sm mb-4 font-mono">🏆 BOSS RUSH SCORES 🏆</div>
               <div className="space-y-2 mb-8 max-h-[50vh] overflow-y-auto smooth-scroll custom-scrollbar">
                 {bossRushLoading ? (
                   <div className="text-center text-slate-400 py-12">Loading scores...</div>
@@ -174,16 +126,9 @@ export const HighScoreDisplay = ({ onClose, leaderboardType = 'all-time', initia
                       <span className="text-red-300 font-bold flex-shrink-0 w-6 sm:w-8">
                         {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}.`}
                       </span>
-                      
                       <span className="text-orange-400 font-bold flex-shrink-0 w-10 sm:w-14">{entry.name}</span>
-                      
-                      <span className="text-amber-300 font-bold tabular-nums flex-1 text-right">
-                        {entry.score}
-                      </span>
-                      
-                      <span className="text-cyan-300 tabular-nums flex-shrink-0">
-                        ⏱️{formatTime(entry.completionTimeMs)}
-                      </span>
+                      <span className="text-amber-300 font-bold tabular-nums flex-1 text-right">{entry.score}</span>
+                      <span className="text-cyan-300 tabular-nums flex-shrink-0">⏱️{formatTime(entry.completionTimeMs)}</span>
                     </div>
                   ))
                 )}

@@ -34,7 +34,6 @@ const Auth = () => {
   const [mode, setMode] = useState<AuthMode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [displayName, setDisplayName] = useState("");
   const [username, setUsername] = useState("");
   const [initials, setInitials] = useState("");
   const [loading, setLoading] = useState(false);
@@ -51,8 +50,6 @@ const Auth = () => {
   }, [navigate]);
 
   const handleSignup = async () => {
-    if (!displayName.trim()) { setError("Display name is required"); return; }
-
     const usernameCheck = validateUsername(username);
     if (!usernameCheck.isValid) { setError(`Username: ${usernameCheck.error}`); return; }
 
@@ -62,11 +59,19 @@ const Auth = () => {
     const pwCheck = validatePassword(password);
     if (!pwCheck.isValid) { setError(pwCheck.errors.join(". ")); return; }
 
+    // Check username uniqueness
+    const { data: existing } = await supabase
+      .from("player_profiles")
+      .select("id")
+      .eq("username", username.toLowerCase())
+      .maybeSingle();
+    if (existing) { setError("Username is already taken. Please choose another."); return; }
+
     const { error: signUpError } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: { display_name: displayName.trim(), username: username.toLowerCase(), initials: initials.toUpperCase() },
+        data: { username: username.toLowerCase(), initials: initials.toUpperCase(), display_name: username.toLowerCase() },
         emailRedirectTo: window.location.origin,
       },
     });
@@ -132,17 +137,11 @@ const Auth = () => {
             {mode === "signup" && (
               <>
                 <div>
-                  <label className="block text-sm mb-1" style={{ color: "hsl(0,0%,70%)" }}>Display Name</label>
-                  <input type="text" value={displayName} onChange={(e) => setDisplayName(e.target.value.slice(0, 20))}
-                    className="w-full px-3 py-2 rounded text-sm" placeholder="Your name"
-                    style={{ background: "hsl(0,0%,15%)", border: "1px solid hsl(0,0%,30%)", color: "hsl(0,0%,90%)" }} required />
-                </div>
-                <div>
                   <label className="block text-sm mb-1" style={{ color: "hsl(0,0%,70%)" }}>Username</label>
                   <input type="text" value={username} onChange={(e) => setUsername(e.target.value.slice(0, 20).replace(/[^a-zA-Z0-9_]/g, ""))}
                     className="w-full px-3 py-2 rounded text-sm" placeholder="unique_username"
                     style={{ background: "hsl(0,0%,15%)", border: "1px solid hsl(0,0%,30%)", color: "hsl(0,0%,90%)" }} required />
-                  <p className="text-[10px] mt-0.5" style={{ color: "hsl(0,0%,50%)" }}>3-20 chars, letters/numbers/underscores</p>
+                  <p className="text-[10px] mt-0.5" style={{ color: "hsl(0,0%,50%)" }}>3-20 chars, letters/numbers/underscores. This is your identity.</p>
                 </div>
                 <div>
                   <label className="block text-sm mb-1" style={{ color: "hsl(0,0%,70%)" }}>Initials (for high scores)</label>
@@ -150,6 +149,7 @@ const Auth = () => {
                     onChange={(e) => setInitials(e.target.value.toUpperCase().replace(/[^A-Z]/g, ""))}
                     className="w-full px-3 py-2 rounded text-sm font-mono tracking-widest" placeholder="AAA"
                     style={{ background: "hsl(0,0%,15%)", border: "1px solid hsl(0,0%,30%)", color: "hsl(0,0%,90%)" }} required />
+                  <p className="text-[10px] mt-0.5" style={{ color: "hsl(0,0%,50%)" }}>Exactly 3 uppercase letters shown on the leaderboard.</p>
                 </div>
               </>
             )}

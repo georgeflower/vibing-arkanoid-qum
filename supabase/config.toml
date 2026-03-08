@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.submit-daily-challenge]
 verify_jwt = false
+
+[functions.delete-account]
+verify_jwt = false
