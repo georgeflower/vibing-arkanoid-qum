@@ -4,7 +4,8 @@ import { Card } from "@/components/ui/card";
 import { X } from "lucide-react";
 import { soundManager } from "@/utils/sounds";
 import { supabase } from "@/integrations/supabase/client";
-import { getDailyChallenge, getTodayString, type DailyChallenge } from "@/utils/dailyChallenge";
+import { getDailyChallenge, getTodayString, getShapeIcon, type DailyChallenge } from "@/utils/dailyChallenge";
+import { DailyChallengeArchive } from "./DailyChallengeArchive";
 
 interface DailyChallengeOverlayProps {
   onPlay: (challenge: DailyChallenge) => void;
@@ -16,12 +17,12 @@ export const DailyChallengeOverlay = ({ onPlay, onClose }: DailyChallengeOverlay
   const [alreadyCompleted, setAlreadyCompleted] = useState(false);
   const [streak, setStreak] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [showArchive, setShowArchive] = useState(false);
 
   useEffect(() => {
     const checkCompletion = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        // Check if already completed today
         const todayStr = getTodayString();
         const { data: completion } = await (supabase as any)
           .from("daily_challenge_completions")
@@ -32,7 +33,6 @@ export const DailyChallengeOverlay = ({ onPlay, onClose }: DailyChallengeOverlay
 
         if (completion) setAlreadyCompleted(true);
 
-        // Get streak
         const { data: profile } = await (supabase as any)
           .from("player_profiles")
           .select("daily_challenge_streak")
@@ -45,6 +45,17 @@ export const DailyChallengeOverlay = ({ onPlay, onClose }: DailyChallengeOverlay
     };
     checkCompletion();
   }, []);
+
+  if (showArchive) {
+    return (
+      <DailyChallengeArchive
+        onPlay={onPlay}
+        onClose={() => setShowArchive(false)}
+      />
+    );
+  }
+
+  const shapeIcon = getShapeIcon(challenge.shapeName);
 
   return (
     <div className="fixed inset-0 w-full h-screen bg-gradient-to-b from-[hsl(220,25%,12%)] to-[hsl(220,30%,8%)] flex items-center justify-center p-2 sm:p-4 overflow-hidden animate-fade-in z-50">
@@ -68,6 +79,29 @@ export const DailyChallengeOverlay = ({ onPlay, onClose }: DailyChallengeOverlay
           <p className="text-xs" style={{ color: "hsl(0,0%,50%)" }}>
             {challenge.dateString}
           </p>
+        </div>
+
+        {/* Shape Name */}
+        <div className="text-center mb-4 p-3 rounded" style={{ background: "hsl(220,20%,20%)", border: "2px solid hsl(45,100%,40%)" }}>
+          {challenge.isBossChallenge ? (
+            <>
+              <p className="retro-pixel-text text-lg" style={{ color: "hsl(0, 70%, 55%)" }}>
+                👹 BOSS CHALLENGE
+              </p>
+              <p className="text-sm mt-1" style={{ color: "hsl(0,0%,80%)" }}>
+                {shapeIcon} {challenge.shapeName.replace("Saturday Boss: ", "")} Boss
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="text-xs font-bold" style={{ color: "hsl(45,100%,50%)", letterSpacing: "1px" }}>
+                TODAY'S SHAPE
+              </p>
+              <p className="retro-pixel-text text-lg mt-1" style={{ color: "hsl(0,0%,90%)" }}>
+                {shapeIcon} {challenge.shapeName}
+              </p>
+            </>
+          )}
         </div>
 
         {/* Streak */}
@@ -148,7 +182,17 @@ export const DailyChallengeOverlay = ({ onPlay, onClose }: DailyChallengeOverlay
           className="w-full text-white text-lg py-4 bg-[hsl(45,100%,45%)] hover:bg-[hsl(45,100%,55%)]"
           style={{ textShadow: "0 1px 2px rgba(0,0,0,0.5)" }}
         >
-          {alreadyCompleted ? "Play Again (no rewards)" : "PLAY CHALLENGE"}
+          {alreadyCompleted ? "Play Again (no rewards)" : challenge.isBossChallenge ? "FIGHT BOSS" : "PLAY CHALLENGE"}
+        </Button>
+
+        {/* Past Challenges button */}
+        <Button
+          onClick={() => { soundManager.playMenuClick(); setShowArchive(true); }}
+          onMouseEnter={() => soundManager.playMenuHover()}
+          variant="outline"
+          className="w-full mt-2 border-[hsl(45,100%,40%)] text-[hsl(45,100%,50%)] hover:bg-[hsl(45,100%,40%)] hover:text-white"
+        >
+          📜 Past Challenges
         </Button>
 
         <Button

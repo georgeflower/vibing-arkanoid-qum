@@ -122,6 +122,9 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
       enemySpawnInterval: challenge.enemySpawnInterval,
       musicReactiveBackground: challenge.musicReactiveBackground,
       noExtraLives: challenge.noExtraLives,
+      shapeName: challenge.shapeName,
+      isBossChallenge: challenge.isBossChallenge,
+      bossLevel: challenge.bossLevel,
     };
     const settings: GameSettings = {
       startingLives: challenge.startingLives,

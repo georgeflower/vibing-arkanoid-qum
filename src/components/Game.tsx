@@ -1782,7 +1782,35 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       world.bullets = [];
       bulletPool.releaseAll();
 
-      if (isBossRush) {
+      if (isDailyChallenge && dailyChallengeData) {
+        // Daily challenge boss defeated — evaluate and show result
+        setGameState("won");
+        soundManager.stopBossMusic();
+        soundManager.stopBackgroundMusic();
+
+        const challengeResult = evaluateObjectives(dailyChallengeData, {
+          livesLost: dailyChallengeLivesLostRef.current,
+          timeSeconds: totalPlayTime,
+          allBricksDestroyed: true,
+          score: scoreRef.current,
+          powerUpsCollected: dailyChallengePowerUpsRef.current,
+          bestCombo: hitStreakRef.current,
+        });
+        setDailyChallengeResult(challengeResult);
+
+        submitDailyChallenge({
+          challengeDate: dailyChallengeData.dateString,
+          score: scoreRef.current,
+          timeSeconds: totalPlayTime,
+          objectivesMet: challengeResult.objectivesMet,
+          allObjectivesMet: challengeResult.allObjectivesMet,
+        }).then((res) => {
+          if (res.success) setDailyChallengeStreak(res.streak);
+          setShowDailyChallengeResult(true);
+        });
+
+        toast.success("⚡ Daily Boss Challenge Complete!");
+      } else if (isBossRush) {
         gameLoopRef.current?.pause();
         setBossRushTimeSnapshot(bossRushStartTime ? Date.now() - bossRushStartTime : 0);
         setBossRushStatsOverlayActive(true);
@@ -1792,7 +1820,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         setTimeout(() => nextLevelRef.current?.(), 3000);
       }
     },
-    [isBossRush, bossRushStartTime, createExplosionParticles, clearAllEnemies, clearAllBombs],
+    [isBossRush, isDailyChallenge, dailyChallengeData, bossRushStartTime, createExplosionParticles, clearAllEnemies, clearAllBombs, totalPlayTime],
   );
 
   // createHighScoreParticles removed — replaced by particlePool.acquireForHighScore
@@ -2012,6 +2040,24 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
       const bossName = newBoss?.type.toUpperCase();
       toast.success(`LEVEL ${currentLevel}: ${bossName} BOSS!`, { duration: 3000 });
+      return []; // No bricks on boss levels
+    }
+
+    // Daily Challenge boss mode: spawn a boss instead of bricks
+    if (isDailyChallenge && settings.dailyChallengeConfig?.isBossChallenge) {
+      const bossLevel = settings.dailyChallengeConfig.bossLevel || 5;
+      const newBoss = createBoss(bossLevel, SCALED_CANVAS_WIDTH, SCALED_CANVAS_HEIGHT);
+      if (newBoss) {
+        setBoss({ ...newBoss, lastHitAt: 0 });
+      } else {
+        setBoss(newBoss);
+      }
+      setBossActive(true);
+      setResurrectedBosses([]);
+      setBossAttacks([]);
+      setLaserWarnings([]);
+
+      toast.success(`DAILY BOSS CHALLENGE!`, { duration: 3000 });
       return []; // No bricks on boss levels
     }
 
@@ -6818,6 +6864,18 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     };
   }, [gameState, tutorialActive, bossRushStatsOverlayActive]);
 
+  // Daily Challenge countdown timer — auto game-over when time runs out
+  useEffect(() => {
+    if (!isDailyChallenge || !settings.dailyChallengeConfig?.timeLimit) return;
+    if (gameState !== "playing") return;
+    const timeLimit = settings.dailyChallengeConfig.timeLimit;
+    if (totalPlayTime >= timeLimit) {
+      toast.error("⏰ Time's Up!");
+      setLives(0);
+      handleGameOver();
+    }
+  }, [totalPlayTime, isDailyChallenge, gameState, settings.dailyChallengeConfig?.timeLimit, handleGameOver]);
+
   // Enemy spawn at regular intervals
   useEffect(() => {
     // Don't spawn normal enemies during boss fights (except daily challenge)
@@ -8496,12 +8554,36 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                       <div className="right-stat-value">{lives}</div>
                     </div>
 
-                    {/* Timer */}
+                    {/* Timer — shows countdown for daily challenge with time limit */}
                     <div className="right-stat-box">
-                      <div className="right-stat-label" style={{ color: "hsl(210, 60%, 55%)" }}>
-                        TIMER
-                      </div>
-                      <div className="right-stat-value">{timer}s</div>
+                      {isDailyChallenge && settings.dailyChallengeConfig?.timeLimit && settings.dailyChallengeConfig.timeLimit > 0 ? (
+                        <>
+                          <div className="right-stat-label" style={{
+                            color: Math.max(0, settings.dailyChallengeConfig.timeLimit - totalPlayTime) <= 30
+                              ? "hsl(0, 80%, 60%)"
+                              : "hsl(45, 100%, 50%)"
+                          }}>
+                            TIME LEFT
+                          </div>
+                          <div
+                            className={`right-stat-value ${Math.max(0, settings.dailyChallengeConfig.timeLimit - totalPlayTime) <= 30 ? "animate-pulse" : ""}`}
+                            style={{
+                              color: Math.max(0, settings.dailyChallengeConfig.timeLimit - totalPlayTime) <= 30
+                                ? "hsl(0, 80%, 65%)"
+                                : "hsl(0, 0%, 85%)"
+                            }}
+                          >
+                            {Math.max(0, settings.dailyChallengeConfig.timeLimit - totalPlayTime)}s
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="right-stat-label" style={{ color: "hsl(210, 60%, 55%)" }}>
+                            TIMER
+                          </div>
+                          <div className="right-stat-value">{timer}s</div>
+                        </>
+                      )}
                     </div>
 
                     {/* Speed */}

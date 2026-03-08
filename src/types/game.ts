@@ -248,6 +248,9 @@ export interface DailyChallengeConfig {
   enemySpawnInterval: number;
   musicReactiveBackground: boolean;
   noExtraLives: boolean;
+  shapeName: string;
+  isBossChallenge: boolean;
+  bossLevel: number;
 }
 
 export interface GameSettings {
