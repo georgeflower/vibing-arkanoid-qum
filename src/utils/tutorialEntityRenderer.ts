@@ -3,7 +3,7 @@
 // Defensive helper for canvas arc calls (prevents DOMException on negative/non-finite radius)
 const safeArcRadius = (r: number): number => (Number.isFinite(r) ? Math.max(0.001, r) : 0.001);
 
-export type EntityType = 'cube' | 'sphere' | 'pyramid' | 'mega' | 'enemy';
+export type EntityType = 'cube' | 'sphere' | 'pyramid' | 'mega' | 'enemy' | 'star';
 
 interface RenderOptions {
   isAngry?: boolean;
@@ -36,6 +36,8 @@ export function renderBossToCanvas(
     renderCubeBoss(ctx, size / 2, isAngry, rotationX, rotationY, rotationZ);
   } else if (type === 'enemy') {
     renderEnemy(ctx, size, rotationX, rotationY);
+  } else if (type === 'star') {
+    renderStarEnemy(ctx, size / 2);
   }
   
   ctx.restore();
@@ -258,4 +260,44 @@ function renderEnemy(
     ctx.lineWidth = 1.5;
     ctx.stroke();
   });
+}
+
+function renderStarEnemy(
+  ctx: CanvasRenderingContext2D,
+  radius: number
+): void {
+  const points = 5;
+  const outerR = radius;
+  const innerR = radius * 0.45;
+
+  // Shadow
+  ctx.fillStyle = "rgba(0, 0, 0, 0.35)";
+  ctx.beginPath();
+  for (let i = 0; i < points * 2; i++) {
+    const r = i % 2 === 0 ? outerR : innerR;
+    const angle = (i * Math.PI) / points - Math.PI / 2;
+    const x = Math.cos(angle) * r + 4;
+    const y = Math.sin(angle) * r + 4;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+  ctx.fill();
+
+  // Main star
+  ctx.beginPath();
+  for (let i = 0; i < points * 2; i++) {
+    const r = i % 2 === 0 ? outerR : innerR;
+    const angle = (i * Math.PI) / points - Math.PI / 2;
+    const x = Math.cos(angle) * r;
+    const y = Math.sin(angle) * r;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+  ctx.fillStyle = "hsl(50, 90%, 50%)";
+  ctx.fill();
+  ctx.strokeStyle = "hsl(50, 95%, 70%)";
+  ctx.lineWidth = 2;
+  ctx.stroke();
 }

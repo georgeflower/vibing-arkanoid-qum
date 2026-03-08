@@ -273,6 +273,9 @@ export const enemyPool = new EntityPool<Enemy>(
     e.isCrossBall = false;
     e.isLargeSphere = false;
     e.spawnTime = undefined;
+    e.buildTarget = undefined;
+    e.buildProgress = 0;
+    e.isBuilding = false;
   },
   15,
   40
