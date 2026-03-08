@@ -5175,7 +5175,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
               }, 1500);
               
               // Play sound to alert player
-              soundManager.playReflectSound();
+              soundManager.playReflectShieldSound();
             }
 
             return resetBoss as unknown as Boss;
