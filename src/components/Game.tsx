@@ -307,6 +307,11 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         return BOSS_RUSH_CONFIG.speedMultipliers[bossLevel];
       }
 
+      // Daily challenge uses its own speed multiplier
+      if (isDailyChallenge && settings.dailyChallengeConfig) {
+        return settings.dailyChallengeConfig.speedMultiplier;
+      }
+
       // 105% base for normal, ~117% for godlike (reduced 15% from 137.5%)
       const baseMultiplier = difficulty === "godlike" ? 1.169 : 1.05;
       // Level-based caps (before brick hit bonuses): ~132% godlike (reduced 15%), 140% normal
