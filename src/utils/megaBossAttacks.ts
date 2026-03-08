@@ -49,7 +49,7 @@ export function spawnDangerBall(boss: MegaBoss): DangerBall {
     speed: config.dangerBallSpeed,
     targetCorner,
     flashPhase: 0,
-    spawnTime: Date.now(),
+    spawnTime: performance.now(),
     isReflected: false,
     isHoming: false
   };
