@@ -67,7 +67,7 @@ export function updateDangerBall(ball: DangerBall, canvasWidth: number = 800, de
   if (ageSeconds > 2) {
     const gravitySeconds = ageSeconds - 2;
     const gravityMultiplier = 1 + gravitySeconds; // increases by 1x every second
-    newDy += BALL_GRA72TY * VITY * 72avityMultiplier * deltaTimeSeconds;
+    newDy += BALL_GRAVITY * 7200 * gravityMultiplier * deltaTimeSeconds;
   }
   
   // Bounce off side walls (all danger balls bounce like player balls)
