@@ -64,8 +64,12 @@ class SoundManager {
       this.musicTracks[this.currentTrackIndex] = audio;
     }
 
-    // Play current track
-    this.musicTracks[this.currentTrackIndex]?.play().catch(() => {});
+    // Connect stereo analyser for VU meters
+    const currentAudio = this.musicTracks[this.currentTrackIndex];
+    if (currentAudio) {
+      this.connectStereoAnalyser(currentAudio);
+      currentAudio.play().catch(() => {});
+    }
   }
 
   private handleTrackEnd() {
