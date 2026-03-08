@@ -410,6 +410,26 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
               <span className="text-[hsl(330,100%,65%)] font-bold">Q-U-M-R-A-N</span> bonus letters for 5 extra lives!
             </p>
 
+            <div className="bg-black/30 p-3 sm:p-4 md:p-5 rounded-lg border border-[hsl(330,100%,65%)]/30">
+              <h3 className="font-bold text-sm sm:text-base md:text-lg mb-2 text-[hsl(330,100%,65%)]">👤 Player Profiles</h3>
+              <p className="text-xs sm:text-sm leading-relaxed">
+                Create an account with a unique <span className="text-[hsl(200,70%,50%)] font-bold">username</span> and
+                upload a custom avatar. Track your lifetime stats, achievements, and power-up usage. Toggle your profile
+                between public and private — public profiles are linked directly from the leaderboard. Full account
+                deletion with data safety: your scores remain on the board but are unlinked from your profile.
+              </p>
+            </div>
+
+            <div className="bg-black/30 p-3 sm:p-4 md:p-5 rounded-lg border border-[hsl(45,100%,50%)]/30">
+              <h3 className="font-bold text-sm sm:text-base md:text-lg mb-2 text-[hsl(45,100%,50%)]">📅 Daily Challenge</h3>
+              <p className="text-xs sm:text-sm leading-relaxed">
+                A new challenge is generated every day with a unique procedural layout, special modifiers (125% speed,
+                enemy spawns every 10s, music-reactive backgrounds, no extra lives), and objectives to complete.
+                Build a <span className="text-[hsl(330,100%,65%)] font-bold">daily streak</span> by completing
+                challenges on consecutive days and unlock exclusive achievements!
+              </p>
+            </div>
+
             <div className="bg-black/30 p-3 sm:p-4 md:p-5 rounded-lg border border-[hsl(200,70%,50%)]/30">
               <h3 className="font-bold text-sm sm:text-base md:text-lg mb-2 text-[hsl(200,70%,50%)]">
                 Vibe Coded to Perfection
