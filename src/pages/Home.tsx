@@ -101,6 +101,17 @@ const Home = () => {
   const [difficultyTab, setDifficultyTab] = useState<DifficultyTab>("all");
   const [scores, setScores] = useState<ScoreEntry[]>([]);
   const [scoresLoading, setScoresLoading] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setIsLoggedIn(!!session);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsLoggedIn(!!session);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
     const fetchScores = async () => {
