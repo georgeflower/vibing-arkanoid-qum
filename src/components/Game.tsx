@@ -4365,39 +4365,15 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
               // Invalidate brick render cache
               brickRenderer.invalidate();
 
-              // Reset build state and steer toward area with most missing bricks
+              // Reset build state — enter roaming cooldown (3–5 seconds)
               enemy.isBuilding = false;
-              enemy.buildProgress = 0;
+              enemy.buildProgress = -(3000 + Math.random() * 2000); // negative = roam timer
               enemy.buildTarget = undefined;
 
-              // Find direction with most empty space
-              const enemyCX = enemy.x + enemy.width / 2;
-              const enemyCY = enemy.y + enemy.height / 2;
-              let bestAngle = Math.random() * Math.PI * 2;
-              let bestEmpty = 0;
-              const directions = [
-                { angle: -Math.PI / 2, label: "top" },
-                { angle: Math.PI / 2, label: "bottom" },
-                { angle: Math.PI, label: "left" },
-                { angle: 0, label: "right" },
-              ];
-              for (const dir of directions) {
-                const checkX = enemyCX + Math.cos(dir.angle) * 100;
-                const checkY = enemyCY + Math.sin(dir.angle) * 100;
-                const emptyCount = world.bricks.filter((b) => {
-                  if (b.visible) return false;
-                  const bCX = b.x + b.width / 2;
-                  const bCY = b.y + b.height / 2;
-                  const dist = Math.sqrt((bCX - checkX) ** 2 + (bCY - checkY) ** 2);
-                  return dist < 150;
-                }).length;
-                if (emptyCount > bestEmpty) {
-                  bestEmpty = emptyCount;
-                  bestAngle = dir.angle;
-                }
-              }
-              enemy.dx = Math.cos(bestAngle) * enemy.speed;
-              enemy.dy = Math.sin(bestAngle) * enemy.speed;
+              // Pick a random flight direction
+              const roamAngle = Math.random() * Math.PI * 2;
+              enemy.dx = Math.cos(roamAngle) * enemy.speed * 1.5;
+              enemy.dy = Math.sin(roamAngle) * enemy.speed * 1.5;
             }
           } else if (!enemy.isBuilding) {
             // Scan for build target every ~60 frames
