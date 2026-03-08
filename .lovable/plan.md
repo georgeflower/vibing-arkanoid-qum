@@ -1,38 +1,26 @@
 
 
-# Revert Game Area to Fixed Size (Pre-Expansion)
+## Fix: Daily Challenge Not Starting
 
-## Problem
-Two previous changes ("Expand game area to frame space" and "Expand game area to fill space") made the game canvas dynamically resize to fill all available space within the metal frame on desktop. The user wants the playable area to return to its original fixed size.
+### Root Cause
 
-## Current behavior
-- `useViewportFrame` makes the metal frame fill the entire viewport on desktop
-- `useCanvasResize` uses ResizeObserver to dynamically size the game canvas to fill the `metal-game-area` container
-- The canvas display size grows to match available space
+The daily challenge procedural layout generates a **13×13 grid** (`ROWS = 13` in `dailyChallenge.ts`), but the brick loading loop in `Game.tsx` iterates over **14 rows** (`BRICK_ROWS = 14` from `constants/game.ts`).
 
-## Desired behavior
-The game canvas stays at its logical size (850×650 scaled by `scaleFactor`) and is simply centered within the frame — no dynamic expansion.
+When `row = 13`, `layout[13]` is `undefined`, causing `layout[13][col]` to throw a runtime error — the game crashes silently before rendering.
 
-## Changes
+### Fix
 
-### 1. `src/components/Game.tsx`
-- **Remove** `useViewportFrame` import and hook call (lines 22, 1651-1654)
-- **Remove** `useCanvasResize` import and hook call (lines 23, 1657-1667), along with destructured `displayWidth`, `displayHeight`, `dynamicScale`
-- Remove `gameAreaRef` if only used for `useCanvasResize` (check first)
-- On desktop, set the `game-glow` div's width/height explicitly to `SCALED_CANVAS_WIDTH` × `SCALED_CANVAS_HEIGHT` (same as mobile path but without the scale transform), so the canvas is fixed-size and centered
+In `src/utils/dailyChallenge.ts`, change `ROWS` from 13 to 14 to match `BRICK_ROWS`:
 
-### 2. `src/hooks/useViewportFrame.ts`
-- Delete file (no longer used)
+```typescript
+const ROWS = 14; // Was 13, must match BRICK_ROWS in constants/game.ts
+```
 
-### 3. `src/hooks/useCanvasResize.ts`
-- Delete file (no longer used)
+This single-line change aligns the procedural layout dimensions with the game engine's expectations.
 
-### 4. `src/index.css`
-- Remove the `.metal-frame.desktop-fullscreen` CSS block (lines ~265-290) since the class is no longer applied
-- Remove `max-width` constraint on `.metal-game-area` that references side panel widths — let it auto-size around the fixed canvas
-- Keep `.metal-frame` as `width: fit-content` so it wraps the fixed-size content naturally
+### Files Changed
 
-### 5. Verify
-- `gameAreaRef` usage — if it's only for `useCanvasResize`, remove the ref. If used elsewhere (e.g. click handlers), keep it.
-- `gameGlowRef` — same check; if only used by `useCanvasResize` for imperative sizing, it can be simplified but likely still needed for CRT overlay positioning.
+| File | Change |
+|------|--------|
+| `src/utils/dailyChallenge.ts` | Change `ROWS = 13` → `ROWS = 14` |
 
