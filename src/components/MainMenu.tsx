@@ -639,6 +639,9 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
                   <span className="text-purple-400">Pyramid Enemies</span> - 3 hits to destroy, toughest regular enemy
                 </li>
                 <li>
+                  <span className="text-[hsl(50,100%,55%)]">Star Enemies</span> - Appear on levels 3, 6, 9, 12, 16 & 19. Build new bricks and upgrade existing ones, then roam for 3–5 seconds before building again. Destroy them fast!
+                </li>
+                <li>
                   <span className="text-[hsl(30,100%,60%)] font-bold">CUBE BOSS (Level 5)</span> - First boss encounter
                   with unique attack patterns
                 </li>
