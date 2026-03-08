@@ -4798,7 +4798,9 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
             soundManager.playCannonModeSound();
 
             // Initialize first cannon missile time (4-7 seconds from now)
-            setNextCannonMissileTime(Date.now() + 4000 + Math.random() * 3000);
+            const firstFireTime = Date.now() + 4000 + Math.random() * 3000;
+            setNextCannonMissileTime(firstFireTime);
+            megaBoss.nextCannonFireTime = firstFireTime;
           }
         });
       }
