@@ -7,6 +7,8 @@ import CRTOverlay from "@/components/CRTOverlay";
 import Index from "./pages/Index";
 import Home from "./pages/Home";
 import LevelEditor from "./pages/LevelEditor";
+import Auth from "./pages/Auth";
+import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
