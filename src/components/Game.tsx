@@ -6900,9 +6900,13 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         const speedIncrease = Math.min(2.0, 1 + Math.min(enemySpawnCount, 5) * 0.3);
         const enemyId = nextEnemyId.current++;
 
-        // Determine enemy type - sphere from level 3+, pyramid from level 6+
-        let enemyType: "cube" | "sphere" | "pyramid";
-        if (level >= 6 && Math.random() < 0.3) {
+        // Determine enemy type - daily challenge gets all types, otherwise level-gated
+        const isDailyMode = settings.gameMode === "dailyChallenge";
+        let enemyType: EnemyType;
+        if (isDailyMode) {
+          const allTypes: EnemyType[] = ["cube", "sphere", "pyramid", "star"];
+          enemyType = allTypes[Math.floor(Math.random() * allTypes.length)];
+        } else if (level >= 6 && Math.random() < 0.3) {
           enemyType = "pyramid";
         } else if (level >= 3 && Math.random() > 0.5) {
           enemyType = "sphere";
