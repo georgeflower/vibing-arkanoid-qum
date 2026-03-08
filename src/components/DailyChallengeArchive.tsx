@@ -111,6 +111,10 @@ export const DailyChallengeArchive = ({ onPlay, onClose }: DailyChallengeArchive
               <div className="text-center py-8">
                 <p className="text-sm" style={{ color: "hsl(0,0%,50%)" }}>Loading challenges...</p>
               </div>
+            ) : entries.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-sm" style={{ color: "hsl(0,0%,50%)" }}>No past challenges yet — come back tomorrow!</p>
+              </div>
             ) : (
               entries.map((entry) => {
                 const icon = getShapeIcon(entry.challenge.shapeName);
