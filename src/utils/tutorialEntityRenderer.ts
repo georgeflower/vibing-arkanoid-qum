@@ -36,6 +36,8 @@ export function renderBossToCanvas(
     renderCubeBoss(ctx, size / 2, isAngry, rotationX, rotationY, rotationZ);
   } else if (type === 'enemy') {
     renderEnemy(ctx, size, rotationX, rotationY);
+  } else if (type === 'star') {
+    renderStarEnemy(ctx, size / 2);
   }
   
   ctx.restore();
