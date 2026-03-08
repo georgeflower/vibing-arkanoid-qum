@@ -762,6 +762,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     settings: debugSettings,
     toggleSetting: toggleDebugSetting,
     resetSettings: resetDebugSettings,
+    isDebugModeActive,
   } = useDebugSettings();
 
   // Helper function to count active debug features
