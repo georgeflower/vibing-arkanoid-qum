@@ -45,6 +45,10 @@ export interface DailyChallenge {
   startingLives: number;
   targetScore: number;
   timeLimit: number; // seconds, 0 = no limit
+  speedMultiplier: number;
+  enemySpawnInterval: number;
+  musicReactiveBackground: boolean;
+  noExtraLives: boolean;
 }
 
 // ── Objective pool ───────────────────────────────────────────
