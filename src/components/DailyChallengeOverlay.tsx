@@ -33,7 +33,7 @@ export const DailyChallengeOverlay = ({ onPlay, onClose }: DailyChallengeOverlay
         if (completion) setAlreadyCompleted(true);
 
         // Get streak
-        const { data: profile } = await supabase
+        const { data: profile } = await (supabase as any)
           .from("player_profiles")
           .select("daily_challenge_streak")
           .eq("user_id", session.user.id)
