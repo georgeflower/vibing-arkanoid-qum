@@ -2015,6 +2015,24 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       return []; // No bricks on boss levels
     }
 
+    // Daily Challenge boss mode: spawn a boss instead of bricks
+    if (isDailyChallenge && settings.dailyChallengeConfig?.isBossChallenge) {
+      const bossLevel = settings.dailyChallengeConfig.bossLevel || 5;
+      const newBoss = createBoss(bossLevel, SCALED_CANVAS_WIDTH, SCALED_CANVAS_HEIGHT);
+      if (newBoss) {
+        setBoss({ ...newBoss, lastHitAt: 0 });
+      } else {
+        setBoss(newBoss);
+      }
+      setBossActive(true);
+      setResurrectedBosses([]);
+      setBossAttacks([]);
+      setLaserWarnings([]);
+
+      toast.success(`DAILY BOSS CHALLENGE!`, { duration: 3000 });
+      return []; // No bricks on boss levels
+    }
+
     // Daily Challenge mode: use the procedural layout
     const layout = isDailyChallenge && settings.dailyChallengeConfig
       ? settings.dailyChallengeConfig.layout
