@@ -6906,6 +6906,11 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         if (isDailyMode) {
           const allTypes: EnemyType[] = ["cube", "sphere", "pyramid", "star"];
           enemyType = allTypes[Math.floor(Math.random() * allTypes.length)];
+        } else if (isDailyMode) {
+          const allTypes: EnemyType[] = ["cube", "sphere", "pyramid", "star"];
+          enemyType = allTypes[Math.floor(Math.random() * allTypes.length)];
+        } else if (level >= 8 && Math.random() < 0.2) {
+          enemyType = "star";
         } else if (level >= 6 && Math.random() < 0.3) {
           enemyType = "pyramid";
         } else if (level >= 3 && Math.random() > 0.5) {
