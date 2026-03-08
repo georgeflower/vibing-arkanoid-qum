@@ -1782,7 +1782,35 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       world.bullets = [];
       bulletPool.releaseAll();
 
-      if (isBossRush) {
+      if (isDailyChallenge && dailyChallengeData) {
+        // Daily challenge boss defeated — evaluate and show result
+        setGameState("won");
+        soundManager.stopBossMusic();
+        soundManager.stopBackgroundMusic();
+
+        const challengeResult = evaluateObjectives(dailyChallengeData, {
+          livesLost: dailyChallengeLivesLostRef.current,
+          timeSeconds: totalPlayTime,
+          allBricksDestroyed: true,
+          score: scoreRef.current,
+          powerUpsCollected: dailyChallengePowerUpsRef.current,
+          bestCombo: hitStreakRef.current,
+        });
+        setDailyChallengeResult(challengeResult);
+
+        submitDailyChallenge({
+          challengeDate: dailyChallengeData.dateString,
+          score: scoreRef.current,
+          timeSeconds: totalPlayTime,
+          objectivesMet: challengeResult.objectivesMet,
+          allObjectivesMet: challengeResult.allObjectivesMet,
+        }).then((res) => {
+          if (res.success) setDailyChallengeStreak(res.streak);
+          setShowDailyChallengeResult(true);
+        });
+
+        toast.success("⚡ Daily Boss Challenge Complete!");
+      } else if (isBossRush) {
         gameLoopRef.current?.pause();
         setBossRushTimeSnapshot(bossRushStartTime ? Date.now() - bossRushStartTime : 0);
         setBossRushStatsOverlayActive(true);
