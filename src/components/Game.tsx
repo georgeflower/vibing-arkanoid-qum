@@ -3690,6 +3690,21 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         setShowEndScreen(true);
         soundManager.stopBackgroundMusic();
         toast.success(`🎉 YOU WIN! Level ${level} Complete! Bonus: +1,000,000 points!`);
+
+        // Submit lifetime stats on victory
+        submitGameStats({
+          bricksDestroyed: totalBricksDestroyed,
+          enemiesKilled,
+          bossesKilled,
+          powerUpsCollected: powerUpsCollectedTypes.size,
+          powerUpTypes: Array.from(powerUpsCollectedTypes),
+          timePlayed: totalPlayTime,
+          score: scoreRef.current + 1000000,
+          level,
+          comboStreak: hitStreakRef.current,
+          difficulty: settings.difficulty,
+          isVictory: true,
+        });
       } else {
         setGameState("ready");
         toast.success(`Level ${level} Complete! Click to continue.`);
