@@ -202,7 +202,15 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     });
   }, []);
   const [lives, setLives] = useState(settings.startingLives);
-  const [level, setLevel] = useState(settings.startingLevel);
+  const [level, setLevelRaw] = useState(settings.startingLevel);
+  const levelRef = useRef(settings.startingLevel);
+  const setLevel = useCallback((updater: number | ((prev: number) => number)) => {
+    setLevelRaw((prev) => {
+      const next = typeof updater === "function" ? updater(prev) : updater;
+      levelRef.current = next;
+      return next;
+    });
+  }, []);
 
   // Game mode flags
   const isBossRush = settings.gameMode === "bossRush";
