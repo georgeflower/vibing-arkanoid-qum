@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    const { type, player_name, score, level, completion_time_ms, boss_level, difficulty, beat_level_50, collected_all_letters, starting_lives, game_mode } = body;
+    const { type, player_name, score, level, completion_time_ms, boss_level, difficulty, beat_level_50, collected_all_letters, starting_lives, game_mode, user_id } = body;
 
     // Validate type
     if (type !== "high_score" && type !== "boss_rush") {
