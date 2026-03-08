@@ -7009,7 +7009,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         }
         setLastEnemySpawnTime(timer);
         setEnemySpawnCount((prev) => prev + 1);
-        const enemyName = enemyType === "sphere" ? "Sphere" : enemyType === "pyramid" ? "Pyramid" : "Cube";
+        const enemyName = enemyType === "sphere" ? "Sphere" : enemyType === "pyramid" ? "Pyramid" : enemyType === "star" ? "Star" : "Cube";
         toast.warning(`${enemyName} enemy ${enemySpawnCount + 1} appeared! Speed: ${Math.round(speedIncrease * 100)}%`);
 
         // Trigger minion tutorial on first enemy spawn (non-boss level enemies)
