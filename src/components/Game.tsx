@@ -4298,15 +4298,164 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         let newX = enemy.x + enemy.dx * dtNorm;
         let newY = enemy.y + enemy.dy * dtNorm;
 
-        // Sphere, Pyramid, and CrossBall enemies have more random movement
-        if (enemy.type === "sphere" || enemy.type === "pyramid" || enemy.type === "crossBall") {
-          const randomChance = enemy.type === "pyramid" ? 0.08 : enemy.type === "crossBall" ? 0.06 : 0.05;
+        // Sphere, Pyramid, CrossBall, and Star enemies have more random movement
+        if (enemy.type === "sphere" || enemy.type === "pyramid" || enemy.type === "crossBall" || (enemy.type === "star" && !enemy.isBuilding)) {
+          const randomChance = enemy.type === "pyramid" ? 0.08 : enemy.type === "crossBall" ? 0.06 : enemy.type === "star" ? 0.04 : 0.05;
           if (Math.random() < randomChance) {
             const randomAngle = ((Math.random() - 0.5) * Math.PI) / 4;
             const currentAngle = Math.atan2(enemy.dy, enemy.dx);
             const newAngle = currentAngle + randomAngle;
             enemy.dx = Math.cos(newAngle) * enemy.speed;
             enemy.dy = Math.sin(newAngle) * enemy.speed;
+          }
+        }
+
+        // ── Star enemy build AI ──
+        if (enemy.type === "star" && !isStunActive) {
+          const dtMs = dtNorm * (1000 / 60); // approximate ms per frame
+
+          if (enemy.isBuilding && enemy.buildTarget) {
+            // Accumulate build progress
+            enemy.buildProgress = (enemy.buildProgress || 0) + dtMs;
+            enemy.dx = 0;
+            enemy.dy = 0;
+
+            if (enemy.buildProgress >= 5000) {
+              // Build/upgrade complete
+              const { row, col } = enemy.buildTarget;
+              const targetX = SCALED_BRICK_OFFSET_LEFT + col * (SCALED_BRICK_WIDTH + SCALED_BRICK_PADDING);
+              const targetY = SCALED_BRICK_OFFSET_TOP + row * (SCALED_BRICK_HEIGHT + SCALED_BRICK_PADDING);
+
+              // Find existing brick at this grid position
+              const existingBrick = world.bricks.find(
+                (b) => b.visible && Math.abs(b.x - targetX) < 2 && Math.abs(b.y - targetY) < 2
+              );
+
+              if (existingBrick) {
+                // Upgrade: increase hits (max 3)
+                if (existingBrick.hitsRemaining < 3) {
+                  existingBrick.maxHits = Math.min(3, existingBrick.maxHits + 1);
+                  existingBrick.hitsRemaining = Math.min(3, existingBrick.hitsRemaining + 1);
+                }
+              } else {
+                // Build new brick
+                const levelColors = getBrickColors(level);
+                const newBrick: Brick = {
+                  id: Date.now() + Math.random() * 1000,
+                  x: targetX,
+                  y: targetY,
+                  width: SCALED_BRICK_WIDTH,
+                  height: SCALED_BRICK_HEIGHT,
+                  color: levelColors[row % levelColors.length],
+                  visible: true,
+                  points: 10,
+                  maxHits: 1,
+                  hitsRemaining: 1,
+                  isIndestructible: false,
+                  type: "normal",
+                };
+                world.bricks.push(newBrick);
+              }
+
+              // Invalidate brick render cache
+              if ((window as any).__brickRenderer) {
+                (window as any).__brickRenderer.invalidate();
+              }
+
+              // Reset build state and steer toward area with most missing bricks
+              enemy.isBuilding = false;
+              enemy.buildProgress = 0;
+              enemy.buildTarget = undefined;
+
+              // Find direction with most empty space
+              const enemyCX = enemy.x + enemy.width / 2;
+              const enemyCY = enemy.y + enemy.height / 2;
+              let bestAngle = Math.random() * Math.PI * 2;
+              let bestEmpty = 0;
+              const directions = [
+                { angle: -Math.PI / 2, label: "top" },
+                { angle: Math.PI / 2, label: "bottom" },
+                { angle: Math.PI, label: "left" },
+                { angle: 0, label: "right" },
+              ];
+              for (const dir of directions) {
+                const checkX = enemyCX + Math.cos(dir.angle) * 100;
+                const checkY = enemyCY + Math.sin(dir.angle) * 100;
+                const emptyCount = world.bricks.filter((b) => {
+                  if (b.visible) return false;
+                  const bCX = b.x + b.width / 2;
+                  const bCY = b.y + b.height / 2;
+                  const dist = Math.sqrt((bCX - checkX) ** 2 + (bCY - checkY) ** 2);
+                  return dist < 150;
+                }).length;
+                if (emptyCount > bestEmpty) {
+                  bestEmpty = emptyCount;
+                  bestAngle = dir.angle;
+                }
+              }
+              enemy.dx = Math.cos(bestAngle) * enemy.speed;
+              enemy.dy = Math.sin(bestAngle) * enemy.speed;
+            }
+          } else if (!enemy.isBuilding) {
+            // Scan for build target every ~60 frames
+            if (Math.random() < 0.016) {
+              const gridCols = 10;
+              const gridRows = 8;
+              let bestDist = Infinity;
+              let bestTarget: { row: number; col: number } | undefined;
+              const enemyCX = enemy.x + enemy.width / 2;
+              const enemyCY = enemy.y + enemy.height / 2;
+
+              for (let r = 0; r < gridRows; r++) {
+                for (let c = 0; c < gridCols; c++) {
+                  const bx = SCALED_BRICK_OFFSET_LEFT + c * (SCALED_BRICK_WIDTH + SCALED_BRICK_PADDING);
+                  const by = SCALED_BRICK_OFFSET_TOP + r * (SCALED_BRICK_HEIGHT + SCALED_BRICK_PADDING);
+                  const bCX = bx + SCALED_BRICK_WIDTH / 2;
+                  const bCY = by + SCALED_BRICK_HEIGHT / 2;
+
+                  // Check if empty slot or upgradeable brick
+                  const existingBrick = world.bricks.find(
+                    (b) => b.visible && Math.abs(b.x - bx) < 2 && Math.abs(b.y - by) < 2
+                  );
+
+                  const isValidTarget = !existingBrick || (existingBrick.hitsRemaining < 3 && !existingBrick.isIndestructible);
+
+                  if (isValidTarget) {
+                    const dist = Math.sqrt((bCX - enemyCX) ** 2 + (bCY - enemyCY) ** 2);
+                    if (dist < bestDist) {
+                      bestDist = dist;
+                      bestTarget = { row: r, col: c };
+                    }
+                  }
+                }
+              }
+
+              if (bestTarget) {
+                enemy.buildTarget = bestTarget;
+              }
+            }
+
+            // Steer toward build target if we have one
+            if (enemy.buildTarget) {
+              const targetX = SCALED_BRICK_OFFSET_LEFT + enemy.buildTarget.col * (SCALED_BRICK_WIDTH + SCALED_BRICK_PADDING) + SCALED_BRICK_WIDTH / 2;
+              const targetY = SCALED_BRICK_OFFSET_TOP + enemy.buildTarget.row * (SCALED_BRICK_HEIGHT + SCALED_BRICK_PADDING) + SCALED_BRICK_HEIGHT / 2;
+              const dx = targetX - (enemy.x + enemy.width / 2);
+              const dy = targetY - (enemy.y + enemy.height / 2);
+              const dist = Math.sqrt(dx * dx + dy * dy);
+
+              if (dist < 5) {
+                // Arrived at target - start building
+                enemy.isBuilding = true;
+                enemy.buildProgress = 0;
+                enemy.dx = 0;
+                enemy.dy = 0;
+              } else {
+                // Steer toward target
+                const angle = Math.atan2(dy, dx);
+                enemy.dx = Math.cos(angle) * enemy.speed;
+                enemy.dy = Math.sin(angle) * enemy.speed;
+              }
+            }
           }
         }
 
