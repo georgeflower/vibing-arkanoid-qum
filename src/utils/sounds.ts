@@ -1284,6 +1284,9 @@ class SoundManager {
     this.analyser = null;
     this.frequencyData = null;
     this.bossMusicSource = null;
+    this.leftAnalyser = null;
+    this.rightAnalyser = null;
+    this.splitter = null;
   }
 
   getBassEnergy(): number {
