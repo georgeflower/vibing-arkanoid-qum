@@ -59,6 +59,7 @@ const PublicProfile = () => {
     );
   }
 
+  const avatarUrl = (profile as any).avatar_url || null;
   const achievements = (profile.achievements as Array<{ id: string; unlockedAt: string }>) || [];
   const unlockedIds = new Set(achievements.map((a: any) => a.id));
 
@@ -76,10 +77,15 @@ const PublicProfile = () => {
       <CRTOverlay quality="medium" />
       <div className="relative z-10 max-w-2xl mx-auto px-4 py-8">
         <div className="amiga-box rounded-lg p-6 mb-6 text-center">
+          {/* Avatar */}
+          {avatarUrl && (
+            <div className="w-20 h-20 rounded-full overflow-hidden mx-auto mb-3" style={{ border: "2px solid hsl(200,70%,50%,0.5)" }}>
+              <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+            </div>
+          )}
           <h1 className="retro-pixel-text mb-1" style={{ fontSize: "28px", color: "hsl(200, 70%, 50%)", textShadow: "0 0 10px hsl(200,70%,50%,0.5)" }}>
-            {profile.display_name}
+            {profile.username}
           </h1>
-          <p style={{ color: "hsl(0,0%,50%)", fontSize: "12px" }}>@{profile.username}</p>
           {profile.bio && <p className="mt-2" style={{ color: "hsl(0,0%,65%)", fontSize: "12px" }}>{profile.bio}</p>}
           {profile.favorite_power_up && (
             <p className="mt-2" style={{ color: "hsl(330,100%,65%)", fontSize: "11px" }}>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, Link } from "react-router-dom";
 import CRTOverlay from "@/components/CRTOverlay";
@@ -6,11 +6,11 @@ import { ACHIEVEMENTS } from "@/constants/achievements";
 import { validateUsername, validateInitials } from "@/utils/passwordValidation";
 
 interface ProfileData {
-  display_name: string;
   username: string | null;
   initials: string;
   bio: string | null;
   is_public: boolean;
+  avatar_url: string | null;
   total_bricks_destroyed: number;
   total_enemies_killed: number;
   total_bosses_killed: number;
@@ -40,6 +40,33 @@ const POWER_UP_LABELS: Record<string, string> = {
   bossStunner: "Stunner", reflectShield: "Reflect", homingBall: "Homing", secondChance: "2nd Chance",
 };
 
+const resizeImage = (file: File, maxSize: number): Promise<Blob> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const canvas = document.createElement("canvas");
+      let w = img.width;
+      let h = img.height;
+      if (w > maxSize || h > maxSize) {
+        if (w > h) { h = Math.round((h * maxSize) / w); w = maxSize; }
+        else { w = Math.round((w * maxSize) / h); h = maxSize; }
+      }
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext("2d")!;
+      ctx.drawImage(img, 0, 0, w, h);
+      canvas.toBlob((blob) => {
+        if (blob) resolve(blob);
+        else reject(new Error("Failed to resize image"));
+      }, "image/webp", 0.8);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("Failed to load image")); };
+    img.src = url;
+  });
+};
+
 const Profile = () => {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<ProfileData | null>(null);
@@ -49,13 +76,24 @@ const Profile = () => {
   const [saveError, setSaveError] = useState("");
   const [emailVerified, setEmailVerified] = useState(false);
   const [userEmail, setUserEmail] = useState("");
+  const [userId, setUserId] = useState("");
 
   // Edit form state
-  const [editDisplayName, setEditDisplayName] = useState("");
   const [editUsername, setEditUsername] = useState("");
   const [editInitials, setEditInitials] = useState("");
   const [editBio, setEditBio] = useState("");
   const [editIsPublic, setEditIsPublic] = useState(false);
+
+  // Avatar
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [avatarError, setAvatarError] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Delete account
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleteEmail, setDeleteEmail] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -64,6 +102,7 @@ const Profile = () => {
 
       setEmailVerified(!!session.user.email_confirmed_at);
       setUserEmail(session.user.email || "");
+      setUserId(session.user.id);
 
       const { data, error } = await supabase
         .from("player_profiles")
@@ -74,11 +113,11 @@ const Profile = () => {
       if (error || !data) { navigate("/auth"); return; }
 
       const p: ProfileData = {
-        display_name: data.display_name,
         username: data.username,
         initials: data.initials || "AAA",
         bio: data.bio,
         is_public: data.is_public,
+        avatar_url: (data as any).avatar_url || null,
         total_bricks_destroyed: data.total_bricks_destroyed,
         total_enemies_killed: data.total_enemies_killed,
         total_bosses_killed: data.total_bosses_killed,
@@ -96,7 +135,6 @@ const Profile = () => {
         total_daily_challenges_completed: data.total_daily_challenges_completed || 0,
       };
       setProfile(p);
-      setEditDisplayName(p.display_name);
       setEditUsername(p.username || "");
       setEditInitials(p.initials);
       setEditBio(p.bio || "");
@@ -106,22 +144,61 @@ const Profile = () => {
     loadProfile();
   }, [navigate]);
 
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAvatarError("");
+
+    if (!file.type.startsWith("image/")) {
+      setAvatarError("Please select an image file (JPG, PNG, or WebP).");
+      return;
+    }
+
+    setUploadingAvatar(true);
+    try {
+      const resized = await resizeImage(file, 256);
+      if (resized.size > 262144) {
+        setAvatarError("Image is too large even after resize. Try a smaller image.");
+        setUploadingAvatar(false);
+        return;
+      }
+
+      const filePath = `${userId}/avatar.webp`;
+
+      // Remove old avatar first
+      await supabase.storage.from("avatars").remove([filePath]);
+
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(filePath, resized, { contentType: "image/webp", upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(filePath);
+      const avatarUrl = urlData.publicUrl + "?t=" + Date.now();
+
+      await supabase.from("player_profiles").update({ avatar_url: avatarUrl }).eq("user_id", userId);
+
+      setProfile((prev) => prev ? { ...prev, avatar_url: avatarUrl } : prev);
+    } catch (err: any) {
+      setAvatarError("Upload failed: " + (err.message || "Unknown error"));
+    }
+    setUploadingAvatar(false);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
   const handleSave = async () => {
     setSaving(true);
     setSaveError("");
 
-    if (!editDisplayName.trim()) { setSaveError("Display name is required"); setSaving(false); return; }
-
-    if (editUsername) {
-      const uCheck = validateUsername(editUsername);
-      if (!uCheck.isValid) { setSaveError(`Username: ${uCheck.error}`); setSaving(false); return; }
-    }
+    const uCheck = validateUsername(editUsername);
+    if (!uCheck.isValid) { setSaveError(`Username: ${uCheck.error}`); setSaving(false); return; }
 
     const iCheck = validateInitials(editInitials);
     if (!iCheck.isValid) { setSaveError(`Initials: ${iCheck.error}`); setSaving(false); return; }
 
     // Check username uniqueness
-    if (editUsername && editUsername !== profile?.username) {
+    if (editUsername.toLowerCase() !== profile?.username) {
       const { data: existing } = await supabase
         .from("player_profiles")
         .select("id")
@@ -136,8 +213,8 @@ const Profile = () => {
     const { error } = await supabase
       .from("player_profiles")
       .update({
-        display_name: editDisplayName.trim(),
-        username: editUsername.toLowerCase() || null,
+        display_name: editUsername.toLowerCase(),
+        username: editUsername.toLowerCase(),
         initials: editInitials.toUpperCase(),
         bio: editBio.trim() || null,
         is_public: editIsPublic,
@@ -148,8 +225,7 @@ const Profile = () => {
     else {
       setProfile((prev) => prev ? {
         ...prev,
-        display_name: editDisplayName.trim(),
-        username: editUsername.toLowerCase() || null,
+        username: editUsername.toLowerCase(),
         initials: editInitials.toUpperCase(),
         bio: editBio.trim() || null,
         is_public: editIsPublic,
@@ -157,6 +233,29 @@ const Profile = () => {
       setEditing(false);
     }
     setSaving(false);
+  };
+
+  const handleDeleteAccount = async () => {
+    setDeleting(true);
+    setDeleteError("");
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
+
+      const { data, error } = await supabase.functions.invoke("delete-account", {
+        body: { confirmation_email: deleteEmail.trim() },
+      });
+
+      if (error) throw error;
+      const result = data as { error?: string; success?: boolean };
+      if (result?.error) throw new Error(result.error);
+
+      await supabase.auth.signOut();
+      navigate("/");
+    } catch (err: any) {
+      setDeleteError(err.message || "Failed to delete account");
+    }
+    setDeleting(false);
   };
 
   const handleLogout = async () => {
@@ -175,6 +274,7 @@ const Profile = () => {
   if (!profile) return null;
 
   const unlockedIds = new Set(profile.achievements.map((a) => a.id));
+  const avatarSrc = profile.avatar_url || null;
 
   const statItems = [
     { label: "Games Played", value: profile.total_games_played.toLocaleString() },
@@ -196,19 +296,44 @@ const Profile = () => {
       <div className="relative z-10 max-w-2xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="amiga-box rounded-lg p-6 mb-6">
+          {/* Avatar Section */}
+          <div className="flex flex-col items-center mb-4">
+            <div className="relative w-20 h-20 rounded-full overflow-hidden mb-2" style={{ background: "hsl(0,0%,20%)", border: "2px solid hsl(200,70%,50%,0.5)" }}>
+              {avatarSrc ? (
+                <img src={avatarSrc} alt="Avatar" className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center" style={{ color: "hsl(0,0%,40%)", fontSize: "28px" }}>👤</div>
+              )}
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={handleAvatarUpload}
+              className="hidden"
+            />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploadingAvatar}
+              className="text-[10px] px-3 py-1 rounded"
+              style={{ background: "hsl(0,0%,20%)", color: "hsl(200,70%,60%)", border: "1px solid hsl(0,0%,30%)", opacity: uploadingAvatar ? 0.5 : 1 }}
+            >
+              {uploadingAvatar ? "UPLOADING..." : "CHANGE AVATAR"}
+            </button>
+            <p className="text-[9px] mt-1 text-center" style={{ color: "hsl(0,0%,45%)" }}>
+              Max 256×256px. JPG/PNG/WebP. Inappropriate images may result in account suspension.
+            </p>
+            {avatarError && <p className="text-[10px] mt-1" style={{ color: "hsl(0,70%,55%)" }}>{avatarError}</p>}
+          </div>
+
           {editing ? (
             <div className="space-y-3">
-              <div>
-                <label className="block text-xs mb-1" style={{ color: "hsl(0,0%,60%)" }}>DISPLAY NAME</label>
-                <input type="text" value={editDisplayName} onChange={(e) => setEditDisplayName(e.target.value.slice(0, 20))}
-                  className="w-full px-3 py-2 rounded text-sm" style={{ background: "hsl(0,0%,15%)", border: "1px solid hsl(0,0%,30%)", color: "hsl(0,0%,90%)" }} />
-              </div>
               <div>
                 <label className="block text-xs mb-1" style={{ color: "hsl(0,0%,60%)" }}>USERNAME</label>
                 <input type="text" value={editUsername} onChange={(e) => setEditUsername(e.target.value.slice(0, 20).replace(/[^a-zA-Z0-9_]/g, ""))}
                   className="w-full px-3 py-2 rounded text-sm" placeholder="your_username"
                   style={{ background: "hsl(0,0%,15%)", border: "1px solid hsl(0,0%,30%)", color: "hsl(0,0%,90%)" }} />
-                <p className="text-[10px] mt-0.5" style={{ color: "hsl(0,0%,50%)" }}>Used for your public profile URL</p>
+                <p className="text-[10px] mt-0.5" style={{ color: "hsl(0,0%,50%)" }}>3-20 chars. Used for your public profile URL. Must be unique.</p>
               </div>
               <div>
                 <label className="block text-xs mb-1" style={{ color: "hsl(0,0%,60%)" }}>INITIALS</label>
@@ -249,11 +374,8 @@ const Profile = () => {
           ) : (
             <div className="text-center">
               <h1 className="retro-pixel-text mb-1" style={{ fontSize: "28px", color: "hsl(200, 70%, 50%)", textShadow: "0 0 10px hsl(200,70%,50%,0.5)" }}>
-                {profile.display_name}
+                {profile.username || "Player"}
               </h1>
-              {profile.username && (
-                <p style={{ color: "hsl(0,0%,50%)", fontSize: "12px" }}>@{profile.username}</p>
-              )}
               <p className="mt-1" style={{ color: "hsl(0,0%,50%)", fontSize: "11px" }}>
                 Initials: <span style={{ color: "hsl(330,100%,65%)", fontFamily: "monospace", letterSpacing: "3px" }}>{profile.initials}</span>
               </p>
@@ -352,6 +474,73 @@ const Profile = () => {
           <button onClick={() => navigate("/play")} className="px-4 py-2 rounded text-sm font-bold" style={{ background: "hsl(120, 50%, 40%)", color: "white" }}>PLAY</button>
           <button onClick={handleLogout} className="px-4 py-2 rounded text-sm font-bold" style={{ background: "hsl(0, 65%, 50%)", color: "white" }}>LOGOUT</button>
         </div>
+
+        {/* Delete Account Section */}
+        <div className="amiga-box rounded-lg p-4 mt-6 text-center" style={{ borderColor: "hsl(0,60%,35%)" }}>
+          <p className="text-[11px] mb-2" style={{ color: "hsl(0,0%,55%)" }}>
+            ⚠️ DANGER ZONE
+          </p>
+          <button
+            onClick={() => setShowDeleteDialog(true)}
+            className="px-4 py-2 rounded text-xs font-bold"
+            style={{ background: "hsl(0, 65%, 40%)", color: "white", border: "1px solid hsl(0,65%,50%)" }}
+          >
+            🗑️ DELETE ACCOUNT
+          </button>
+          <p className="text-[9px] mt-2" style={{ color: "hsl(0,0%,40%)" }}>
+            This permanently deletes your profile, stats, and achievements. Your initials will remain on the leaderboard but will no longer link to your profile. This cannot be undone.
+          </p>
+        </div>
+
+        {/* Delete Account Dialog */}
+        {showDeleteDialog && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "hsla(0,0%,0%,0.8)" }}>
+            <div className="amiga-box rounded-lg p-6 max-w-sm w-full">
+              <h2 className="retro-pixel-text text-center mb-4" style={{ fontSize: "18px", color: "hsl(0, 70%, 55%)" }}>
+                DELETE ACCOUNT
+              </h2>
+              <p className="text-[11px] mb-3 text-center" style={{ color: "hsl(0,0%,65%)" }}>
+                This will permanently delete your profile, stats, achievements, and avatar. Your initials will remain on the leaderboard but the link to your profile will be removed.
+              </p>
+              <p className="text-[11px] mb-3 text-center font-bold" style={{ color: "hsl(0, 70%, 60%)" }}>
+                This action cannot be undone.
+              </p>
+              <p className="text-[11px] mb-2" style={{ color: "hsl(0,0%,55%)" }}>
+                Type your email to confirm: <span style={{ color: "hsl(0,0%,75%)" }}>{userEmail}</span>
+              </p>
+              <input
+                type="email"
+                value={deleteEmail}
+                onChange={(e) => setDeleteEmail(e.target.value)}
+                className="w-full px-3 py-2 rounded text-sm mb-3"
+                placeholder="your@email.com"
+                style={{ background: "hsl(0,0%,15%)", border: "1px solid hsl(0,0%,30%)", color: "hsl(0,0%,90%)" }}
+              />
+              {deleteError && <p className="text-[11px] mb-2" style={{ color: "hsl(0,70%,55%)" }}>{deleteError}</p>}
+              <div className="flex gap-2 justify-center">
+                <button
+                  onClick={handleDeleteAccount}
+                  disabled={deleting || deleteEmail.toLowerCase().trim() !== userEmail.toLowerCase()}
+                  className="px-4 py-2 rounded text-sm font-bold"
+                  style={{
+                    background: "hsl(0, 65%, 45%)",
+                    color: "white",
+                    opacity: (deleting || deleteEmail.toLowerCase().trim() !== userEmail.toLowerCase()) ? 0.4 : 1,
+                  }}
+                >
+                  {deleting ? "DELETING..." : "PERMANENTLY DELETE"}
+                </button>
+                <button
+                  onClick={() => { setShowDeleteDialog(false); setDeleteEmail(""); setDeleteError(""); }}
+                  className="px-4 py-2 rounded text-sm font-bold"
+                  style={{ background: "hsl(0,0%,25%)", color: "hsl(0,0%,80%)" }}
+                >
+                  CANCEL
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="mt-4 flex justify-center gap-4 text-[10px]">
           <Link to="/privacy" style={{ color: "hsl(0,0%,45%)" }}>Privacy Policy</Link>
