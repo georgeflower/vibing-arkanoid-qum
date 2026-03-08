@@ -185,12 +185,15 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
         } else if (showInstructions) {
           soundManager.playMenuClick();
           setShowInstructions(false);
+        } else if (showDailyChallenge) {
+          soundManager.playMenuClick();
+          setShowDailyChallenge(false);
         }
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [showHighScores, showChangelog, showWhatsNew, showAbout, showInstructions]);
+  }, [showHighScores, showChangelog, showWhatsNew, showAbout, showInstructions, showDailyChallenge]);
 
   if (showHighScores) {
     return (
