@@ -4862,7 +4862,9 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
           // Schedule next missile in 4-7 seconds
           const nextDelay = 4000 + Math.random() * 3000;
-          setNextCannonMissileTime(now + nextDelay);
+          const nextFireTime = now + nextDelay;
+          setNextCannonMissileTime(nextFireTime);
+          megaBoss.nextCannonFireTime = nextFireTime;
         }
       }
 
