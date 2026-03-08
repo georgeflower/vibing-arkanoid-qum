@@ -1,5 +1,6 @@
 // Mega Boss attack patterns and danger ball system
 import type { Boss, BossAttack, Ball } from "@/types/game";
+import { BALL_GRAVITY } from "@/engine/physics";
 import { MEGA_BOSS_CONFIG, CORNER_TARGETS } from "@/constants/megaBossConfig";
 import { ATTACK_PATTERNS } from "@/constants/bossConfig";
 import { MegaBoss, getMegaBossPhase, isMegaBoss } from "./megaBossUtils";
