@@ -24,26 +24,24 @@ export interface DangerBall {
 
 let nextDangerBallId = 3000;
 
-// Spawn a danger ball from the cannon (shoots downward toward paddle)
+// Spawn a danger ball from the boss center with a random direction
 export function spawnDangerBall(boss: MegaBoss): DangerBall {
   const config = MEGA_BOSS_CONFIG;
   
   // Pick random corner as general direction target
   const targetCorner = CORNER_TARGETS[Math.floor(Math.random() * CORNER_TARGETS.length)];
   
-  // Shoot mostly downward with some spread toward corners
+  // Spawn from boss center
   const bossX = boss.x + boss.width / 2;
-  const bossY = boss.y + boss.height;
+  const bossY = boss.y + boss.height / 2;
   
-  // Random angle between 60 and 120 degrees (downward spread)
-  const baseAngle = Math.PI / 2; // Straight down
-  const spread = (Math.random() - 0.5) * (Math.PI / 3); // ±30 degrees
-  const angle = baseAngle + spread;
+  // Random angle in full 360° — ball bounces off all walls like a player ball
+  const angle = Math.random() * Math.PI * 2;
   
   return {
     id: nextDangerBallId++,
     x: bossX,
-    y: bossY + 30, // Below cannon muzzle
+    y: bossY,
     dx: Math.cos(angle) * config.dangerBallSpeed,
     dy: Math.sin(angle) * config.dangerBallSpeed,
     radius: config.dangerBallSize,
