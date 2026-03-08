@@ -1,6 +1,16 @@
-export const GAME_VERSION = "0.9.975";
+export const GAME_VERSION = "0.9.976";
 
 export const CHANGELOG = [
+  {
+    version: "0.9.976",
+    changes: [
+      "NEW: Star Enemy — a yellow star that builds and upgrades bricks on the playfield",
+      "Star enemies appear on levels 3, 6, 9, 12, 16, and 19",
+      "Stars take ~5 seconds to construct a new brick or upgrade existing ones (up to 3-hit)",
+      "Stars intelligently move toward gaps in the brick field after building",
+      "All 4 enemy types (Cube, Sphere, Pyramid, Star) spawn in Daily Challenges",
+    ],
+  },
   {
     version: "0.9.975",
     changes: [
