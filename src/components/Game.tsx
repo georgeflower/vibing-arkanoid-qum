@@ -7054,14 +7054,12 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
         // Determine enemy type - daily challenge gets all types, otherwise level-gated
         const isDailyMode = settings.gameMode === "dailyChallenge";
+        const STAR_ENEMY_LEVELS = [3, 6, 9, 12, 16, 19];
         let enemyType: EnemyType;
         if (isDailyMode) {
           const allTypes: EnemyType[] = ["cube", "sphere", "pyramid", "star"];
           enemyType = allTypes[Math.floor(Math.random() * allTypes.length)];
-        } else if (isDailyMode) {
-          const allTypes: EnemyType[] = ["cube", "sphere", "pyramid", "star"];
-          enemyType = allTypes[Math.floor(Math.random() * allTypes.length)];
-        } else if (level >= 8 && Math.random() < 0.2) {
+        } else if (STAR_ENEMY_LEVELS.includes(level) && Math.random() < 0.3) {
           enemyType = "star";
         } else if (level >= 6 && Math.random() < 0.3) {
           enemyType = "pyramid";

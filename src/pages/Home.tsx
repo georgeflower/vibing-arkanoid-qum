@@ -66,6 +66,7 @@ const tips = [
   { title: "Save Turrets", tip: "Turrets persist across levels and stack ammo. Use them wisely on bosses." },
   { title: "Reflect Shield", tip: "Reflect Shield turns boss attacks against them. Devastating on later bosses." },
   { title: "Boss Rush", tip: "Practice Boss Rush mode to master all 4 bosses back-to-back." },
+  { title: "Star Enemies", tip: "Yellow star enemies build and upgrade bricks! They appear on levels 3, 6, 9, 12, 16, and 19. Destroy them fast!" },
 ];
 
 const SectionTitle = ({ children }: { children: React.ReactNode }) => (

@@ -2,7 +2,7 @@
 
 A loving tribute to the legendary **Arkanoid** (Taito, 1986) — rebuilt from scratch as a modern browser game with retro Amiga aesthetics, epic boss battles, and a high-performance canvas engine.
 
-**[▶ Play Now](https://vibing-arkanoid.lovable.app)** · **v0.9.975**
+**[▶ Play Now](https://vibing-arkanoid.lovable.app)** · **v0.9.976**
 
 ![Vibing Arkanoid](src/assets/start-screen-new.webp)
 
@@ -12,6 +12,7 @@ A loving tribute to the legendary **Arkanoid** (Taito, 1986) — rebuilt from sc
 
 - **20 levels** of increasing difficulty with hand-crafted brick layouts
 - **4 boss battles** (levels 5, 10, 15) + a Mega Boss on level 20 with 3 phases, cross projectiles, music-reactive visuals, and danger ball mechanics
+- **4 enemy types**: Cubes, Spheres, Pyramids, and Stars — star enemies build and upgrade bricks on the playfield (levels 3, 6, 9, 12, 16, 19)
 - **Boss Rush mode** — fight all bosses back-to-back
 - **12 power-ups**: Fireball, Multi-Ball, Extend, Shield, Barrier, Slow Down, Turrets, Stunner, Reflect, Homing, Shrink, Extra Life
 - **Dual power-up choice** — 15% of power-up bricks drop two side-by-side options; pick one and the other vanishes
