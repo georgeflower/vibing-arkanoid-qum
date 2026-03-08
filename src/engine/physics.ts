@@ -942,49 +942,27 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
                   if (enemy.id !== undefined) result.bombIntervalsToClean.push(enemy.id);
                 }
               } else if (enemy.type === "star") {
-                // Star enemy: 2 hits to destroy, 150 points
-                const currentHits = enemy.hits || 0;
-                if (currentHits === 0) {
-                  result.soundsToPlay.push({ type: "bounce" });
-                  enemiesToUpdate.set(enemy.id!, {
-                    hits: 1,
-                    isAngry: true,
-                    speed: enemy.speed * 1.3,
-                    dx: enemy.dx * 1.3,
-                    dy: enemy.dy * 1.3,
-                    isBuilding: false,
-                    buildProgress: 0,
-                    buildTarget: undefined,
-                  });
-                  result.toastEvents.push({
-                    level: "warning",
-                    message: "Star is angry!",
-                    key: "star_hit",
-                  });
-                  result.screenShakes.push({ intensity: 5, duration: 500 });
-                  result.enemyHitBallIds.push(ccdResult.ball.id);
-                } else {
-                  enemiesToDestroy.add(enemyIndex);
-                  result.enemyHitBallIds.push(ccdResult.ball.id);
-                  result.explosionsToCreate.push({
-                    x: enemy.x + enemy.width / 2,
-                    y: enemy.y + enemy.height / 2,
-                    type: enemy.type,
-                  });
-                  scoreIncrease += 150;
-                  result.toastEvents.push({
-                    level: "success",
-                    message: "Star destroyed! +150 points",
-                    key: "enemy_destroyed",
-                  });
-                  result.soundsToPlay.push({ type: "explosion" });
-                  enemiesKilledIncrease++;
-                  result.bonusLetterDrops.push({
-                    x: enemy.x + enemy.width / 2,
-                    y: enemy.y + enemy.height / 2,
-                  });
-                  if (enemy.id !== undefined) result.bombIntervalsToClean.push(enemy.id);
-                }
+                // Star enemy: 1 hit to destroy, 150 points
+                enemiesToDestroy.add(enemyIndex);
+                result.enemyHitBallIds.push(ccdResult.ball.id);
+                result.explosionsToCreate.push({
+                  x: enemy.x + enemy.width / 2,
+                  y: enemy.y + enemy.height / 2,
+                  type: enemy.type,
+                });
+                scoreIncrease += 150;
+                result.toastEvents.push({
+                  level: "success",
+                  message: "Star destroyed! +150 points",
+                  key: "enemy_destroyed",
+                });
+                result.soundsToPlay.push({ type: "explosion" });
+                enemiesKilledIncrease++;
+                result.bonusLetterDrops.push({
+                  x: enemy.x + enemy.width / 2,
+                  y: enemy.y + enemy.height / 2,
+                });
+                if (enemy.id !== undefined) result.bombIntervalsToClean.push(enemy.id);
               } else {
                 // Cube enemy — one hit kill
                 enemiesToDestroy.add(enemyIndex);
@@ -1176,6 +1154,34 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
             bricksDestroyedCount++;
           }
         }
+      }
+    }
+
+    // Destroy nearby enemies within blast radius
+    for (let ei = 0; ei < enemies.length; ei++) {
+      const enemy = enemies[ei];
+      if (enemiesToDestroy.has(ei)) continue;
+      const enemyCenterX = enemy.x + enemy.width / 2;
+      const enemyCenterY = enemy.y + enemy.height / 2;
+      const dx = enemyCenterX - brickCenterX;
+      const dy = enemyCenterY - brickCenterY;
+      if (Math.sqrt(dx * dx + dy * dy) <= explosionRadius) {
+        enemiesToDestroy.add(ei);
+        result.explosionsToCreate.push({
+          x: enemyCenterX,
+          y: enemyCenterY,
+          type: enemy.type,
+        });
+        scoreIncrease += 150;
+        result.toastEvents.push({
+          level: "success",
+          message: `${enemy.type} enemy caught in explosion! +150`,
+          key: "enemy_destroyed",
+        });
+        result.soundsToPlay.push({ type: "explosion" });
+        enemiesKilledIncrease++;
+        result.bonusLetterDrops.push({ x: enemyCenterX, y: enemyCenterY });
+        if (enemy.id !== undefined) result.bombIntervalsToClean.push(enemy.id);
       }
     }
 

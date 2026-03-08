@@ -66,7 +66,7 @@ const tips = [
   { title: "Save Turrets", tip: "Turrets persist across levels and stack ammo. Use them wisely on bosses." },
   { title: "Reflect Shield", tip: "Reflect Shield turns boss attacks against them. Devastating on later bosses." },
   { title: "Boss Rush", tip: "Practice Boss Rush mode to master all 4 bosses back-to-back." },
-  { title: "Star Enemies", tip: "Yellow star enemies build and upgrade bricks! They appear on levels 3, 6, 9, 12, 16, and 19. Destroy them fast!" },
+  { title: "Star Enemies", tip: "Yellow star enemies build and upgrade bricks! They appear rarely on levels 3, 6, 9, 12, 16, and 19. Only 1 hit to destroy — explosive bricks can catch them too!" },
 ];
 
 const SectionTitle = ({ children }: { children: React.ReactNode }) => (
@@ -301,8 +301,8 @@ const Home = () => {
               <span style={{ color: "hsl(200,70%,50%)" }}>Cubes</span> bounce around randomly.{" "}
               <span style={{ color: "hsl(120,50%,50%)" }}>Spheres</span> appear from level 3 with faster movement.{" "}
               <span style={{ color: "hsl(270,70%,60%)" }}>Pyramids</span> from level 6 take 3 hits to destroy.{" "}
-              <span style={{ color: "hsl(50,100%,55%)" }}>Stars</span> ★ appear on levels 3, 6, 9, 12, 16, and 19 —
-              they build new bricks and upgrade existing ones, then roam around for a few seconds before building again. Destroy them fast!
+              <span style={{ color: "hsl(50,100%,55%)" }}>Stars</span> ★ appear rarely on levels 3, 6, 9, 12, 16, and 19 —
+              they build new bricks and upgrade existing ones, then roam for a few seconds before building again. Only 1 hit to destroy! Explosive bricks can also catch them in the blast.
             </p>
           </div>
 

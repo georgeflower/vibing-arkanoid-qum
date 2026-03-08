@@ -1,6 +1,14 @@
-export const GAME_VERSION = "0.9.976";
+export const GAME_VERSION = "0.9.977";
 
 export const CHANGELOG = [
+  {
+    version: "0.9.977",
+    changes: [
+      "Explosive bricks now destroy nearby enemies within blast radius",
+      "Star enemies now die in 1 hit (reduced from 2)",
+      "Star enemies spawn less frequently (15% chance, down from 30%)",
+    ],
+  },
   {
     version: "0.9.976",
     changes: [

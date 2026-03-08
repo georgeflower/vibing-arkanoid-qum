@@ -1,32 +1,38 @@
 
 
-## Plan: Explosive Bricks Kill Enemies + Star Enemy 1-Hit Kill + Reduced Spawn Rate
+# Revert Game Area to Fixed Size (Pre-Expansion)
 
-### Changes
+## Problem
+Two previous changes ("Expand game area to frame space" and "Expand game area to fill space") made the game canvas dynamically resize to fill all available space within the metal frame on desktop. The user wants the playable area to return to its original fixed size.
 
-**1. `src/engine/physics.ts`** — Explosive bricks kill nearby enemies (~line 1156-1180):
-After the existing "destroy nearby bricks" loop, add a second loop over `enemies` that checks distance to the explosion center. Any enemy within the 70px radius gets marked for destruction (add to `enemiesToDestroy`), awards points, creates explosion, drops bonus letter, and plays sound — same as a ball-hit kill.
+## Current behavior
+- `useViewportFrame` makes the metal frame fill the entire viewport on desktop
+- `useCanvasResize` uses ResizeObserver to dynamically size the game canvas to fill the `metal-game-area` container
+- The canvas display size grows to match available space
 
-**2. `src/engine/physics.ts`** — Star enemy 1-hit kill (~line 944-987):
-Remove the 2-hit logic. Replace with immediate destruction (like cube enemy): `enemiesToDestroy.add(enemyIndex)`, award 150 points, create explosion. Remove the `currentHits === 0` angry branch entirely.
+## Desired behavior
+The game canvas stays at its logical size (850×650 scaled by `scaleFactor`) and is simply centered within the frame — no dynamic expansion.
 
-**3. `src/components/Game.tsx`** — Reduce star spawn probability (~line 7046):
-Change `Math.random() < 0.3` → `Math.random() < 0.15` (15% chance instead of 30%) for star enemy spawns on star levels.
+## Changes
 
-**4. `src/constants/version.ts`** — Bump version and add changelog entries:
-- Explosive bricks now destroy nearby enemies within blast radius
-- Star enemies now die in 1 hit (reduced from 2)
-- Star enemies spawn less frequently
+### 1. `src/components/Game.tsx`
+- **Remove** `useViewportFrame` import and hook call (lines 22, 1651-1654)
+- **Remove** `useCanvasResize` import and hook call (lines 23, 1657-1667), along with destructured `displayWidth`, `displayHeight`, `dynamicScale`
+- Remove `gameAreaRef` if only used for `useCanvasResize` (check first)
+- On desktop, set the `game-glow` div's width/height explicitly to `SCALED_CANVAS_WIDTH` × `SCALED_CANVAS_HEIGHT` (same as mobile path but without the scale transform), so the canvas is fixed-size and centered
 
-**5. Documentation updates** — `README.md`, `src/pages/Home.tsx`, `src/components/MainMenu.tsx`:
-Update star enemy descriptions to say "1 hit" and mention explosive brick enemy-killing.
+### 2. `src/hooks/useViewportFrame.ts`
+- Delete file (no longer used)
 
-| File | Change |
-|------|--------|
-| `src/engine/physics.ts` | Add enemy kill loop in explosive detonation; star = 1-hit kill |
-| `src/components/Game.tsx` | Star spawn chance 0.3 → 0.15 |
-| `src/constants/version.ts` | Version bump + changelog |
-| `README.md` | Update star/explosive descriptions |
-| `src/pages/Home.tsx` | Update star/explosive descriptions |
-| `src/components/MainMenu.tsx` | Update star description in instructions |
+### 3. `src/hooks/useCanvasResize.ts`
+- Delete file (no longer used)
+
+### 4. `src/index.css`
+- Remove the `.metal-frame.desktop-fullscreen` CSS block (lines ~265-290) since the class is no longer applied
+- Remove `max-width` constraint on `.metal-game-area` that references side panel widths — let it auto-size around the fixed canvas
+- Keep `.metal-frame` as `width: fit-content` so it wraps the fixed-size content naturally
+
+### 5. Verify
+- `gameAreaRef` usage — if it's only for `useCanvasResize`, remove the ref. If used elsewhere (e.g. click handlers), keep it.
+- `gameGlowRef` — same check; if only used by `useCanvasResize` for imperative sizing, it can be simplified but likely still needed for CRT overlay positioning.
 
