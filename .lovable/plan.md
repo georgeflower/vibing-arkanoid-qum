@@ -1,33 +1,38 @@
 
 
-## Plan: Fix Daily Challenge Level — Use Level 21+ Instead of 0
+# Revert Game Area to Fixed Size (Pre-Expansion)
 
-### Problem
-Setting `startingLevel: 0` causes the Game component to crash. When `initBricksForLevel(0)` runs, the fallback path accesses `levelLayouts[-1]` (undefined), crashing the game. Multiple other systems also assume `level >= 1` (speed calculations, enemy gating, etc.).
+## Problem
+Two previous changes ("Expand game area to frame space" and "Expand game area to fill space") made the game canvas dynamically resize to fill all available space within the metal frame on desktop. The user wants the playable area to return to its original fixed size.
 
-### Solution
-Use the user's suggestion: daily challenges use level numbers **starting at 21** (one above `FINAL_LEVEL = 20`), incrementing daily. This avoids all edge cases with level 0 and clearly separates daily challenge levels from the normal 1-20 progression.
+## Current behavior
+- `useViewportFrame` makes the metal frame fill the entire viewport on desktop
+- `useCanvasResize` uses ResizeObserver to dynamically size the game canvas to fill the `metal-game-area` container
+- The canvas display size grows to match available space
 
-The daily challenge layout is already handled correctly via `isDailyChallenge && settings.dailyChallengeConfig` — the level number just needs to not break other systems.
+## Desired behavior
+The game canvas stays at its logical size (850×650 scaled by `scaleFactor`) and is simply centered within the frame — no dynamic expansion.
 
-### Changes
+## Changes
 
-**`src/components/MainMenu.tsx`** (~line 132):
-- Change `startingLevel: 0` → `startingLevel: 21` (or compute a day-based offset: `21 + daysSinceLaunch`)
+### 1. `src/components/Game.tsx`
+- **Remove** `useViewportFrame` import and hook call (lines 22, 1651-1654)
+- **Remove** `useCanvasResize` import and hook call (lines 23, 1657-1667), along with destructured `displayWidth`, `displayHeight`, `dynamicScale`
+- Remove `gameAreaRef` if only used for `useCanvasResize` (check first)
+- On desktop, set the `game-glow` div's width/height explicitly to `SCALED_CANVAS_WIDTH` × `SCALED_CANVAS_HEIGHT` (same as mobile path but without the scale transform), so the canvas is fixed-size and centered
 
-**`src/components/Game.tsx`**:
-1. **Speed clamp** (~line 318-322): When `isDailyChallenge`, use the daily config's `speedMultiplier` directly instead of the level-based formula (this is already done in the initialization at line 333-334, but `calculateSpeedForLevel` also needs a daily challenge guard).
-2. **Level display**: Where `LEVEL ${currentLevel}` is shown in toasts/UI, show "DAILY" instead when `isDailyChallenge` is active.
-3. **Win condition** (~line 3822): The `level >= FINAL_LEVEL` check already has a daily challenge branch above it, so level 21 won't trigger the "beat the game" ending.
-4. **Enemy spawning**: The daily challenge bypass (all 4 types) is already in place.
-5. **Level progression**: Daily challenge doesn't advance levels, so level 21 won't try to load `levelLayouts[20]` for a "next level."
+### 2. `src/hooks/useViewportFrame.ts`
+- Delete file (no longer used)
 
-**`src/utils/dailyChallenge.ts`**: No changes needed — the level number is set in MainMenu, not here.
+### 3. `src/hooks/useCanvasResize.ts`
+- Delete file (no longer used)
 
-### Files Changed
+### 4. `src/index.css`
+- Remove the `.metal-frame.desktop-fullscreen` CSS block (lines ~265-290) since the class is no longer applied
+- Remove `max-width` constraint on `.metal-game-area` that references side panel widths — let it auto-size around the fixed canvas
+- Keep `.metal-frame` as `width: fit-content` so it wraps the fixed-size content naturally
 
-| File | Change |
-|------|--------|
-| `src/components/MainMenu.tsx` | `startingLevel: 21` for daily challenge |
-| `src/components/Game.tsx` | Guard `calculateSpeedForLevel` for daily mode; display "DAILY" instead of level number |
+### 5. Verify
+- `gameAreaRef` usage — if it's only for `useCanvasResize`, remove the ref. If used elsewhere (e.g. click handlers), keep it.
+- `gameGlowRef` — same check; if only used by `useCanvasResize` for imperative sizing, it can be simplified but likely still needed for CRT overlay positioning.
 

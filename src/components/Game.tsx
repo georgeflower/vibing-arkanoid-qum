@@ -307,6 +307,11 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         return BOSS_RUSH_CONFIG.speedMultipliers[bossLevel];
       }
 
+      // Daily challenge uses its own speed multiplier
+      if (isDailyChallenge && settings.dailyChallengeConfig) {
+        return settings.dailyChallengeConfig.speedMultiplier;
+      }
+
       // 105% base for normal, ~117% for godlike (reduced 15% from 137.5%)
       const baseMultiplier = difficulty === "godlike" ? 1.169 : 1.05;
       // Level-based caps (before brick hit bonuses): ~132% godlike (reduced 15%), 140% normal
@@ -7587,10 +7592,14 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
     // Keep the current level
     const currentLevel = level;
-    const maxSpeedMultiplier = settings.difficulty === "godlike" ? 1.4875 : 1.5;
-    const baseMultiplier = settings.difficulty === "godlike" ? 1.0625 : 1.0;
-    const levelSpeedMultiplier = Math.min(maxSpeedMultiplier, Math.max(baseMultiplier, baseMultiplier + (currentLevel - 1) * 0.05));
-    setSpeedMultiplier(levelSpeedMultiplier);
+    if (isDailyChallenge && settings.dailyChallengeConfig) {
+      setSpeedMultiplier(settings.dailyChallengeConfig.speedMultiplier);
+    } else {
+      const maxSpeedMultiplier = settings.difficulty === "godlike" ? 1.4875 : 1.5;
+      const baseMultiplier = settings.difficulty === "godlike" ? 1.0625 : 1.0;
+      const levelSpeedMultiplier = Math.min(maxSpeedMultiplier, Math.max(baseMultiplier, baseMultiplier + (currentLevel - 1) * 0.05));
+      setSpeedMultiplier(levelSpeedMultiplier);
+    }
 
     // Reset paddle
     const initialPaddleX = SCALED_CANVAS_WIDTH / 2 - SCALED_PADDLE_WIDTH / 2;
@@ -7605,7 +7614,14 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     paddleXRef.current = initialPaddleX;
 
     // Initialize ball with level speed - waiting to launch
-    const baseSpeed = 4.5 * Math.min(levelSpeedMultiplier, 1.75);
+    const retrySpeedMult = isDailyChallenge && settings.dailyChallengeConfig
+      ? settings.dailyChallengeConfig.speedMultiplier
+      : (() => {
+          const maxSM = settings.difficulty === "godlike" ? 1.4875 : 1.5;
+          const baseMult = settings.difficulty === "godlike" ? 1.0625 : 1.0;
+          return Math.min(maxSM, Math.max(baseMult, baseMult + (currentLevel - 1) * 0.05));
+        })();
+    const baseSpeed = 4.5 * Math.min(retrySpeedMult, 1.75);
     const initialBall: Ball = {
       x: SCALED_CANVAS_WIDTH / 2,
       y: SCALED_CANVAS_HEIGHT - SCALED_PADDLE_START_Y,
@@ -7714,7 +7730,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     // Set to ready state
     setGameState("ready");
 
-    toast.info(`Retrying Level ${currentLevel}`);
+    toast.info(isDailyChallenge ? `Retrying Daily Challenge` : `Retrying Level ${currentLevel}`);
   }, [
     level,
     settings.startingLives,
