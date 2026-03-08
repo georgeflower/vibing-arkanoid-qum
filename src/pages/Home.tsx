@@ -220,6 +220,36 @@ const Home = () => {
             >
               ▶ PLAY NOW
             </Link>
+
+            <div className="mt-4 flex gap-3 justify-center">
+              {isLoggedIn ? (
+                <Link
+                  to="/profile"
+                  className="retro-pixel-text px-4 py-2 rounded text-xs"
+                  style={{
+                    background: "hsl(330, 40%, 50%)",
+                    color: "white",
+                    textDecoration: "none",
+                    border: "2px ridge hsl(330,40%,60%)",
+                  }}
+                >
+                  👤 PROFILE
+                </Link>
+              ) : (
+                <Link
+                  to="/auth"
+                  className="retro-pixel-text px-4 py-2 rounded text-xs"
+                  style={{
+                    background: "hsl(0,0%,25%)",
+                    color: "hsl(0,0%,75%)",
+                    textDecoration: "none",
+                    border: "2px ridge hsl(0,0%,35%)",
+                  }}
+                >
+                  🔑 LOGIN
+                </Link>
+              )}
+            </div>
           </div>
         </section>
 
