@@ -330,6 +330,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   const [speedMultiplierInitialized] = useState(() => {
     if (settings.gameMode === "bossRush") {
       world.speedMultiplier = BOSS_RUSH_CONFIG.speedMultipliers[5];
+    } else if (isDailyChallenge && settings.dailyChallengeConfig) {
+      world.speedMultiplier = settings.dailyChallengeConfig.speedMultiplier;
     } else {
       const startLevel = settings.startingLevel;
       const baseMultiplier = settings.difficulty === "godlike" ? 1.169 : 1.05;
