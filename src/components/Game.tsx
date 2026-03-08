@@ -22,6 +22,7 @@ import { useScaledConstants } from "@/hooks/useScaledConstants";
 import { useViewportFrame } from "@/hooks/useViewportFrame";
 import { useCanvasResize } from "@/hooks/useCanvasResize";
 import CRTOverlay from "./CRTOverlay";
+import { VUMeter } from "./VUMeter";
 import { BOSS_RUSH_CONFIG, BossRushLevel } from "@/constants/bossRushConfig";
 import { submitGameStats } from "@/utils/profileStats";
 import { DailyChallengeResultOverlay } from "./DailyChallengeResultOverlay";
