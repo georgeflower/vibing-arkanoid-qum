@@ -97,7 +97,7 @@ const MODIFIER_POOL: DailyChallengeModifier[] = [
 ];
 
 // ── Layout generation ────────────────────────────────────────
-const ROWS = 13;
+const ROWS = 14;
 const COLS = 13;
 
 function generateLayout(rng: () => number, modifier: DailyChallengeModifier): (boolean | number)[][] {
