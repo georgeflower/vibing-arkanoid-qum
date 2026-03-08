@@ -1244,14 +1244,26 @@ class SoundManager {
     this.bossMusic.loop = true;
     this.bossMusic.volume = 0.3;
     
-    // Set up AnalyserNode for frequency analysis
+    // Set up AnalyserNode for frequency analysis + stereo VU
     try {
       const ctx = this.getAudioContext();
       this.bossMusicSource = ctx.createMediaElementSource(this.bossMusic);
+      this.connectedElements.add(this.bossMusic);
       this.analyser = ctx.createAnalyser();
       this.analyser.fftSize = 256;
       this.frequencyData = new Uint8Array(this.analyser.frequencyBinCount);
+      
+      // Set up stereo split for VU meters
+      this.splitter = ctx.createChannelSplitter(2);
+      this.leftAnalyser = ctx.createAnalyser();
+      this.rightAnalyser = ctx.createAnalyser();
+      this.leftAnalyser.fftSize = 256;
+      this.rightAnalyser.fftSize = 256;
+      
       this.bossMusicSource.connect(this.analyser);
+      this.bossMusicSource.connect(this.splitter);
+      this.splitter.connect(this.leftAnalyser, 0);
+      this.splitter.connect(this.rightAnalyser, 1);
       this.analyser.connect(ctx.destination);
     } catch (e) {
       // Fallback: play without analyser
