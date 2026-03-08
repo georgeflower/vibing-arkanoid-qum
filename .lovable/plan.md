@@ -1,38 +1,40 @@
 
+Goal: Fix why player profile stats are not updating after gameplay.
 
-# Revert Game Area to Fixed Size (Pre-Expansion)
+What I found
+- The backend update path works: calling `update-profile-stats` directly updates `player_profiles` correctly.
+- During normal gameplay, there are no `update-profile-stats` requests from the client.
+- Root cause is client-side gating:
+  - `submitGameStats(...)` is skipped when `isDebugModeActive(debugSettings)` is true.
+  - In `useDebugSettings`, `showDebugModeIndicator` defaults to `true` and is counted as “debug mode active”, so stat submission is effectively always blocked.
 
-## Problem
-Two previous changes ("Expand game area to frame space" and "Expand game area to fill space") made the game canvas dynamically resize to fill all available space within the metal frame on desktop. The user wants the playable area to return to its original fixed size.
+Implementation plan
 
-## Current behavior
-- `useViewportFrame` makes the metal frame fill the entire viewport on desktop
-- `useCanvasResize` uses ResizeObserver to dynamically size the game canvas to fill the `metal-game-area` container
-- The canvas display size grows to match available space
+1) Fix debug-mode detection logic
+- File: `src/hooks/useDebugSettings.ts`
+- Update `isDebugModeActive(...)` so it does NOT treat `showDebugModeIndicator` as active debug mode.
+- Keep actual debug overlays/logging toggles as the criteria.
 
-## Desired behavior
-The game canvas stays at its logical size (850×650 scaled by `scaleFactor`) and is simply centered within the frame — no dynamic expansion.
+2) Make stat-submission guard production-safe
+- File: `src/components/Game.tsx`
+- Update both `submitGameStats(...)` call sites to skip only when real debug instrumentation is active (not just indicator visibility).
+- Apply at:
+  - game-over submission block
+  - final-victory submission block
 
-## Changes
+3) Ensure submission uses current match values
+- File: `src/components/Game.tsx`
+- Prevent stale closure values at submit time by reading current values (via refs or corrected callback dependencies) for:
+  - bricks destroyed, enemies killed, bosses killed, power-ups collected, play time, level, combo
+- This avoids sending outdated zeros even after gating is fixed.
 
-### 1. `src/components/Game.tsx`
-- **Remove** `useViewportFrame` import and hook call (lines 22, 1651-1654)
-- **Remove** `useCanvasResize` import and hook call (lines 23, 1657-1667), along with destructured `displayWidth`, `displayHeight`, `dynamicScale`
-- Remove `gameAreaRef` if only used for `useCanvasResize` (check first)
-- On desktop, set the `game-glow` div's width/height explicitly to `SCALED_CANVAS_WIDTH` × `SCALED_CANVAS_HEIGHT` (same as mobile path but without the scale transform), so the canvas is fixed-size and centered
+4) Keep backend unchanged
+- No database schema or RLS changes are needed.
+- `update-profile-stats` function is already functional and authenticated correctly.
 
-### 2. `src/hooks/useViewportFrame.ts`
-- Delete file (no longer used)
-
-### 3. `src/hooks/useCanvasResize.ts`
-- Delete file (no longer used)
-
-### 4. `src/index.css`
-- Remove the `.metal-frame.desktop-fullscreen` CSS block (lines ~265-290) since the class is no longer applied
-- Remove `max-width` constraint on `.metal-game-area` that references side panel widths — let it auto-size around the fixed canvas
-- Keep `.metal-frame` as `width: fit-content` so it wraps the fixed-size content naturally
-
-### 5. Verify
-- `gameAreaRef` usage — if it's only for `useCanvasResize`, remove the ref. If used elsewhere (e.g. click handlers), keep it.
-- `gameGlowRef` — same check; if only used by `useCanvasResize` for imperative sizing, it can be simplified but likely still needed for CRT overlay positioning.
-
+Validation plan
+1. Play a short non-debug run and lose.
+2. Confirm client sends `update-profile-stats` request.
+3. Confirm profile row increments (`total_games_played`, bricks/time/etc.).
+4. Open player profile page and verify updated stats render correctly.
+5. Repeat once more to confirm cumulative increments.
