@@ -1,38 +1,50 @@
 
 
-# Revert Game Area to Fixed Size (Pre-Expansion)
+## Plan: Star Enemy Spawn Levels + Documentation Update
 
-## Problem
-Two previous changes ("Expand game area to frame space" and "Expand game area to fill space") made the game canvas dynamically resize to fill all available space within the metal frame on desktop. The user wants the playable area to return to its original fixed size.
+### 1. Star Enemy Spawn Logic
 
-## Current behavior
-- `useViewportFrame` makes the metal frame fill the entire viewport on desktop
-- `useCanvasResize` uses ResizeObserver to dynamically size the game canvas to fill the `metal-game-area` container
-- The canvas display size grows to match available space
+**`src/components/Game.tsx`** (~line 7064): Replace the current `level >= 8 && Math.random() < 0.2` star gate with an explicit level list:
 
-## Desired behavior
-The game canvas stays at its logical size (850×650 scaled by `scaleFactor`) and is simply centered within the frame — no dynamic expansion.
+```typescript
+const STAR_ENEMY_LEVELS = [3, 6, 9, 12, 16, 19];
+// ...
+} else if (STAR_ENEMY_LEVELS.includes(level) && Math.random() < 0.3) {
+  enemyType = "star";
+} else if (level >= 6 && Math.random() < 0.3) {
+  // pyramid ...
+```
 
-## Changes
+Move the star check **before** the pyramid check so it takes priority on shared levels (6, 9, 12).
 
-### 1. `src/components/Game.tsx`
-- **Remove** `useViewportFrame` import and hook call (lines 22, 1651-1654)
-- **Remove** `useCanvasResize` import and hook call (lines 23, 1657-1667), along with destructured `displayWidth`, `displayHeight`, `dynamicScale`
-- Remove `gameAreaRef` if only used for `useCanvasResize` (check first)
-- On desktop, set the `game-glow` div's width/height explicitly to `SCALED_CANVAS_WIDTH` × `SCALED_CANVAS_HEIGHT` (same as mobile path but without the scale transform), so the canvas is fixed-size and centered
+### 2. Version Bump
 
-### 2. `src/hooks/useViewportFrame.ts`
-- Delete file (no longer used)
+**`src/constants/version.ts`**: Bump `GAME_VERSION` to `"0.9.976"` and add a new changelog entry:
 
-### 3. `src/hooks/useCanvasResize.ts`
-- Delete file (no longer used)
+```
+"NEW: Star Enemy — a yellow star that builds and upgrades bricks on the playfield",
+"Star enemies appear on levels 3, 6, 9, 12, 16, and 19",
+"Stars take ~5 seconds to construct a new brick or upgrade existing ones (up to 3-hit)",
+"Stars intelligently move toward gaps in the brick field after building",
+"All 4 enemy types (Cube, Sphere, Pyramid, Star) spawn in Daily Challenges",
+```
 
-### 4. `src/index.css`
-- Remove the `.metal-frame.desktop-fullscreen` CSS block (lines ~265-290) since the class is no longer applied
-- Remove `max-width` constraint on `.metal-game-area` that references side panel widths — let it auto-size around the fixed canvas
-- Keep `.metal-frame` as `width: fit-content` so it wraps the fixed-size content naturally
+### 3. README.md
 
-### 5. Verify
-- `gameAreaRef` usage — if it's only for `useCanvasResize`, remove the ref. If used elsewhere (e.g. click handlers), keep it.
-- `gameGlowRef` — same check; if only used by `useCanvasResize` for imperative sizing, it can be simplified but likely still needed for CRT overlay positioning.
+Add a bullet under Features describing the star enemy and update the enemy/level description.
+
+### 4. Homepage (`src/pages/Home.tsx`)
+
+Add a tip or description mentioning the star enemy and its brick-building behavior in the tips section or game description area.
+
+### 5. Tutorial (`src/hooks/useTutorial.ts`)
+
+No change needed — there's only one tutorial step (level 1 welcome). The star enemy is self-explanatory via the existing toast when it spawns.
+
+| File | Change |
+|------|--------|
+| `src/components/Game.tsx` | Star spawns on levels 3,6,9,12,16,19 with 30% chance |
+| `src/constants/version.ts` | v0.9.976 + star enemy changelog |
+| `README.md` | Add star enemy to features |
+| `src/pages/Home.tsx` | Add star enemy tip/description |
 
