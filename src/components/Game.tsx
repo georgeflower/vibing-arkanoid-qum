@@ -1820,7 +1820,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         setTimeout(() => nextLevelRef.current?.(), 3000);
       }
     },
-    [isBossRush, bossRushStartTime, createExplosionParticles, clearAllEnemies, clearAllBombs],
+    [isBossRush, isDailyChallenge, dailyChallengeData, bossRushStartTime, createExplosionParticles, clearAllEnemies, clearAllBombs, totalPlayTime],
   );
 
   // createHighScoreParticles removed — replaced by particlePool.acquireForHighScore
