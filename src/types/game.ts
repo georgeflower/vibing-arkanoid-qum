@@ -77,7 +77,7 @@ export interface PowerUp {
   isDualChoice?: boolean; // Flag for rendering the visual connector
 }
 
-export type EnemyType = "cube" | "sphere" | "pyramid" | "crossBall";
+export type EnemyType = "cube" | "sphere" | "pyramid" | "crossBall" | "star";
 
 export interface Enemy {
   id?: number;
