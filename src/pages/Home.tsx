@@ -5,7 +5,6 @@ import { supabase } from "@/integrations/supabase/client";
 import CRTOverlay from "@/components/CRTOverlay";
 import { GAME_VERSION } from "@/constants/version";
 import { CHANGELOG } from "@/constants/version";
-import { supabase } from "@/integrations/supabase/client";
 import startScreen from "@/assets/start-screen-new.webp";
 
 // Power-up images
