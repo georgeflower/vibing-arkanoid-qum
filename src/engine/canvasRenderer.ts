@@ -3568,7 +3568,7 @@ function drawMegaBoss(
     ctx.fillRect(cannonWidth / 2, cannonBaseY + cannonLength * 0.4, 3, 8);
 
     // Blinking muzzle half-circle - blinks rapidly before firing
-    const timeToFire = megaBoss.nextCannonFireTime > 0 ? megaBoss.nextCannonFireTime - now : Infinity;
+    const timeToFire = megaBoss.nextCannonFireTime > 0 ? megaBoss.nextCannonFireTime - Date.now() : Infinity;
     const isPreFireWarning = timeToFire > 0 && timeToFire < 800; // 800ms warning
     const blinkRate = isPreFireWarning ? 50 : 200; // Very fast blink when about to fire
     const muzzleBlink = Math.floor(now / blinkRate) % 2 === 0;
