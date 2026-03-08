@@ -2090,6 +2090,15 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   const initPowerUpAssignments = useCallback(
     (bricks: Brick[], targetLevel: number, dropCounts: Partial<Record<PowerUpType, number>> = {}) => {
       const result = assignPowerUpsToBricks(bricks, extraLifeUsedLevels, targetLevel, settings.difficulty, dropCounts);
+      // Daily challenge: filter out life power-ups if noExtraLives
+      if (isDailyChallenge && settings.dailyChallengeConfig?.noExtraLives) {
+        for (const [id, type] of result.assignments) {
+          if (type === "life") result.assignments.delete(id);
+        }
+        for (const [id, type] of result.dualChoiceAssignments) {
+          if (type === "life") result.dualChoiceAssignments.delete(id);
+        }
+      }
       setPowerUpAssignments(result.assignments);
       setDualChoiceAssignments(result.dualChoiceAssignments);
       if (ENABLE_DEBUG_FEATURES && debugSettings.enablePowerUpLogging) {
