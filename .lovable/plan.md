@@ -1,38 +1,43 @@
 
 
-# Revert Game Area to Fixed Size (Pre-Expansion)
+## Plan: Fix Turret Bullet Damage to Mega Boss
 
-## Problem
-Two previous changes ("Expand game area to frame space" and "Expand game area to fill space") made the game canvas dynamically resize to fill all available space within the metal frame on desktop. The user wants the playable area to return to its original fixed size.
+### Problem
+In `src/components/Game.tsx` lines 6413-6462, the `pendingBulletBossHits` processing simply reduces `boss.currentHealth` directly. For the Mega Boss, actual HP lives in `outerShieldHP` / `innerShieldHP`, so reducing `currentHealth` alone has no gameplay effect — no shield is damaged, no core exposure is triggered.
 
-## Current behavior
-- `useViewportFrame` makes the metal frame fill the entire viewport on desktop
-- `useCanvasResize` uses ResizeObserver to dynamically size the game canvas to fill the `metal-game-area` container
-- The canvas display size grows to match available space
+### Fix
+Add a Mega Boss branch inside the `if (!hit.isResurrected)` block (line 6416), mirroring the ball-hit handler at lines 3380-3417:
 
-## Desired behavior
-The game canvas stays at its logical size (850×650 scaled by `scaleFactor`) and is simply centered within the frame — no dynamic expansion.
+**File: `src/components/Game.tsx` (~line 6416)**
 
-## Changes
+Before the existing `boss.currentHealth = Math.max(0, ...)` line, add:
 
-### 1. `src/components/Game.tsx`
-- **Remove** `useViewportFrame` import and hook call (lines 22, 1651-1654)
-- **Remove** `useCanvasResize` import and hook call (lines 23, 1657-1667), along with destructured `displayWidth`, `displayHeight`, `dynamicScale`
-- Remove `gameAreaRef` if only used for `useCanvasResize` (check first)
-- On desktop, set the `game-glow` div's width/height explicitly to `SCALED_CANVAS_WIDTH` × `SCALED_CANVAS_HEIGHT` (same as mobile path but without the scale transform), so the canvas is fixed-size and centered
+```
+if (isMegaBoss(boss)) {
+  const megaBoss = boss as MegaBoss;
+  if (megaBoss.coreExposed || megaBoss.trappedBall) continue;
 
-### 2. `src/hooks/useViewportFrame.ts`
-- Delete file (no longer used)
+  const { newOuterHP, newInnerHP, shouldExposeCore } = handleMegaBossOuterDamage(megaBoss, hit.damage);
+  megaBoss.outerShieldHP = newOuterHP;
+  megaBoss.innerShieldHP = newInnerHP;
 
-### 3. `src/hooks/useCanvasResize.ts`
-- Delete file (no longer used)
+  const activeShieldHP = megaBoss.outerShieldRemoved ? newInnerHP : newOuterHP;
+  megaBoss.currentHealth = activeShieldHP;
+  megaBoss.lastHitAt = world.simTimeMs;
 
-### 4. `src/index.css`
-- Remove the `.metal-frame.desktop-fullscreen` CSS block (lines ~265-290) since the class is no longer applied
-- Remove `max-width` constraint on `.metal-game-area` that references side panel widths — let it auto-size around the fixed canvas
-- Keep `.metal-frame` as `width: fit-content` so it wraps the fixed-size content naturally
+  if (shouldExposeCore) {
+    Object.assign(megaBoss, exposeMegaBossCore(megaBoss));
+    megaBoss.currentHealth = 0;
+    world.screenShake = 12;
+    soundManager.playExplosion();
+  }
 
-### 5. Verify
-- `gameAreaRef` usage — if it's only for `useCanvasResize`, remove the ref. If used elsewhere (e.g. click handlers), keep it.
-- `gameGlowRef` — same check; if only used by `useCanvasResize` for imperative sizing, it can be simplified but likely still needed for CRT overlay positioning.
+  soundManager.playBossHitSound();
+  continue; // skip generic health reduction
+}
+```
+
+This ensures turret bullets properly reduce shield HP and trigger core exposure, identical to ball hits. The `continue` skips the generic `currentHealth` reduction below.
+
+No other files need changes — the bullet collision detection in `useBullets.ts` already correctly generates hit events for the mega boss.
 
