@@ -23,7 +23,7 @@ export const DailyChallengeOverlay = ({ onPlay, onClose }: DailyChallengeOverlay
       if (session) {
         // Check if already completed today
         const todayStr = getTodayString();
-        const { data: completion } = await supabase
+        const { data: completion } = await (supabase as any)
           .from("daily_challenge_completions")
           .select("id")
           .eq("user_id", session.user.id)
