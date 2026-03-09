@@ -1652,8 +1652,9 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     setBossAttacks([]);
     setLaserWarnings([]);
 
-    // Submit lifetime stats to player profile (skip if debug mode is active)
-    if (!isDebugModeActive(debugSettings)) {
+    // Submit lifetime stats to player profile (skip if debug mode is active or daily challenge)
+    // Daily challenges are tracked separately via submitDailyChallenge
+    if (!isDebugModeActive(debugSettings) && !isDailyChallenge) {
       submitGameStats({
         bricksDestroyed: totalBricksDestroyedRef.current,
         enemiesKilled: world.enemiesKilled,
