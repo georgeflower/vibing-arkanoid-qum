@@ -40,6 +40,12 @@ const POWER_UP_LABELS: Record<string, string> = {
   bossStunner: "Stunner", reflectShield: "Reflect", homingBall: "Homing", secondChance: "2nd Chance",
 };
 
+const PROFILE_BETA_KNOWN_ISSUES = [
+  "Avatar upload may occasionally fail on slow connections",
+  "Public profile links may take a few seconds to update after changes",
+  "Stats synchronization can be delayed during high server load",
+];
+
 const resizeImage = (file: File, maxSize: number): Promise<Blob> => {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -306,13 +312,13 @@ const Profile = () => {
             This feature is in beta. Some features may be unstable or incomplete.
           </p>
           <details className="mt-2">
-            <summary className="text-[10px] text-center cursor-pointer" style={{ color: "hsl(200,70%,60%)" }}>
+            <summary className="text-[10px] text-center cursor-pointer" style={{ color: "hsl(200,70%,60%)" }} aria-label="Toggle known issues list">
               Known Issues (click to expand)
             </summary>
             <ul className="mt-2 space-y-1 text-[9px] list-disc list-inside" style={{ color: "hsl(0,0%,65%)" }}>
-              <li>Avatar upload may occasionally fail on slow connections</li>
-              <li>Public profile links may take a few seconds to update after changes</li>
-              <li>Stats synchronization can be delayed during high server load</li>
+              {PROFILE_BETA_KNOWN_ISSUES.map((issue) => (
+                <li key={issue}>{issue}</li>
+              ))}
             </ul>
           </details>
         </div>

@@ -295,7 +295,7 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
 
             {/* Player Profile System */}
             <div className="bg-gradient-to-r from-[hsl(330,100%,65%)]/20 to-[hsl(200,70%,50%)]/20 p-2 sm:p-3 rounded-lg border-2 border-[hsl(330,100%,65%)]/50">
-              <div className="flex items-center justify-center gap-2 mb-1">
+              <div className="flex items-center gap-2 mb-1">
                 <h3 className="font-bold text-xs sm:text-sm text-[hsl(330,100%,65%)]">👤 Player Profile System</h3>
                 <span className="text-[8px] sm:text-[9px] font-bold px-1.5 py-0.5 rounded" style={{ background: "hsl(45,100%,50%)", color: "hsl(220,30%,10%)" }}>
                   BETA
