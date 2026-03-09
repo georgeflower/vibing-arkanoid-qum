@@ -295,7 +295,12 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
 
             {/* Player Profile System */}
             <div className="bg-gradient-to-r from-[hsl(330,100%,65%)]/20 to-[hsl(200,70%,50%)]/20 p-2 sm:p-3 rounded-lg border-2 border-[hsl(330,100%,65%)]/50">
-              <h3 className="font-bold text-xs sm:text-sm mb-1 text-[hsl(330,100%,65%)]">👤 Player Profile System</h3>
+              <div className="flex items-center gap-2 mb-1">
+                <h3 className="font-bold text-xs sm:text-sm text-[hsl(330,100%,65%)]">👤 Player Profile System</h3>
+                <span className="text-[8px] sm:text-[9px] font-bold px-1.5 py-0.5 rounded" style={{ background: "hsl(45,100%,50%)", color: "hsl(220,30%,10%)" }}>
+                  BETA
+                </span>
+              </div>
               <ul className="list-disc list-inside space-y-0.5 text-[10px] sm:text-xs">
                 <li>Create an account with a unique <span className="text-[hsl(200,70%,50%)] font-bold">username</span> and leaderboard initials.</li>
                 <li>Upload a custom <span className="text-[hsl(30,100%,60%)] font-bold">avatar</span> (256×256) to personalize your profile.</li>
@@ -414,7 +419,12 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
             </p>
 
             <div className="bg-black/30 p-3 sm:p-4 md:p-5 rounded-lg border border-[hsl(330,100%,65%)]/30">
-              <h3 className="font-bold text-sm sm:text-base md:text-lg mb-2 text-[hsl(330,100%,65%)]">👤 Player Profiles</h3>
+              <div className="flex items-center gap-2 mb-2">
+                <h3 className="font-bold text-sm sm:text-base md:text-lg text-[hsl(330,100%,65%)]">👤 Player Profiles</h3>
+                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded" style={{ background: "hsl(45,100%,50%)", color: "hsl(220,30%,10%)" }}>
+                  BETA
+                </span>
+              </div>
               <p className="text-xs sm:text-sm leading-relaxed">
                 Create an account with a unique <span className="text-[hsl(200,70%,50%)] font-bold">username</span> and
                 upload a custom avatar. Track your lifetime stats, achievements, and power-up usage. Toggle your profile

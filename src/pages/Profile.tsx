@@ -40,6 +40,12 @@ const POWER_UP_LABELS: Record<string, string> = {
   bossStunner: "Stunner", reflectShield: "Reflect", homingBall: "Homing", secondChance: "2nd Chance",
 };
 
+const PROFILE_BETA_KNOWN_ISSUES = [
+  "Avatar upload may occasionally fail on slow connections",
+  "Public profile links may take a few seconds to update after changes",
+  "Stats synchronization can be delayed during high server load",
+];
+
 const resizeImage = (file: File, maxSize: number): Promise<Blob> => {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -294,6 +300,29 @@ const Profile = () => {
     <div className="min-h-screen" style={{ background: "linear-gradient(180deg, hsl(220,25%,12%) 0%, hsl(220,30%,8%) 100%)", overflowY: "auto", height: "100vh", position: "fixed", inset: 0 }}>
       <CRTOverlay quality="medium" />
       <div className="relative z-10 max-w-2xl mx-auto px-4 py-8">
+        {/* Beta Status Banner */}
+        <div className="mb-4 p-3 rounded-lg" style={{ background: "hsl(45,100%,50%,0.15)", border: "1px solid hsl(45,100%,50%,0.5)" }}>
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <span className="text-xs font-bold px-2 py-0.5 rounded" style={{ background: "hsl(45,100%,50%)", color: "hsl(220,30%,10%)" }}>
+              BETA
+            </span>
+            <span className="text-xs font-bold" style={{ color: "hsl(45,100%,60%)" }}>Profile System</span>
+          </div>
+          <p className="text-[10px] text-center" style={{ color: "hsl(0,0%,70%)" }}>
+            This feature is in beta. Some features may be unstable or incomplete.
+          </p>
+          <details className="mt-2">
+            <summary className="text-[10px] text-center cursor-pointer" style={{ color: "hsl(200,70%,60%)" }} aria-label="Toggle known issues list">
+              Known Issues (click to expand)
+            </summary>
+            <ul className="mt-2 space-y-1 text-[9px] list-disc list-inside" style={{ color: "hsl(0,0%,65%)" }}>
+              {PROFILE_BETA_KNOWN_ISSUES.map((issue) => (
+                <li key={issue}>{issue}</li>
+              ))}
+            </ul>
+          </details>
+        </div>
+
         {/* Header */}
         <div className="amiga-box rounded-lg p-6 mb-6">
           {/* Avatar Section */}
