@@ -1199,7 +1199,7 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
   }
 
   // Check all bricks cleared (win condition flag)
-  const allGone = bricks.every((b) => !b.visible || b.isIndestructible);
+  const allGone = bricks.every((b) => !b.visible || b.isIndestructible || b.starBuilt);
   if (allGone && brickUpdates.size > 0) {
     const hasDestructible = bricks.some((b) => !b.isIndestructible);
     if (hasDestructible || !BOSS_LEVELS.includes(level)) {

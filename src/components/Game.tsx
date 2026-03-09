@@ -4437,6 +4437,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                   hitsRemaining: 1,
                   isIndestructible: false,
                   type: "normal",
+                  starBuilt: true,
                 };
                 world.bricks.push(newBrick);
               }
