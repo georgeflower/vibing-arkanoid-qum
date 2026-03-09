@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { soundManager } from "@/utils/sounds";
 import type { DailyChallenge, DailyChallengeResult } from "@/utils/dailyChallenge";
+import type { DailyChallengeScoreEntry } from "@/utils/dailyChallengeSubmit";
 
 interface DailyChallengeResultOverlayProps {
   active: boolean;
@@ -9,6 +10,9 @@ interface DailyChallengeResultOverlayProps {
   score: number;
   timeSeconds: number;
   streak: number;
+  dailyScores: DailyChallengeScoreEntry[];
+  onRetry: () => void;
+  onBackToDaily: () => void;
   onReturnToMenu: () => void;
 }
 
@@ -19,6 +23,9 @@ export const DailyChallengeResultOverlay = ({
   score,
   timeSeconds,
   streak,
+  dailyScores,
+  onRetry,
+  onBackToDaily,
   onReturnToMenu,
 }: DailyChallengeResultOverlayProps) => {
   if (!active) return null;
@@ -32,7 +39,7 @@ export const DailyChallengeResultOverlay = ({
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black/80 z-[200] animate-fade-in">
       <div
-        className="max-w-md w-full mx-4 p-6 rounded-lg"
+        className="max-w-md w-full mx-4 p-6 rounded-lg overflow-y-auto max-h-[90vh]"
         style={{
           background: "linear-gradient(180deg, hsl(220,25%,15%) 0%, hsl(220,30%,10%) 100%)",
           border: result.allObjectivesMet
@@ -117,16 +124,97 @@ export const DailyChallengeResultOverlay = ({
           </div>
         )}
 
-        <Button
-          onClick={() => {
-            soundManager.playMenuClick();
-            onReturnToMenu();
-          }}
-          onMouseEnter={() => soundManager.playMenuHover()}
-          className="w-full bg-[hsl(200,70%,50%)] hover:bg-[hsl(200,70%,60%)] text-white text-sm py-3"
-        >
-          RETURN TO MENU
-        </Button>
+        {/* Daily Leaderboard */}
+        {dailyScores.length > 0 && (
+          <div className="mb-4">
+            <p className="text-xs font-bold mb-2" style={{ color: "hsl(200,70%,50%)", letterSpacing: "1px" }}>
+              TODAY'S TOP SCORES
+            </p>
+            <div className="space-y-1">
+              {dailyScores.map((entry, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-center justify-between p-2 rounded"
+                  style={{
+                    background: idx === 0 ? "hsl(45,30%,15%)" : "hsl(0,0%,12%)",
+                    border: idx === 0 ? "1px solid hsl(45,60%,40%)" : "1px solid hsl(0,0%,20%)",
+                  }}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="retro-pixel-text text-xs" style={{
+                      color: idx === 0 ? "hsl(45,100%,60%)" : idx === 1 ? "hsl(0,0%,75%)" : "hsl(25,60%,50%)",
+                    }}>
+                      {idx === 0 ? "🥇" : idx === 1 ? "🥈" : "🥉"}
+                    </span>
+                    <span className="text-xs font-bold" style={{ color: "hsl(0,0%,80%)" }}>
+                      {entry.player_name}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="retro-pixel-text text-xs" style={{ color: "hsl(0,0%,90%)" }}>
+                      {entry.score.toLocaleString()}
+                    </span>
+                    <span className="text-xs" style={{ color: "hsl(0,0%,50%)" }}>
+                      {formatTime(entry.time_seconds)}
+                    </span>
+                    {entry.all_objectives_met && (
+                      <span style={{ fontSize: "12px" }}>⭐</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Buttons */}
+        <div className="flex flex-col gap-2">
+          {!result.allObjectivesMet && (
+            <Button
+              onClick={() => {
+                soundManager.playMenuClick();
+                onRetry();
+              }}
+              onMouseEnter={() => soundManager.playMenuHover()}
+              className="w-full text-sm py-3"
+              style={{
+                background: "hsl(45,80%,45%)",
+                color: "hsl(0,0%,10%)",
+              }}
+            >
+              🔄 RETRY (COMPLETE ALL OBJECTIVES)
+            </Button>
+          )}
+          <Button
+            onClick={() => {
+              soundManager.playMenuClick();
+              onBackToDaily();
+            }}
+            onMouseEnter={() => soundManager.playMenuHover()}
+            className="w-full text-sm py-3"
+            style={{
+              background: "hsl(200,70%,50%)",
+              color: "hsl(0,0%,100%)",
+            }}
+          >
+            📅 DAILY CHALLENGES
+          </Button>
+          <Button
+            onClick={() => {
+              soundManager.playMenuClick();
+              onReturnToMenu();
+            }}
+            onMouseEnter={() => soundManager.playMenuHover()}
+            className="w-full text-sm py-3"
+            variant="ghost"
+            style={{
+              color: "hsl(0,0%,60%)",
+              border: "1px solid hsl(0,0%,25%)",
+            }}
+          >
+            MAIN MENU
+          </Button>
+        </div>
       </div>
     </div>
   );
