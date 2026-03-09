@@ -8164,45 +8164,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
           completionTimeMs={bossRushCompletionTime}
           bossLevel={bossRushGameOverLevel}
           completed={bossRushGameOverLevel === 20}
-          onSubmit={async (name) => {
-            try {
-              const { supabase } = await import("@/integrations/supabase/client");
-              // Submit to boss_rush_scores table
-              const response = await supabase.functions.invoke("submit-score", {
-                body: {
-                  type: "boss_rush",
-                  player_name: name,
-                  score: score,
-                  completion_time_ms: bossRushCompletionTime,
-                  boss_level: bossRushGameOverLevel,
-                },
-              });
-              if (response.error) throw response.error;
-              const result = response.data as { error?: string };
-              if (result?.error) throw new Error(result.error);
-              // Also submit to main high_scores table with boss_rush game_mode
-              try {
-                await addHighScore(
-                  name,
-                  score,
-                  bossRushGameOverLevel,
-                  settings.difficulty,
-                  false,
-                  false,
-                  settings.startingLives,
-                  "boss_rush",
-                );
-              } catch (_) {
-                // Non-critical: boss rush score already saved above
-              }
-              toast.success("🎉 BOSS RUSH SCORE SAVED! 🎉");
-            } catch (err) {
-              console.error("Failed to submit boss rush score:", err);
-              toast.error("Failed to submit boss rush score");
-            }
-            setShowBossRushScoreEntry(false);
-            setShowHighScoreDisplay(true);
-          }}
+          onSubmit={handleBossRushScoreSubmit}
+          defaultName={userInitialsRef.current ?? undefined}
         />
       ) : (
         <>
@@ -8212,6 +8175,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
               level={level}
               onSubmit={handleHighScoreSubmit}
               qualifiedLeaderboards={qualifiedLeaderboards || undefined}
+              defaultName={userInitialsRef.current ?? undefined}
             />
           ) : (
             <div
