@@ -7606,6 +7606,59 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       setShowHighScoreDisplay(true);
     }
   };
+
+  const handleBossRushScoreSubmit = async (name: string) => {
+    try {
+      const response = await supabase.functions.invoke("submit-score", {
+        body: {
+          type: "boss_rush",
+          player_name: name,
+          score: score,
+          completion_time_ms: bossRushCompletionTime,
+          boss_level: bossRushGameOverLevel,
+        },
+      });
+      if (response.error) throw response.error;
+      const result = response.data as { error?: string };
+      if (result?.error) throw new Error(result.error);
+      try {
+        await addHighScore(
+          name,
+          score,
+          bossRushGameOverLevel,
+          settings.difficulty,
+          false,
+          false,
+          settings.startingLives,
+          "boss_rush",
+        );
+      } catch (_) {}
+      toast.success("🎉 BOSS RUSH SCORE SAVED! 🎉");
+    } catch (err) {
+      console.error("Failed to submit boss rush score:", err);
+      toast.error("Failed to submit boss rush score");
+    }
+    setShowBossRushScoreEntry(false);
+    setShowHighScoreDisplay(true);
+  };
+
+  // Auto-submit high scores when user has stored initials
+  const autoSubmittedRef = useRef<string | null>(null);
+  useEffect(() => {
+    const initials = userInitialsRef.current;
+    if (!initials) return;
+    if (showHighScoreEntry && autoSubmittedRef.current !== 'campaign') {
+      autoSubmittedRef.current = 'campaign';
+      handleHighScoreSubmit(initials);
+    } else if (showBossRushScoreEntry && autoSubmittedRef.current !== 'bossRush') {
+      autoSubmittedRef.current = 'bossRush';
+      handleBossRushScoreSubmit(initials);
+    }
+    if (!showHighScoreEntry && !showBossRushScoreEntry) {
+      autoSubmittedRef.current = null;
+    }
+  }, [showHighScoreEntry, showBossRushScoreEntry]);
+
   const handleEndScreenContinue = () => {
     setShowEndScreen(false);
     setShowHighScoreDisplay(true);
