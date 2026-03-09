@@ -14,6 +14,7 @@ export interface Brick {
   hitsRemaining: number;
   isIndestructible?: boolean;
   type: BrickType;
+  starBuilt?: boolean;
 }
 
 export interface Ball {

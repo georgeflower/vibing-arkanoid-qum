@@ -432,6 +432,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   const [showDailyChallengeResult, setShowDailyChallengeResult] = useState(false);
   const [dailyChallengeResult, setDailyChallengeResult] = useState<DailyChallengeResult | null>(null);
   const [dailyChallengeStreak, setDailyChallengeStreak] = useState(0);
+  const [dailyChallengeScores, setDailyChallengeScores] = useState<import("@/utils/dailyChallengeSubmit").DailyChallengeScoreEntry[]>([]);
   const dailyChallengeLivesLostRef = useRef(0);
   const dailyChallengePowerUpsRef = useRef(0);
   // ═══ PHASE 1: enemies lives in world.enemies (engine/state.ts) ═══
@@ -1687,6 +1688,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         allObjectivesMet: challengeResult.allObjectivesMet,
       }).then((res) => {
         if (res.success) setDailyChallengeStreak(res.streak);
+        setDailyChallengeScores(res.dailyScores || []);
         setShowDailyChallengeResult(true);
       });
 
@@ -1886,6 +1888,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
           allObjectivesMet: challengeResult.allObjectivesMet,
         }).then((res) => {
           if (res.success) setDailyChallengeStreak(res.streak);
+          setDailyChallengeScores(res.dailyScores || []);
           setShowDailyChallengeResult(true);
         });
 
@@ -3895,6 +3898,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
           if (res.success) {
             setDailyChallengeStreak(res.streak);
           }
+          setDailyChallengeScores(res.dailyScores || []);
           setShowDailyChallengeResult(true);
         });
 
@@ -4437,6 +4441,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                   hitsRemaining: 1,
                   isIndestructible: false,
                   type: "normal",
+                  starBuilt: true,
                 };
                 world.bricks.push(newBrick);
               }
@@ -8510,6 +8515,23 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                       score={score}
                       timeSeconds={totalPlayTime}
                       streak={dailyChallengeStreak}
+                      dailyScores={dailyChallengeScores}
+                      onRetry={() => {
+                        setShowDailyChallengeResult(false);
+                        setDailyChallengeResult(null);
+                        setDailyChallengeScores([]);
+                        // Re-initialize the game for a retry
+                        setGameState("ready");
+                        setScore(0);
+                        setLevel(1);
+                        setLives(settings.startingLives);
+                        dailyChallengeLivesLostRef.current = 0;
+                        dailyChallengePowerUpsRef.current = 0;
+                      }}
+                      onBackToDaily={() => {
+                        setShowDailyChallengeResult(false);
+                        onReturnToMenu();
+                      }}
                       onReturnToMenu={onReturnToMenu}
                     />
                   )}

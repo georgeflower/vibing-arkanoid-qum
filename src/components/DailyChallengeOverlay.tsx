@@ -5,6 +5,7 @@ import { X } from "lucide-react";
 import { soundManager } from "@/utils/sounds";
 import { supabase } from "@/integrations/supabase/client";
 import { getDailyChallenge, getTodayString, getShapeIcon, type DailyChallenge } from "@/utils/dailyChallenge";
+import { fetchDailyChallengeScores, type DailyChallengeScoreEntry } from "@/utils/dailyChallengeSubmit";
 import { DailyChallengeArchive } from "./DailyChallengeArchive";
 
 interface DailyChallengeOverlayProps {
@@ -18,12 +19,17 @@ export const DailyChallengeOverlay = ({ onPlay, onClose }: DailyChallengeOverlay
   const [streak, setStreak] = useState(0);
   const [loading, setLoading] = useState(true);
   const [showArchive, setShowArchive] = useState(false);
+  const [todayScores, setTodayScores] = useState<DailyChallengeScoreEntry[]>([]);
 
   useEffect(() => {
     const checkCompletion = async () => {
+      const todayStr = getTodayString();
+
+      // Fetch today's scores (public, no auth needed)
+      fetchDailyChallengeScores(todayStr).then(setTodayScores);
+
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        const todayStr = getTodayString();
         const { data: completion } = await (supabase as any)
           .from("daily_challenge_completions")
           .select("id")
@@ -169,6 +175,56 @@ export const DailyChallengeOverlay = ({ onPlay, onClose }: DailyChallengeOverlay
             <p className="text-xs mt-1" style={{ color: "hsl(0,0%,50%)" }}>
               Come back tomorrow for a new challenge!
             </p>
+          </div>
+        )}
+
+        {/* Today's Top Scores */}
+        {todayScores.length > 0 && (
+          <div className="mb-4">
+            <p className="text-xs font-bold mb-2" style={{ color: "hsl(200,70%,50%)", letterSpacing: "1px" }}>
+              TODAY'S TOP SCORES
+            </p>
+            <div className="space-y-1">
+              {todayScores.map((entry, idx) => {
+                const formatTime = (s: number) => {
+                  const m = Math.floor(s / 60);
+                  const sec = s % 60;
+                  return `${m}:${sec.toString().padStart(2, "0")}`;
+                };
+                return (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between p-2 rounded"
+                    style={{
+                      background: idx === 0 ? "hsl(45,30%,15%)" : "hsl(0,0%,12%)",
+                      border: idx === 0 ? "1px solid hsl(45,60%,40%)" : "1px solid hsl(0,0%,20%)",
+                    }}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="retro-pixel-text text-xs" style={{
+                        color: idx === 0 ? "hsl(45,100%,60%)" : idx === 1 ? "hsl(0,0%,75%)" : "hsl(25,60%,50%)",
+                      }}>
+                        {idx === 0 ? "🥇" : idx === 1 ? "🥈" : "🥉"}
+                      </span>
+                      <span className="text-xs font-bold" style={{ color: "hsl(0,0%,80%)" }}>
+                        {entry.player_name}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="retro-pixel-text text-xs" style={{ color: "hsl(0,0%,90%)" }}>
+                        {entry.score.toLocaleString()}
+                      </span>
+                      <span className="text-xs" style={{ color: "hsl(0,0%,50%)" }}>
+                        {formatTime(entry.time_seconds)}
+                      </span>
+                      {entry.all_objectives_met && (
+                        <span style={{ fontSize: "12px" }}>⭐</span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
 
