@@ -1,38 +1,28 @@
 
 
-# Revert Game Area to Fixed Size (Pre-Expansion)
+## Auto-fill initials for logged-in players
 
-## Problem
-Two previous changes ("Expand game area to frame space" and "Expand game area to fill space") made the game canvas dynamically resize to fill all available space within the metal frame on desktop. The user wants the playable area to return to its original fixed size.
+**Goal**: When a logged-in user qualifies for the high score list, skip the manual initials entry and auto-submit using their profile's stored initials.
 
-## Current behavior
-- `useViewportFrame` makes the metal frame fill the entire viewport on desktop
-- `useCanvasResize` uses ResizeObserver to dynamically size the game canvas to fill the `metal-game-area` container
-- The canvas display size grows to match available space
+### Changes
 
-## Desired behavior
-The game canvas stays at its logical size (850×650 scaled by `scaleFactor`) and is simply centered within the frame — no dynamic expansion.
+**1. `src/components/Game.tsx`** — Fetch user initials on mount
+- Import `supabase` client at top level.
+- Add a `useEffect` that listens to auth state and fetches `initials` from `player_profiles` for the logged-in user. Store in a ref (`userInitialsRef`).
+- At both high-score submission points:
+  - **Campaign** (`showHighScoreEntry`): If `userInitialsRef.current` exists, skip showing `HighScoreEntry` and call `handleHighScoreSubmit(userInitialsRef.current)` directly.
+  - **Boss Rush** (`showBossRushScoreEntry`): Same — auto-invoke the `onSubmit` handler with the stored initials.
 
-## Changes
+**2. `src/components/HighScoreEntry.tsx`** — Add optional `defaultName` prop
+- Accept `defaultName?: string` prop.
+- Initialize `name` state with `defaultName ?? ""`.
+- This serves as a fallback if we still show the entry form (e.g., user has no initials set).
 
-### 1. `src/components/Game.tsx`
-- **Remove** `useViewportFrame` import and hook call (lines 22, 1651-1654)
-- **Remove** `useCanvasResize` import and hook call (lines 23, 1657-1667), along with destructured `displayWidth`, `displayHeight`, `dynamicScale`
-- Remove `gameAreaRef` if only used for `useCanvasResize` (check first)
-- On desktop, set the `game-glow` div's width/height explicitly to `SCALED_CANVAS_WIDTH` × `SCALED_CANVAS_HEIGHT` (same as mobile path but without the scale transform), so the canvas is fixed-size and centered
+**3. `src/components/BossRushScoreEntry.tsx`** — Same `defaultName` treatment
+- Accept `defaultName?: string` prop and pre-fill the input.
 
-### 2. `src/hooks/useViewportFrame.ts`
-- Delete file (no longer used)
-
-### 3. `src/hooks/useCanvasResize.ts`
-- Delete file (no longer used)
-
-### 4. `src/index.css`
-- Remove the `.metal-frame.desktop-fullscreen` CSS block (lines ~265-290) since the class is no longer applied
-- Remove `max-width` constraint on `.metal-game-area` that references side panel widths — let it auto-size around the fixed canvas
-- Keep `.metal-frame` as `width: fit-content` so it wraps the fixed-size content naturally
-
-### 5. Verify
-- `gameAreaRef` usage — if it's only for `useCanvasResize`, remove the ref. If used elsewhere (e.g. click handlers), keep it.
-- `gameGlowRef` — same check; if only used by `useCanvasResize` for imperative sizing, it can be simplified but likely still needed for CRT overlay positioning.
+### Flow
+- Logged in with initials set → entry form is bypassed, score auto-submitted with profile initials.
+- Logged in without initials → show entry form (empty, as today).
+- Not logged in → show entry form (as today).
 
