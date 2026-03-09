@@ -5,6 +5,7 @@ import { X } from "lucide-react";
 import { soundManager } from "@/utils/sounds";
 import { supabase } from "@/integrations/supabase/client";
 import { getDailyChallenge, getTodayString, getShapeIcon, type DailyChallenge } from "@/utils/dailyChallenge";
+import { fetchDailyChallengeScores, type DailyChallengeScoreEntry } from "@/utils/dailyChallengeSubmit";
 import { DailyChallengeArchive } from "./DailyChallengeArchive";
 
 interface DailyChallengeOverlayProps {
@@ -18,12 +19,17 @@ export const DailyChallengeOverlay = ({ onPlay, onClose }: DailyChallengeOverlay
   const [streak, setStreak] = useState(0);
   const [loading, setLoading] = useState(true);
   const [showArchive, setShowArchive] = useState(false);
+  const [todayScores, setTodayScores] = useState<DailyChallengeScoreEntry[]>([]);
 
   useEffect(() => {
     const checkCompletion = async () => {
+      const todayStr = getTodayString();
+
+      // Fetch today's scores (public, no auth needed)
+      fetchDailyChallengeScores(todayStr).then(setTodayScores);
+
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        const todayStr = getTodayString();
         const { data: completion } = await (supabase as any)
           .from("daily_challenge_completions")
           .select("id")
