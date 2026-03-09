@@ -413,6 +413,22 @@ const Profile = () => {
           )}
         </div>
 
+        {/* Navigation & Logout buttons */}
+        <div className="flex justify-center gap-3 mb-6">
+          <Link to="/" className="px-4 py-2 rounded text-xs font-bold text-center"
+            style={{ background: "hsl(200,50%,30%)", color: "hsl(200,70%,85%)", border: "1px solid hsl(200,50%,40%)" }}>
+            🏠 HOMEPAGE
+          </Link>
+          <Link to="/play" className="px-4 py-2 rounded text-xs font-bold text-center"
+            style={{ background: "hsl(120,50%,30%)", color: "hsl(120,70%,85%)", border: "1px solid hsl(120,50%,40%)" }}>
+            🎮 PLAY
+          </Link>
+          <button onClick={handleLogout} className="px-4 py-2 rounded text-xs font-bold"
+            style={{ background: "hsl(0,50%,30%)", color: "hsl(0,70%,85%)", border: "1px solid hsl(0,50%,40%)" }}>
+            🚪 LOGOUT
+          </button>
+        </div>
+
         {/* Email info */}
         <div className="amiga-box rounded-lg p-3 mb-6 text-center">
           <p style={{ color: "hsl(0,0%,50%)", fontSize: "11px" }}>
