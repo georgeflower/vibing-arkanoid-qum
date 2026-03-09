@@ -31,9 +31,24 @@ export const DailyChallengeResultOverlay = ({
 }: DailyChallengeResultOverlayProps) => {
   // Release pointer lock when overlay is active
   useEffect(() => {
-    if (active && document.pointerLockElement) {
+    if (!active) return;
+
+    // Release pointer lock immediately if it's currently locked
+    if (document.pointerLockElement) {
       document.exitPointerLock();
     }
+
+    // Also listen for pointer lock changes and release if it gets locked again
+    const handlePointerLockChange = () => {
+      if (document.pointerLockElement) {
+        document.exitPointerLock();
+      }
+    };
+
+    document.addEventListener("pointerlockchange", handlePointerLockChange);
+    return () => {
+      document.removeEventListener("pointerlockchange", handlePointerLockChange);
+    };
   }, [active]);
 
   if (!active) return null;
