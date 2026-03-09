@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { soundManager } from "@/utils/sounds";
 import type { DailyChallenge, DailyChallengeResult } from "@/utils/dailyChallenge";
@@ -28,6 +29,13 @@ export const DailyChallengeResultOverlay = ({
   onBackToDaily,
   onReturnToMenu,
 }: DailyChallengeResultOverlayProps) => {
+  // Release pointer lock when overlay is active
+  useEffect(() => {
+    if (active && document.pointerLockElement) {
+      document.exitPointerLock();
+    }
+  }, [active]);
+
   if (!active) return null;
 
   const formatTime = (s: number) => {
