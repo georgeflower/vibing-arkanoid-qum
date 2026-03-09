@@ -8,10 +8,11 @@ interface BossRushScoreEntryProps {
   bossLevel: number;
   completed: boolean;
   onSubmit: (name: string) => void;
+  defaultName?: string;
 }
 
-export const BossRushScoreEntry = ({ score, completionTimeMs, bossLevel, completed, onSubmit }: BossRushScoreEntryProps) => {
-  const [name, setName] = useState("");
+export const BossRushScoreEntry = ({ score, completionTimeMs, bossLevel, completed, onSubmit, defaultName }: BossRushScoreEntryProps) => {
+  const [name, setName] = useState(defaultName ?? "");
   const [displayScore, setDisplayScore] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
