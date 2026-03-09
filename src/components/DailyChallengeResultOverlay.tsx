@@ -40,6 +40,7 @@ export const DailyChallengeResultOverlay = ({
 
     // Also listen for pointer lock changes and release if it gets locked again
     const handlePointerLockChange = () => {
+      // Only call exitPointerLock if something is actually locked
       if (document.pointerLockElement) {
         document.exitPointerLock();
       }
