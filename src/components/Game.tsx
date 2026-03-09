@@ -8515,6 +8515,23 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                       score={score}
                       timeSeconds={totalPlayTime}
                       streak={dailyChallengeStreak}
+                      dailyScores={dailyChallengeScores}
+                      onRetry={() => {
+                        setShowDailyChallengeResult(false);
+                        setDailyChallengeResult(null);
+                        setDailyChallengeScores([]);
+                        // Re-initialize the game for a retry
+                        setGameState("ready");
+                        setScore(0);
+                        setLevel(1);
+                        setLives(settings.startingLives);
+                        dailyChallengeLivesLostRef.current = 0;
+                        dailyChallengePowerUpsRef.current = 0;
+                      }}
+                      onBackToDaily={() => {
+                        setShowDailyChallengeResult(false);
+                        onReturnToMenu();
+                      }}
                       onReturnToMenu={onReturnToMenu}
                     />
                   )}
