@@ -3898,6 +3898,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
           if (res.success) {
             setDailyChallengeStreak(res.streak);
           }
+          setDailyChallengeScores(res.dailyScores || []);
           setShowDailyChallengeResult(true);
         });
 
