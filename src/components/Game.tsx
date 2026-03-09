@@ -7639,7 +7639,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
       toast.success("🎉 DAILY CHALLENGE SCORE SAVED! 🎉");
 
-      // Transition to result overlay
+      // Delay transition to show celebration (consistent with other score submissions)
       setTimeout(() => {
         setShowDailyChallengeScoreEntry(false);
         setShowDailyChallengeResult(true);
@@ -7647,6 +7647,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     } catch (err) {
       console.error("Failed to submit daily challenge score:", err);
       toast.error("Failed to submit daily challenge score");
+      // Show result overlay immediately on error (consistent with other score submissions)
       setShowDailyChallengeScoreEntry(false);
       setShowDailyChallengeResult(true);
     }
