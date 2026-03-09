@@ -1688,6 +1688,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         allObjectivesMet: challengeResult.allObjectivesMet,
       }).then((res) => {
         if (res.success) setDailyChallengeStreak(res.streak);
+        setDailyChallengeScores(res.dailyScores || []);
         setShowDailyChallengeResult(true);
       });
 
