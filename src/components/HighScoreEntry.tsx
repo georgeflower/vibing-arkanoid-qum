@@ -10,10 +10,11 @@ interface HighScoreEntryProps {
     weekly: boolean;
     allTime: boolean;
   };
+  defaultName?: string;
 }
 
-export const HighScoreEntry = ({ score, level, onSubmit, qualifiedLeaderboards }: HighScoreEntryProps) => {
-  const [name, setName] = useState("");
+export const HighScoreEntry = ({ score, level, onSubmit, qualifiedLeaderboards, defaultName }: HighScoreEntryProps) => {
+  const [name, setName] = useState(defaultName ?? "");
   const [displayScore, setDisplayScore] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
 

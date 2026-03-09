@@ -27,6 +27,7 @@ import { submitGameStats } from "@/utils/profileStats";
 import { DailyChallengeResultOverlay } from "./DailyChallengeResultOverlay";
 import { getDailyChallenge, evaluateObjectives, type DailyChallenge, type DailyChallengeResult } from "@/utils/dailyChallenge";
 import { submitDailyChallenge } from "@/utils/dailyChallengeSubmit";
+import { supabase } from "@/integrations/supabase/client";
 
 // ═══════════════════════════════════════════════════════════════
 // ████████╗ DEBUG IMPORTS - REMOVE BEFORE PRODUCTION ████████╗
@@ -165,6 +166,40 @@ interface GameProps {
 export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   // Import debug flag from shared constants
   // To enable/disable debug features, edit ENABLE_DEBUG_FEATURES in src/constants/game.ts
+
+  // Fetch logged-in user's initials for auto-fill on high score entry
+  const userInitialsRef = useRef<string | null>(null);
+  useEffect(() => {
+    const fetchInitials = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        const { data } = await supabase
+          .from("player_profiles")
+          .select("initials")
+          .eq("user_id", session.user.id)
+          .single();
+        if (data?.initials && data.initials.length === 3) {
+          userInitialsRef.current = data.initials;
+        }
+      }
+    };
+    fetchInitials();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) {
+        supabase
+          .from("player_profiles")
+          .select("initials")
+          .eq("user_id", session.user.id)
+          .single()
+          .then(({ data }) => {
+            userInitialsRef.current = data?.initials?.length === 3 ? data.initials : null;
+          });
+      } else {
+        userInitialsRef.current = null;
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   // Detect updates but don't apply during gameplay - defer until back at menu
   useServiceWorkerUpdate({ shouldApplyUpdate: false });
@@ -7571,6 +7606,59 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       setShowHighScoreDisplay(true);
     }
   };
+
+  const handleBossRushScoreSubmit = async (name: string) => {
+    try {
+      const response = await supabase.functions.invoke("submit-score", {
+        body: {
+          type: "boss_rush",
+          player_name: name,
+          score: score,
+          completion_time_ms: bossRushCompletionTime,
+          boss_level: bossRushGameOverLevel,
+        },
+      });
+      if (response.error) throw response.error;
+      const result = response.data as { error?: string };
+      if (result?.error) throw new Error(result.error);
+      try {
+        await addHighScore(
+          name,
+          score,
+          bossRushGameOverLevel,
+          settings.difficulty,
+          false,
+          false,
+          settings.startingLives,
+          "boss_rush",
+        );
+      } catch (_) {}
+      toast.success("🎉 BOSS RUSH SCORE SAVED! 🎉");
+    } catch (err) {
+      console.error("Failed to submit boss rush score:", err);
+      toast.error("Failed to submit boss rush score");
+    }
+    setShowBossRushScoreEntry(false);
+    setShowHighScoreDisplay(true);
+  };
+
+  // Auto-submit high scores when user has stored initials
+  const autoSubmittedRef = useRef<string | null>(null);
+  useEffect(() => {
+    const initials = userInitialsRef.current;
+    if (!initials) return;
+    if (showHighScoreEntry && autoSubmittedRef.current !== 'campaign') {
+      autoSubmittedRef.current = 'campaign';
+      handleHighScoreSubmit(initials);
+    } else if (showBossRushScoreEntry && autoSubmittedRef.current !== 'bossRush') {
+      autoSubmittedRef.current = 'bossRush';
+      handleBossRushScoreSubmit(initials);
+    }
+    if (!showHighScoreEntry && !showBossRushScoreEntry) {
+      autoSubmittedRef.current = null;
+    }
+  }, [showHighScoreEntry, showBossRushScoreEntry]);
+
   const handleEndScreenContinue = () => {
     setShowEndScreen(false);
     setShowHighScoreDisplay(true);
@@ -8076,45 +8164,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
           completionTimeMs={bossRushCompletionTime}
           bossLevel={bossRushGameOverLevel}
           completed={bossRushGameOverLevel === 20}
-          onSubmit={async (name) => {
-            try {
-              const { supabase } = await import("@/integrations/supabase/client");
-              // Submit to boss_rush_scores table
-              const response = await supabase.functions.invoke("submit-score", {
-                body: {
-                  type: "boss_rush",
-                  player_name: name,
-                  score: score,
-                  completion_time_ms: bossRushCompletionTime,
-                  boss_level: bossRushGameOverLevel,
-                },
-              });
-              if (response.error) throw response.error;
-              const result = response.data as { error?: string };
-              if (result?.error) throw new Error(result.error);
-              // Also submit to main high_scores table with boss_rush game_mode
-              try {
-                await addHighScore(
-                  name,
-                  score,
-                  bossRushGameOverLevel,
-                  settings.difficulty,
-                  false,
-                  false,
-                  settings.startingLives,
-                  "boss_rush",
-                );
-              } catch (_) {
-                // Non-critical: boss rush score already saved above
-              }
-              toast.success("🎉 BOSS RUSH SCORE SAVED! 🎉");
-            } catch (err) {
-              console.error("Failed to submit boss rush score:", err);
-              toast.error("Failed to submit boss rush score");
-            }
-            setShowBossRushScoreEntry(false);
-            setShowHighScoreDisplay(true);
-          }}
+          onSubmit={handleBossRushScoreSubmit}
+          defaultName={userInitialsRef.current ?? undefined}
         />
       ) : (
         <>
@@ -8124,6 +8175,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
               level={level}
               onSubmit={handleHighScoreSubmit}
               qualifiedLeaderboards={qualifiedLeaderboards || undefined}
+              defaultName={userInitialsRef.current ?? undefined}
             />
           ) : (
             <div
