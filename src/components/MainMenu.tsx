@@ -918,10 +918,7 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
             className="w-full relative bg-[hsl(45,100%,45%)] hover:bg-[hsl(45,100%,55%)] text-white"
             style={{ textShadow: "0 1px 2px rgba(0,0,0,0.5)" }}
           >
-            <span className="absolute -top-2 -right-2 bg-[hsl(0,85%,55%)] text-white text-xs px-2 py-0.5 rounded-full animate-pulse">
-              NEW
-            </span>
-            ⚡ Daily Challenge
+            ⚡ Daily Challenge <span style={{ color: "hsl(0, 100%, 60%)", fontWeight: "bold", marginLeft: "0.5rem" }}>BETA</span>
           </Button>
 
           <Button
