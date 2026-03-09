@@ -2506,8 +2506,10 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     ballHitSinceLastPaddleRef.current.clear();
     setSpeedMultiplier(newSpeedMultiplier);
 
-    // Update max level reached in localStorage
-    updateMaxLevel(newLevel);
+    // Update max level reached in localStorage (only for normal game mode, not daily challenge)
+    if (settings.gameMode === "normal") {
+      updateMaxLevel(newLevel);
+    }
     setPaddle((prev) => ({
       x: SCALED_CANVAS_WIDTH / 2 - SCALED_PADDLE_WIDTH / 2,
       y: SCALED_CANVAS_HEIGHT - SCALED_PADDLE_START_Y,
@@ -2615,7 +2617,9 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     isBossRush,
     bossRushIndex,
     settings.difficulty,
+    settings.gameMode,
     calculateSpeedForLevel,
+    isDailyChallenge,
   ]);
 
   // Update nextLevel ref whenever nextLevel function changes
