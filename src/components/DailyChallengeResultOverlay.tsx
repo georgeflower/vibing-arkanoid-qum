@@ -37,9 +37,10 @@ export const DailyChallengeResultOverlay = ({
   };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black/80 z-[200] animate-fade-in">
+    <div className="fixed inset-0 overflow-y-auto bg-black/80 z-[200] animate-fade-in p-4">
+      <div className="min-h-screen flex items-center justify-center">
       <div
-        className="max-w-md w-full mx-4 p-6 rounded-lg overflow-y-auto max-h-[90vh]"
+        className="max-w-md w-full p-6 rounded-lg my-6"
         style={{
           background: "linear-gradient(180deg, hsl(220,25%,15%) 0%, hsl(220,30%,10%) 100%)",
           border: result.allObjectivesMet
@@ -215,6 +216,7 @@ export const DailyChallengeResultOverlay = ({
             MAIN MENU
           </Button>
         </div>
+      </div>
       </div>
     </div>
   );
