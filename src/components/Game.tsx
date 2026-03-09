@@ -167,6 +167,40 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   // Import debug flag from shared constants
   // To enable/disable debug features, edit ENABLE_DEBUG_FEATURES in src/constants/game.ts
 
+  // Fetch logged-in user's initials for auto-fill on high score entry
+  const userInitialsRef = useRef<string | null>(null);
+  useEffect(() => {
+    const fetchInitials = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        const { data } = await supabase
+          .from("player_profiles")
+          .select("initials")
+          .eq("user_id", session.user.id)
+          .single();
+        if (data?.initials && data.initials.length === 3) {
+          userInitialsRef.current = data.initials;
+        }
+      }
+    };
+    fetchInitials();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) {
+        supabase
+          .from("player_profiles")
+          .select("initials")
+          .eq("user_id", session.user.id)
+          .single()
+          .then(({ data }) => {
+            userInitialsRef.current = data?.initials?.length === 3 ? data.initials : null;
+          });
+      } else {
+        userInitialsRef.current = null;
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
   // Detect updates but don't apply during gameplay - defer until back at menu
   useServiceWorkerUpdate({ shouldApplyUpdate: false });
 
