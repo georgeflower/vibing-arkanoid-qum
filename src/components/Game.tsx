@@ -433,6 +433,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   const [dailyChallengeResult, setDailyChallengeResult] = useState<DailyChallengeResult | null>(null);
   const [dailyChallengeStreak, setDailyChallengeStreak] = useState(0);
   const [dailyChallengeScores, setDailyChallengeScores] = useState<import("@/utils/dailyChallengeSubmit").DailyChallengeScoreEntry[]>([]);
+  const [showDailyChallengeScoreEntry, setShowDailyChallengeScoreEntry] = useState(false);
   const dailyChallengeLivesLostRef = useRef(0);
   const dailyChallengePowerUpsRef = useRef(0);
   // ═══ PHASE 1: enemies lives in world.enemies (engine/state.ts) ═══
@@ -1669,7 +1670,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     }
 
     if (isDailyChallenge && dailyChallengeData) {
-      // Daily challenge game over — still evaluate objectives
+      // Daily challenge game over — evaluate objectives and show high score entry
       const challengeResult = evaluateObjectives(dailyChallengeData, {
         livesLost: dailyChallengeLivesLostRef.current,
         timeSeconds: totalPlayTime,
@@ -1679,19 +1680,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         bestCombo: hitStreakRef.current,
       });
       setDailyChallengeResult(challengeResult);
-
-      submitDailyChallenge({
-        challengeDate: dailyChallengeData.dateString,
-        score: scoreRef.current,
-        timeSeconds: totalPlayTime,
-        objectivesMet: challengeResult.objectivesMet,
-        allObjectivesMet: challengeResult.allObjectivesMet,
-      }).then((res) => {
-        if (res.success) setDailyChallengeStreak(res.streak);
-        setDailyChallengeScores(res.dailyScores || []);
-        setShowDailyChallengeResult(true);
-      });
-
+      setShowDailyChallengeScoreEntry(true);
+      soundManager.playHighScoreMusic();
       toast.error("Daily Challenge Over!");
     } else if (isBossRush) {
       const currentBossLevel = BOSS_RUSH_CONFIG.bossOrder[bossRushIndex] || 5;
@@ -1865,7 +1855,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       bulletPool.releaseAll();
 
       if (isDailyChallenge && dailyChallengeData) {
-        // Daily challenge boss defeated — evaluate and show result
+        // Daily challenge boss defeated — evaluate and show high score entry
         setGameState("won");
         soundManager.stopBossMusic();
         soundManager.stopBackgroundMusic();
@@ -1879,19 +1869,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
           bestCombo: hitStreakRef.current,
         });
         setDailyChallengeResult(challengeResult);
-
-        submitDailyChallenge({
-          challengeDate: dailyChallengeData.dateString,
-          score: scoreRef.current,
-          timeSeconds: totalPlayTime,
-          objectivesMet: challengeResult.objectivesMet,
-          allObjectivesMet: challengeResult.allObjectivesMet,
-        }).then((res) => {
-          if (res.success) setDailyChallengeStreak(res.streak);
-          setDailyChallengeScores(res.dailyScores || []);
-          setShowDailyChallengeResult(true);
-        });
-
+        setShowDailyChallengeScoreEntry(true);
+        soundManager.playHighScoreMusic();
         toast.success("⚡ Daily Boss Challenge Complete!");
       } else if (isBossRush) {
         gameLoopRef.current?.pause();
@@ -3886,22 +3865,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
           bestCombo: hitStreakRef.current,
         });
         setDailyChallengeResult(challengeResult);
-
-        // Submit to backend if logged in
-        submitDailyChallenge({
-          challengeDate: dailyChallengeData.dateString,
-          score: scoreRef.current,
-          timeSeconds: totalPlayTime,
-          objectivesMet: challengeResult.objectivesMet,
-          allObjectivesMet: challengeResult.allObjectivesMet,
-        }).then((res) => {
-          if (res.success) {
-            setDailyChallengeStreak(res.streak);
-          }
-          setDailyChallengeScores(res.dailyScores || []);
-          setShowDailyChallengeResult(true);
-        });
-
+        setShowDailyChallengeScoreEntry(true);
+        soundManager.playHighScoreMusic();
         toast.success("⚡ Daily Challenge Complete!");
       } else if (level >= FINAL_LEVEL) {
         setScore((prev) => prev + 1000000);
@@ -7647,6 +7612,46 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     setShowHighScoreDisplay(true);
   };
 
+  const handleDailyChallengeScoreSubmit = async (name: string) => {
+    try {
+      if (!dailyChallengeData || !dailyChallengeResult) {
+        console.error("Missing daily challenge data or result");
+        return;
+      }
+
+      // Store player initials for future use
+      userInitialsRef.current = name;
+
+      // Submit daily challenge with player name
+      const response = await submitDailyChallenge({
+        challengeDate: dailyChallengeData.dateString,
+        score: score,
+        timeSeconds: totalPlayTime,
+        objectivesMet: dailyChallengeResult.objectivesMet,
+        allObjectivesMet: dailyChallengeResult.allObjectivesMet,
+        playerName: name,
+      });
+
+      if (response.success) {
+        setDailyChallengeStreak(response.streak);
+      }
+      setDailyChallengeScores(response.dailyScores || []);
+
+      toast.success("🎉 DAILY CHALLENGE SCORE SAVED! 🎉");
+
+      // Transition to result overlay
+      setTimeout(() => {
+        setShowDailyChallengeScoreEntry(false);
+        setShowDailyChallengeResult(true);
+      }, 1000);
+    } catch (err) {
+      console.error("Failed to submit daily challenge score:", err);
+      toast.error("Failed to submit daily challenge score");
+      setShowDailyChallengeScoreEntry(false);
+      setShowDailyChallengeResult(true);
+    }
+  };
+
   // Auto-submit high scores when user has stored initials
   const autoSubmittedRef = useRef<string | null>(null);
   useEffect(() => {
@@ -7658,11 +7663,14 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     } else if (showBossRushScoreEntry && autoSubmittedRef.current !== 'bossRush') {
       autoSubmittedRef.current = 'bossRush';
       handleBossRushScoreSubmit(initials);
+    } else if (showDailyChallengeScoreEntry && autoSubmittedRef.current !== 'dailyChallenge') {
+      autoSubmittedRef.current = 'dailyChallenge';
+      handleDailyChallengeScoreSubmit(initials);
     }
-    if (!showHighScoreEntry && !showBossRushScoreEntry) {
+    if (!showHighScoreEntry && !showBossRushScoreEntry && !showDailyChallengeScoreEntry) {
       autoSubmittedRef.current = null;
     }
-  }, [showHighScoreEntry, showBossRushScoreEntry]);
+  }, [showHighScoreEntry, showBossRushScoreEntry, showDailyChallengeScoreEntry]);
 
   const handleEndScreenContinue = () => {
     setShowEndScreen(false);
@@ -8170,6 +8178,13 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
           bossLevel={bossRushGameOverLevel}
           completed={bossRushGameOverLevel === 20}
           onSubmit={handleBossRushScoreSubmit}
+          defaultName={userInitialsRef.current ?? undefined}
+        />
+      ) : showDailyChallengeScoreEntry ? (
+        <HighScoreEntry
+          score={score}
+          level={level}
+          onSubmit={handleDailyChallengeScoreSubmit}
           defaultName={userInitialsRef.current ?? undefined}
         />
       ) : (
