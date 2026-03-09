@@ -76,6 +76,13 @@ const PublicProfile = () => {
     <div className="min-h-screen" style={{ background: "linear-gradient(180deg, hsl(220,25%,12%) 0%, hsl(220,30%,8%) 100%)", overflowY: "auto", height: "100vh", position: "fixed", inset: 0 }}>
       <CRTOverlay quality="medium" />
       <div className="relative z-10 max-w-2xl mx-auto px-4 py-8">
+        {/* Beta Status Indicator */}
+        <div className="mb-4 flex justify-center">
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded" style={{ background: "hsl(45,100%,50%,0.2)", color: "hsl(45,100%,60%)", border: "1px solid hsl(45,100%,50%,0.5)" }}>
+            BETA FEATURE
+          </span>
+        </div>
+
         <div className="amiga-box rounded-lg p-6 mb-6 text-center">
           {/* Avatar */}
           {avatarUrl && (
