@@ -7625,7 +7625,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       // Submit daily challenge with player name
       const response = await submitDailyChallenge({
         challengeDate: dailyChallengeData.dateString,
-        score: score,
+        score: scoreRef.current,
         timeSeconds: totalPlayTime,
         objectivesMet: dailyChallengeResult.objectivesMet,
         allObjectivesMet: dailyChallengeResult.allObjectivesMet,
