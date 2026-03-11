@@ -67,7 +67,7 @@ npm install
 npm run dev
 ```
 
-The game runs at `http://localhost:5173`.
+The game runs at `http://localhost:XXXX`.
 
 ## 🎮 Controls
 
@@ -104,7 +104,3 @@ This project is **100% open source** and proudly **vibe coded**. Contributions, 
 ## 📝 License
 
 Open source. See the repository for license details.
-
----
-
-*Built with [Lovable](https://lovable.dev)*
