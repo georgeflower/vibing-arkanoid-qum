@@ -33,6 +33,8 @@ interface SettingsDialogProps {
   onPauseMenuHide?: () => void;
   /** Called when settings closes — re-shows the pause overlay */
   onPauseMenuShow?: () => void;
+  /** Called after settings are saved with the full settings object */
+  onSettingsSaved?: (settings: GameSettingsType) => void;
 }
 
 type TabId = "video" | "sound";
@@ -55,6 +57,7 @@ export const SettingsDialog = ({
   hideTrigger,
   onPauseMenuHide,
   onPauseMenuShow,
+  onSettingsSaved,
 }: SettingsDialogProps) => {
   const { settings, updateSettings, saveSettings, resetSoundDefaults, resetVideoDefaults } =
     useGameSettings();
@@ -102,6 +105,7 @@ export const SettingsDialog = ({
     // Commit draft to real settings and persist
     updateSettings(draft);
     saveSettings(draft);
+    onSettingsSaved?.(draft);
     soundManager.playMenuClick();
 
     // Close dialog

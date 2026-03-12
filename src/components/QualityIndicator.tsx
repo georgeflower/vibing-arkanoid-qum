@@ -35,7 +35,7 @@ export const QualityIndicator = ({ quality, autoAdjustEnabled, fps }: QualityInd
   };
 
   return (
-    <div className="fixed top-4 right-4 z-40 pointer-events-none select-none">
+    <div className="fixed bottom-4 left-4 md:top-4 md:right-4 md:bottom-auto md:left-auto z-40 pointer-events-none select-none">
       <div className="flex flex-col gap-1 bg-black/70 backdrop-blur-sm px-3 py-2 rounded-lg border border-border/20">
         <div className="flex items-center gap-2">
           <Settings size={14} className="text-muted-foreground" />
