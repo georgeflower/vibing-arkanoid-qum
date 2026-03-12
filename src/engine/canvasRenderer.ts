@@ -449,6 +449,7 @@ export function renderFrame(
   const level = rs.level;
   const qualitySettings = rs.qualitySettings;
   const gameState = rs.gameState;
+  const isPotato = qualitySettings.level === "potato";
 
   // Shorthand world reads
   const {
@@ -605,7 +606,7 @@ export function renderFrame(
   if (paddle) {
     const img = assets.paddleImage;
     ctx.save();
-    if (isImageValid(img)) {
+    if (!isPotato && isImageValid(img)) {
       if (qualitySettings.shadowsEnabled) {
         drawRectShadow(ctx, paddle.x + 4, paddle.y + 4, paddle.width, paddle.height);
       }
@@ -616,8 +617,10 @@ export function renderFrame(
       }
       ctx.fillStyle = "hsl(200, 70%, 50%)";
       ctx.fillRect(paddle.x, paddle.y, paddle.width, paddle.height);
-      ctx.fillStyle = "rgba(255, 255, 255, 0.25)";
-      ctx.fillRect(paddle.x, paddle.y, paddle.width, paddle.height / 2);
+      if (!isPotato) {
+        ctx.fillStyle = "rgba(255, 255, 255, 0.25)";
+        ctx.fillRect(paddle.x, paddle.y, paddle.width, paddle.height / 2);
+      }
     }
     ctx.restore();
   }
@@ -724,7 +727,11 @@ export function renderFrame(
       ctx.strokeStyle = highlightOn ? "hsl(190, 100%, 55%)" : "hsl(190, 80%, 35%)";
       ctx.lineWidth = 3;
       ctx.beginPath();
-      ctx.roundRect(paddle.x - 4, paddle.y - 4, paddle.width + 8, paddle.height + 8, 6);
+      if (isPotato) {
+        ctx.rect(paddle.x - 4, paddle.y - 4, paddle.width + 8, paddle.height + 8);
+      } else {
+        ctx.roundRect(paddle.x - 4, paddle.y - 4, paddle.width + 8, paddle.height + 8, 6);
+      }
       ctx.stroke();
       ctx.restore();
     }
@@ -1009,7 +1016,7 @@ export function renderFrame(
     const size = powerUp.width;
     const isHighlighted = tutorialHighlight?.type === "power_up" && powerUps.indexOf(powerUp) === 0;
     const pulsePhase = (now % 1000) / 1000;
-    const pulseScale = 1 + Math.sin(pulsePhase * Math.PI * 2) * 0.05;
+    const pulseScale = isPotato ? 1 : 1 + Math.sin(pulsePhase * Math.PI * 2) * 0.05;
 
     ctx.save();
     // Alternating dim for dual-choice power-ups (zero-allocation)
@@ -1029,83 +1036,93 @@ export function renderFrame(
       ctx.lineWidth = 3;
     }
 
-    // Metallic background
-    const padding = 4;
-    const rectX = -padding;
-    const rectY = -padding;
-    const rectWidth = size + padding * 2;
-    const rectHeight = size + padding * 2;
-    const radius = 6;
+    if (isPotato) {
+      // Kartoffel: simple flat rectangle, no gradients/rivets/rounded corners
+      const padding = 4;
+      ctx.fillStyle = "hsl(220, 10%, 45%)";
+      ctx.fillRect(-padding, -padding, size + padding * 2, size + padding * 2);
+      ctx.strokeStyle = "hsl(220, 10%, 25%)";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(-padding, -padding, size + padding * 2, size + padding * 2);
+    } else {
+      // Metallic background with rounded corners
+      const padding = 4;
+      const rectX = -padding;
+      const rectY = -padding;
+      const rectWidth = size + padding * 2;
+      const rectHeight = size + padding * 2;
+      const radius = 6;
 
-    const metalGradient = getCachedLinearGradient(ctx, `pu_metal_${size}`, rectX, rectY, rectX, rectY + rectHeight, [
-      [0, "hsl(220,10%,65%)"],
-      [0.3, "hsl(220,8%,50%)"],
-      [0.5, "hsl(220,10%,60%)"],
-      [0.7, "hsl(220,8%,45%)"],
-      [1, "hsl(220,10%,35%)"],
-    ]);
+      const metalGradient = getCachedLinearGradient(ctx, `pu_metal_${size}`, rectX, rectY, rectX, rectY + rectHeight, [
+        [0, "hsl(220,10%,65%)"],
+        [0.3, "hsl(220,8%,50%)"],
+        [0.5, "hsl(220,10%,60%)"],
+        [0.7, "hsl(220,8%,45%)"],
+        [1, "hsl(220,10%,35%)"],
+      ]);
 
-    ctx.beginPath();
-    ctx.moveTo(rectX + radius, rectY);
-    ctx.lineTo(rectX + rectWidth - radius, rectY);
-    ctx.quadraticCurveTo(rectX + rectWidth, rectY, rectX + rectWidth, rectY + radius);
-    ctx.lineTo(rectX + rectWidth, rectY + rectHeight - radius);
-    ctx.quadraticCurveTo(rectX + rectWidth, rectY + rectHeight, rectX + rectWidth - radius, rectY + rectHeight);
-    ctx.lineTo(rectX + radius, rectY + rectHeight);
-    ctx.quadraticCurveTo(rectX, rectY + rectHeight, rectX, rectY + rectHeight - radius);
-    ctx.lineTo(rectX, rectY + radius);
-    ctx.quadraticCurveTo(rectX, rectY, rectX + radius, rectY);
-    ctx.closePath();
-    ctx.fillStyle = metalGradient;
-    ctx.fill();
-
-    ctx.strokeStyle = "hsla(220, 15%, 80%, 0.4)";
-    ctx.lineWidth = 1;
-    ctx.stroke();
-
-    // Rivets
-    const rivetRadius = 3;
-    const rivetOffset = 6;
-    const rivetPositions = [
-      { x: rectX + rivetOffset, y: rectY + rivetOffset },
-      { x: rectX + rectWidth - rivetOffset, y: rectY + rivetOffset },
-      { x: rectX + rivetOffset, y: rectY + rectHeight - rivetOffset },
-      { x: rectX + rectWidth - rivetOffset, y: rectY + rectHeight - rivetOffset },
-    ];
-
-    const rivetGrad = getCachedRadialGradient(ctx, "pu_rivet", -0.5, -0.5, 0, 0, 0, rivetRadius, [
-      [0, "hsl(220,8%,70%)"],
-      [0.4, "hsl(220,8%,50%)"],
-      [1, "hsl(220,10%,30%)"],
-    ]);
-    rivetPositions.forEach((pos) => {
-      ctx.save();
-      ctx.translate(pos.x, pos.y);
       ctx.beginPath();
-      ctx.arc(0, 0, rivetRadius, 0, Math.PI * 2);
-      ctx.fillStyle = rivetGrad;
+      ctx.moveTo(rectX + radius, rectY);
+      ctx.lineTo(rectX + rectWidth - radius, rectY);
+      ctx.quadraticCurveTo(rectX + rectWidth, rectY, rectX + rectWidth, rectY + radius);
+      ctx.lineTo(rectX + rectWidth, rectY + rectHeight - radius);
+      ctx.quadraticCurveTo(rectX + rectWidth, rectY + rectHeight, rectX + rectWidth - radius, rectY + rectHeight);
+      ctx.lineTo(rectX + radius, rectY + rectHeight);
+      ctx.quadraticCurveTo(rectX, rectY + rectHeight, rectX, rectY + rectHeight - radius);
+      ctx.lineTo(rectX, rectY + radius);
+      ctx.quadraticCurveTo(rectX, rectY, rectX + radius, rectY);
+      ctx.closePath();
+      ctx.fillStyle = metalGradient;
       ctx.fill();
-      ctx.strokeStyle = "hsla(220, 10%, 20%, 0.5)";
-      ctx.lineWidth = 0.5;
-      ctx.stroke();
-      ctx.restore();
-    });
 
-    // Outline
-    ctx.strokeStyle = "hsl(220, 10%, 25%)";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(rectX + radius, rectY);
-    ctx.lineTo(rectX + rectWidth - radius, rectY);
-    ctx.quadraticCurveTo(rectX + rectWidth, rectY, rectX + rectWidth, rectY + radius);
-    ctx.lineTo(rectX + rectWidth, rectY + rectHeight - radius);
-    ctx.quadraticCurveTo(rectX + rectWidth, rectY + rectHeight, rectX + rectWidth - radius, rectY + rectHeight);
-    ctx.lineTo(rectX + radius, rectY + rectHeight);
-    ctx.quadraticCurveTo(rectX, rectY + rectHeight, rectX, rectY + rectHeight - radius);
-    ctx.lineTo(rectX, rectY + radius);
-    ctx.quadraticCurveTo(rectX, rectY, rectX + radius, rectY);
-    ctx.closePath();
-    ctx.stroke();
+      ctx.strokeStyle = "hsla(220, 15%, 80%, 0.4)";
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      // Rivets
+      const rivetRadius = 3;
+      const rivetOffset = 6;
+      const rivetPositions = [
+        { x: rectX + rivetOffset, y: rectY + rivetOffset },
+        { x: rectX + rectWidth - rivetOffset, y: rectY + rivetOffset },
+        { x: rectX + rivetOffset, y: rectY + rectHeight - rivetOffset },
+        { x: rectX + rectWidth - rivetOffset, y: rectY + rectHeight - rivetOffset },
+      ];
+
+      const rivetGrad = getCachedRadialGradient(ctx, "pu_rivet", -0.5, -0.5, 0, 0, 0, rivetRadius, [
+        [0, "hsl(220,8%,70%)"],
+        [0.4, "hsl(220,8%,50%)"],
+        [1, "hsl(220,10%,30%)"],
+      ]);
+      rivetPositions.forEach((pos) => {
+        ctx.save();
+        ctx.translate(pos.x, pos.y);
+        ctx.beginPath();
+        ctx.arc(0, 0, rivetRadius, 0, Math.PI * 2);
+        ctx.fillStyle = rivetGrad;
+        ctx.fill();
+        ctx.strokeStyle = "hsla(220, 10%, 20%, 0.5)";
+        ctx.lineWidth = 0.5;
+        ctx.stroke();
+        ctx.restore();
+      });
+
+      // Outline
+      ctx.strokeStyle = "hsl(220, 10%, 25%)";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(rectX + radius, rectY);
+      ctx.lineTo(rectX + rectWidth - radius, rectY);
+      ctx.quadraticCurveTo(rectX + rectWidth, rectY, rectX + rectWidth, rectY + radius);
+      ctx.lineTo(rectX + rectWidth, rectY + rectHeight - radius);
+      ctx.quadraticCurveTo(rectX + rectWidth, rectY + rectHeight, rectX + rectWidth - radius, rectY + rectHeight);
+      ctx.lineTo(rectX + radius, rectY + rectHeight);
+      ctx.quadraticCurveTo(rectX, rectY + rectHeight, rectX, rectY + rectHeight - radius);
+      ctx.lineTo(rectX, rectY + radius);
+      ctx.quadraticCurveTo(rectX, rectY, rectX + radius, rectY);
+      ctx.closePath();
+      ctx.stroke();
+    }
 
     if (isImageValid(img)) {
       // Preserve dim alpha for dual-choice; otherwise default to 0.95

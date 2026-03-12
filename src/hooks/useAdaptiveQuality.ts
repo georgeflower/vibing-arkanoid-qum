@@ -35,11 +35,11 @@ interface AdaptiveQualityOptions {
 
 const QUALITY_PRESETS: Record<QualityLevel, Omit<QualitySettings, "level" | "autoAdjust">> = {
   potato: {
-    particleMultiplier: 0,
+    particleMultiplier: 0.15,
     shadowsEnabled: false,
     glowEnabled: false,
-    screenShakeMultiplier: 0,
-    explosionParticles: 0,
+    screenShakeMultiplier: 0.25,
+    explosionParticles: 3,
     backgroundEffects: false,
     resolutionScale: 0.25,
     chaosGlowEnabled: false,

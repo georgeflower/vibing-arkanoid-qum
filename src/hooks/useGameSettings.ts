@@ -10,7 +10,6 @@ export interface ResolutionPreset {
 }
 
 export const RESOLUTION_PRESETS: ResolutionPreset[] = [
-  { width: 320, height: 200, label: "320×200 (CGA)" },
   { width: 640, height: 400, label: "640×400 (Amiga)" },
   { width: 640, height: 480, label: "640×480 (VGA)" },
   { width: 800, height: 600, label: "800×600 (SVGA)" },
