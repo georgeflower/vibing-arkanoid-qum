@@ -419,6 +419,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   }, []);
   // High-priority paddle position ref for immediate input response during low FPS
   const paddleXRef = useRef(0);
+  // Track previous canvas dimensions for mid-game resolution rescaling
+  const prevCanvasDimsRef = useRef({ w: SCALED_CANVAS_WIDTH, h: SCALED_CANVAS_HEIGHT });
   const [showHighScoreEntry, setShowHighScoreEntry] = useState(false);
   const [showHighScoreDisplay, setShowHighScoreDisplay] = useState(false);
   const [showEndScreen, setShowEndScreen] = useState(false);
@@ -921,6 +923,155 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     // Also invalidate brick layer cache to trigger re-render
     brickRenderer.invalidate();
   }, [bricks]);
+
+  // ═══ MID-GAME RESOLUTION RESCALING ═══
+  // When canvas resolution changes during gameplay, proportionally reposition all entities
+  useEffect(() => {
+    const prevW = prevCanvasDimsRef.current.w;
+    const prevH = prevCanvasDimsRef.current.h;
+    const scaleX = SCALED_CANVAS_WIDTH / prevW;
+    const scaleY = SCALED_CANVAS_HEIGHT / prevH;
+
+    // Skip if dimensions haven't meaningfully changed
+    if (Math.abs(scaleX - 1) < 0.001 && Math.abs(scaleY - 1) < 0.001) return;
+
+    // Rescale bricks
+    for (const brick of world.bricks) {
+      brick.x *= scaleX;
+      brick.y *= scaleY;
+      brick.width *= scaleX;
+      brick.height *= scaleY;
+    }
+
+    // Rescale paddle
+    if (world.paddle) {
+      world.paddle.x *= scaleX;
+      world.paddle.y *= scaleY;
+      world.paddle.width *= scaleX;
+      world.paddle.height *= scaleY;
+      paddleXRef.current *= scaleX;
+    }
+
+    // Rescale balls
+    for (const ball of world.balls) {
+      ball.x *= scaleX;
+      ball.y *= scaleY;
+      ball.radius *= Math.min(scaleX, scaleY);
+    }
+
+    // Rescale power-ups
+    for (const pu of world.powerUps) {
+      pu.x *= scaleX;
+      pu.y *= scaleY;
+      pu.width *= scaleX;
+      pu.height *= scaleY;
+    }
+
+    // Rescale bullets
+    for (const bullet of world.bullets) {
+      bullet.x *= scaleX;
+      bullet.y *= scaleY;
+      bullet.width *= scaleX;
+      bullet.height *= scaleY;
+    }
+
+    // Rescale enemies
+    for (const enemy of world.enemies) {
+      enemy.x *= scaleX;
+      enemy.y *= scaleY;
+      enemy.width *= scaleX;
+      enemy.height *= scaleY;
+    }
+
+    // Rescale bombs
+    for (const bomb of world.bombs) {
+      bomb.x *= scaleX;
+      bomb.y *= scaleY;
+      bomb.width *= scaleX;
+      bomb.height *= scaleY;
+    }
+
+    // Rescale bonus letters
+    for (const letter of world.bonusLetters) {
+      letter.x *= scaleX;
+      letter.y *= scaleY;
+      letter.originX *= scaleX;
+      letter.width *= scaleX;
+      letter.height *= scaleY;
+    }
+
+    // Rescale boss
+    if (world.boss) {
+      world.boss.x *= scaleX;
+      world.boss.y *= scaleY;
+      world.boss.width *= scaleX;
+      world.boss.height *= scaleY;
+      if (world.boss.targetPosition) {
+        world.boss.targetPosition.x *= scaleX;
+        world.boss.targetPosition.y *= scaleY;
+      }
+      for (const pos of world.boss.positions) {
+        pos.x *= scaleX;
+        pos.y *= scaleY;
+      }
+    }
+
+    // Rescale resurrected bosses
+    for (const rb of world.resurrectedBosses) {
+      rb.x *= scaleX;
+      rb.y *= scaleY;
+      rb.width *= scaleX;
+      rb.height *= scaleY;
+      if (rb.targetPosition) {
+        rb.targetPosition.x *= scaleX;
+        rb.targetPosition.y *= scaleY;
+      }
+      for (const pos of rb.positions) {
+        pos.x *= scaleX;
+        pos.y *= scaleY;
+      }
+    }
+
+    // Rescale boss attacks
+    for (const atk of world.bossAttacks) {
+      atk.x *= scaleX;
+      atk.y *= scaleY;
+      atk.width *= scaleX;
+      atk.height *= scaleY;
+    }
+
+    // Rescale danger balls
+    for (const db of world.dangerBalls) {
+      db.x *= scaleX;
+      db.y *= scaleY;
+    }
+
+    // Rescale visual effects
+    for (const lw of world.laserWarnings) {
+      lw.x *= scaleX;
+    }
+    for (const sw of world.superWarnings) {
+      sw.x *= scaleX;
+      sw.y *= scaleY;
+    }
+    for (const si of world.shieldImpacts) {
+      si.x *= scaleX;
+      si.y *= scaleY;
+    }
+    for (const bi of world.bulletImpacts) {
+      bi.x *= scaleX;
+      bi.y *= scaleY;
+    }
+
+    // Invalidate caches
+    brickRenderer.invalidate();
+    if (world.bricks.length > 0) {
+      brickSpatialHash.rebuild(world.bricks.filter(b => b.visible));
+    }
+
+    // Update ref
+    prevCanvasDimsRef.current = { w: SCALED_CANVAS_WIDTH, h: SCALED_CANVAS_HEIGHT };
+  }, [SCALED_CANVAS_WIDTH, SCALED_CANVAS_HEIGHT]);
 
   // ═══ POOL SYNC HELPERS ═══
   // These helpers ensure pool state stays in sync when bulk-clearing React state
@@ -2214,7 +2365,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       }
     }
     return newBricks;
-  }, []);
+  }, [SCALED_CANVAS_WIDTH, SCALED_CANVAS_HEIGHT, SCALED_PADDLE_WIDTH, SCALED_PADDLE_HEIGHT, SCALED_PADDLE_START_Y, SCALED_BRICK_WIDTH, SCALED_BRICK_HEIGHT, SCALED_BRICK_PADDING, SCALED_BRICK_OFFSET_LEFT, SCALED_BRICK_OFFSET_TOP]);
 
   // Initialize power-up assignments for bricks
   const initPowerUpAssignments = useCallback(
