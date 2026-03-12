@@ -7076,11 +7076,15 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     if (gameState !== "playing") return;
     const timeLimit = settings.dailyChallengeConfig.timeLimit;
     if (totalPlayTime >= timeLimit) {
-      toast.error("⏰ Time's Up!");
-      setLives(0);
-      handleGameOver();
+      toast.error("⏰ Time's Up! Challenge Failed!");
+      setDailyChallengeTimedOut(true);
+      setDailyChallengeResult({ objectivesMet: [], allObjectivesMet: false });
+      setShowDailyChallengeResult(true);
+      setGameState("gameOver");
+      soundManager.stopBackgroundMusic();
+      soundManager.stopBossMusic();
     }
-  }, [totalPlayTime, isDailyChallenge, gameState, settings.dailyChallengeConfig?.timeLimit, handleGameOver]);
+  }, [totalPlayTime, isDailyChallenge, gameState, settings.dailyChallengeConfig?.timeLimit]);
 
   // Enemy spawn at regular intervals
   useEffect(() => {
