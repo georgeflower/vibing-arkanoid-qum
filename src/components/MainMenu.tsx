@@ -38,7 +38,7 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
   const [difficulty, setDifficulty] = useState<Difficulty>("normal");
   const [gameMode, setGameMode] = useState<GameMode>("normal");
   const { settings: gameSettings } = useGameSettings();
-  const { settings: gameSettings } = useGameSettings();
+  const [showSettings, setShowSettings] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
   const [showHighScores, setShowHighScores] = useState(false);
