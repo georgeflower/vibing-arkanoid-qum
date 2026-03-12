@@ -41,7 +41,7 @@ const QUALITY_PRESETS: Record<QualityLevel, Omit<QualitySettings, "level" | "aut
     screenShakeMultiplier: 0,
     explosionParticles: 0,
     backgroundEffects: false,
-    resolutionScale: 0.5,
+    resolutionScale: 0.25,
     chaosGlowEnabled: false,
     animatedDashesEnabled: false,
     shieldArcsEnabled: false,
