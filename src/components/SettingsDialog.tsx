@@ -105,6 +105,7 @@ export const SettingsDialog = ({
     // Commit draft to real settings and persist
     updateSettings(draft);
     saveSettings(draft);
+    onSettingsSaved?.(draft);
     soundManager.playMenuClick();
 
     // Close dialog

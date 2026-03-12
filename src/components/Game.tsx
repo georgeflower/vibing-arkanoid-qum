@@ -8801,6 +8801,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                     }}
                     hideTrigger
                     onPauseMenuShow={() => setSettingsOpenFromPause(false)}
+                    onSettingsSaved={(s) => setQuality(s.qualityLevel)}
                   />
                 )}
 
