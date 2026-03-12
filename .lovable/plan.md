@@ -1,38 +1,32 @@
 
 
-# Revert Game Area to Fixed Size (Pre-Expansion)
+# Fix Settings Dialog Visibility, Quality Sync, and Mobile Indicator
 
-## Problem
-Two previous changes ("Expand game area to frame space" and "Expand game area to fill space") made the game canvas dynamically resize to fill all available space within the metal frame on desktop. The user wants the playable area to return to its original fixed size.
+## Issues Found
 
-## Current behavior
-- `useViewportFrame` makes the metal frame fill the entire viewport on desktop
-- `useCanvasResize` uses ResizeObserver to dynamically size the game canvas to fill the `metal-game-area` container
-- The canvas display size grows to match available space
+1. **Settings dialog hidden behind game canvas**: The Dialog portal renders with `z-50` (from `dialog.tsx` overlay and content), but the `DialogContent` in `SettingsDialog.tsx` uses `z-[300]`. The problem is that `DialogContent` passes `z-[300]` as a className, but the `DialogOverlay` (rendered inside `DialogPortal` at line 35 of dialog.tsx) only has `z-50`. The overlay blocks interaction at z-50 while the game elements may be higher. The `fixed inset-0` pause overlay is at `z-[200]`, so the dialog overlay at `z-50` is behind it. Need to bump both overlay and content z-index.
 
-## Desired behavior
-The game canvas stays at its logical size (850×650 scaled by `scaleFactor`) and is simply centered within the frame — no dynamic expansion.
+2. **Saving doesn't affect quality**: The sync effect (Game.tsx line 1593-1597) only fires when `gameSettingsData.qualityLevel !== quality`. But `saveSettings` in `useGameSettings` calls `setSettingsRaw` inside a state updater — it returns the same object that was already set by `updateSettings(draft)` in `handleSave`. Since `updateSettings(draft)` already set the state, `saveSettings(draft)` produces the same reference. The `useEffect` comparing `gameSettingsData.qualityLevel` may not re-trigger because the value didn't change between the two calls (both set the same draft). The real issue: `updateSettings` takes a `Partial<GameSettings>` but is called with a full settings object — this works. But the `useEffect` dependency is `[gameSettingsData.qualityLevel, setQuality]` — if `qualityLevel` was already set to the same string by `updateSettings`, it won't re-fire. The fix: also call `setQuality` directly in `handleSave` or make the effect always sync.
+
+3. **Default quality "high"**: Already set in `DEFAULT_SETTINGS`. But old localStorage data may have stale values. The `loadSettings` merges `DEFAULT_SETTINGS` with stored — if stored has no `qualityLevel`, it defaults to "high". This should work. But if user previously saved with a different quality, that persists. This is correct behavior.
+
+4. **QualityIndicator on mobile**: Currently `fixed top-4 right-4`. Should be `fixed bottom-4 left-4` on mobile.
 
 ## Changes
 
-### 1. `src/components/Game.tsx`
-- **Remove** `useViewportFrame` import and hook call (lines 22, 1651-1654)
-- **Remove** `useCanvasResize` import and hook call (lines 23, 1657-1667), along with destructured `displayWidth`, `displayHeight`, `dynamicScale`
-- Remove `gameAreaRef` if only used for `useCanvasResize` (check first)
-- On desktop, set the `game-glow` div's width/height explicitly to `SCALED_CANVAS_WIDTH` × `SCALED_CANVAS_HEIGHT` (same as mobile path but without the scale transform), so the canvas is fixed-size and centered
+### 1. `src/components/ui/dialog.tsx` — Fix z-index
+- Change `DialogOverlay` from `z-50` to `z-[300]`
+- Change `DialogContent` from `z-50` to `z-[300]`
+This ensures the dialog renders above the pause overlay (`z-[200]`).
 
-### 2. `src/hooks/useViewportFrame.ts`
-- Delete file (no longer used)
+### 2. `src/components/SettingsDialog.tsx` — Fix quality save
+- In `handleSave`, after calling `updateSettings(draft)` and `saveSettings(draft)`, dispatch a custom event `"game-settings-saved"` with the quality level. This ensures Game.tsx can react even if React state didn't "change".
+- Alternative (simpler): Accept a callback prop `onQualityChange?: (quality: QualityLevel) => void` and call it in `handleSave`. 
+- **Chosen approach**: Add an `onSettingsSaved` callback prop. Game.tsx passes `setQuality` through it.
 
-### 3. `src/hooks/useCanvasResize.ts`
-- Delete file (no longer used)
+### 3. `src/components/Game.tsx` — Wire quality callback
+- Pass `onSettingsSaved` to both `SettingsDialog` instances in the pause menu, calling `setQuality(settings.qualityLevel)`.
 
-### 4. `src/index.css`
-- Remove the `.metal-frame.desktop-fullscreen` CSS block (lines ~265-290) since the class is no longer applied
-- Remove `max-width` constraint on `.metal-game-area` that references side panel widths — let it auto-size around the fixed canvas
-- Keep `.metal-frame` as `width: fit-content` so it wraps the fixed-size content naturally
-
-### 5. Verify
-- `gameAreaRef` usage — if it's only for `useCanvasResize`, remove the ref. If used elsewhere (e.g. click handlers), keep it.
-- `gameGlowRef` — same check; if only used by `useCanvasResize` for imperative sizing, it can be simplified but likely still needed for CRT overlay positioning.
+### 4. `src/components/QualityIndicator.tsx` — Mobile positioning
+- Change positioning to `fixed bottom-4 left-4` on mobile (detect via media query or accept a prop). Use responsive Tailwind: `fixed bottom-4 left-4 md:top-4 md:right-4 md:bottom-auto md:left-auto`.
 
