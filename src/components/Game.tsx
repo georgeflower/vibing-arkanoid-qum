@@ -170,7 +170,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   // To enable/disable debug features, edit ENABLE_DEBUG_FEATURES in src/constants/game.ts
 
   // Game settings (persisted to localStorage)
-  const { settings: gameSettingsData } = useGameSettings();
+  const { settings: gameSettingsData, updateSettings: updateGameSettings } = useGameSettings();
 
   // Fetch logged-in user's initials for auto-fill on high score entry
   const userInitialsRef = useRef<string | null>(null);
