@@ -54,7 +54,7 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
   // Starting level state
   const [startingLevel, setStartingLevel] = useState(1);
   const [showLockedMessage, setShowLockedMessage] = useState(false);
-  const lockedMessageTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lockedMessageTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { maxLevelReached, isLevelUnlocked } = useLevelProgress();
 
   // Refs for swipe gesture detection

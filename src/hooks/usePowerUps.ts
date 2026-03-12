@@ -36,7 +36,7 @@ export const usePowerUps = (
       return next;
     });
   }, []);
-  const fireballTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const fireballTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const createPowerUp = useCallback((brick: Brick, isBossMinion: boolean = false, forceBossPowerUp: boolean = false, timeScale: number = 1.0): PowerUp | PowerUp[] | null => {
     const isEnemyDrop = brick.id < 0; // Enemies use fakeBricks with id: -1

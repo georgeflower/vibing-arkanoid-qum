@@ -23,7 +23,7 @@ export const TopScoresDisplay = () => {
   }, [fetchTopScores]);
 
   useEffect(() => {
-    let timeout: NodeJS.Timeout;
+    let timeout: ReturnType<typeof setTimeout>;
     
     const runCycle = () => {
       // Phase 1: Show for 5 seconds

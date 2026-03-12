@@ -8038,7 +8038,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
   // Adaptive header and frame visibility based on vertical space
   useEffect(() => {
-    let debounceTimer: NodeJS.Timeout;
+    let debounceTimer: ReturnType<typeof setTimeout>;
     const checkFrameVisibility = () => {
       if (!fullscreenContainerRef.current) return;
       const containerHeight = fullscreenContainerRef.current.clientHeight;
