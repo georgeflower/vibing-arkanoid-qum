@@ -1,38 +1,23 @@
 
 
-# Revert Game Area to Fixed Size (Pre-Expansion)
+# Add Mobile Timer Display Above Game Canvas
 
 ## Problem
-Two previous changes ("Expand game area to frame space" and "Expand game area to fill space") made the game canvas dynamically resize to fill all available space within the metal frame on desktop. The user wants the playable area to return to its original fixed size.
+On mobile, when frames are hidden, the compact HUD only shows SCORE, LV, and LIVES. The timer/countdown is only visible in the right panel (which is hidden on mobile). The user wants the timer displayed in the gap between the compact HUD and the game canvas — the area highlighted with the blue rectangle in the screenshot.
 
-## Current behavior
-- `useViewportFrame` makes the metal frame fill the entire viewport on desktop
-- `useCanvasResize` uses ResizeObserver to dynamically size the game canvas to fill the `metal-game-area` container
-- The canvas display size grows to match available space
+## Plan
 
-## Desired behavior
-The game canvas stays at its logical size (850×650 scaled by `scaleFactor`) and is simply centered within the frame — no dynamic expansion.
+**File: `src/components/Game.tsx`**
 
-## Changes
+Inside the `{!framesVisible && (...)}` compact HUD block (around line 9060-9140), add a second row below the existing SCORE/LV/LIVES bar that shows:
+- **Daily Challenge mode**: "TIME LEFT: Xs" countdown with urgent styling when ≤30s (red + pulse), matching the right panel's logic
+- **Normal mode**: "TIMER: Xs" showing elapsed time
 
-### 1. `src/components/Game.tsx`
-- **Remove** `useViewportFrame` import and hook call (lines 22, 1651-1654)
-- **Remove** `useCanvasResize` import and hook call (lines 23, 1657-1667), along with destructured `displayWidth`, `displayHeight`, `dynamicScale`
-- Remove `gameAreaRef` if only used for `useCanvasResize` (check first)
-- On desktop, set the `game-glow` div's width/height explicitly to `SCALED_CANVAS_WIDTH` × `SCALED_CANVAS_HEIGHT` (same as mobile path but without the scale transform), so the canvas is fixed-size and centered
+The new element will be:
+- `fixed` positioned, centered horizontally, below the compact HUD (~`top-14` or similar)
+- Larger font than the compact HUD stats to be clearly visible
+- Same `pointer-events-none` and semi-transparent background styling
+- Uses the same `totalPlayTime`, `timer`, `isDailyChallenge`, and `settings.dailyChallengeConfig?.timeLimit` variables already in scope
 
-### 2. `src/hooks/useViewportFrame.ts`
-- Delete file (no longer used)
-
-### 3. `src/hooks/useCanvasResize.ts`
-- Delete file (no longer used)
-
-### 4. `src/index.css`
-- Remove the `.metal-frame.desktop-fullscreen` CSS block (lines ~265-290) since the class is no longer applied
-- Remove `max-width` constraint on `.metal-game-area` that references side panel widths — let it auto-size around the fixed canvas
-- Keep `.metal-frame` as `width: fit-content` so it wraps the fixed-size content naturally
-
-### 5. Verify
-- `gameAreaRef` usage — if it's only for `useCanvasResize`, remove the ref. If used elsewhere (e.g. click handlers), keep it.
-- `gameGlowRef` — same check; if only used by `useCanvasResize` for imperative sizing, it can be simplified but likely still needed for CRT overlay positioning.
+This reuses the exact same countdown logic already present in the right panel (lines 8865-8894) but rendered in the mobile compact HUD area.
 
