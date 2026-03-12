@@ -604,8 +604,9 @@ export function renderFrame(
   // ═══ Draw paddle ═══
   if (paddle) {
     const img = assets.paddleImage;
+    const isPotato = qualitySettings.level === "potato";
     ctx.save();
-    if (isImageValid(img)) {
+    if (!isPotato && isImageValid(img)) {
       if (qualitySettings.shadowsEnabled) {
         drawRectShadow(ctx, paddle.x + 4, paddle.y + 4, paddle.width, paddle.height);
       }
@@ -616,8 +617,10 @@ export function renderFrame(
       }
       ctx.fillStyle = "hsl(200, 70%, 50%)";
       ctx.fillRect(paddle.x, paddle.y, paddle.width, paddle.height);
-      ctx.fillStyle = "rgba(255, 255, 255, 0.25)";
-      ctx.fillRect(paddle.x, paddle.y, paddle.width, paddle.height / 2);
+      if (!isPotato) {
+        ctx.fillStyle = "rgba(255, 255, 255, 0.25)";
+        ctx.fillRect(paddle.x, paddle.y, paddle.width, paddle.height / 2);
+      }
     }
     ctx.restore();
   }
