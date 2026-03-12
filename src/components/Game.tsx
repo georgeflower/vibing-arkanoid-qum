@@ -8770,6 +8770,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                           setGameState={setGameState}
                           onPauseMenuHide={() => setSettingsOpenFromPause(true)}
                           onPauseMenuShow={() => setSettingsOpenFromPause(false)}
+                          onSettingsSaved={(s) => setQuality(s.qualityLevel)}
                         />
                         <Button
                           onClick={() => {
