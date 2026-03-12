@@ -8653,7 +8653,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                 </div>
 
                 {/* Pause Overlay - moved outside game-glow to fix portal/scroll issues */}
-                {gameState === "paused" && !showDebugDashboard && !tutorialActive && (
+                {gameState === "paused" && !showDebugDashboard && !tutorialActive && !settingsOpenFromPause && (
                   <div className="fixed inset-0 flex items-start justify-center bg-black/70 z-[200] pt-4 md:pt-16 overflow-y-auto">
                     <div className="bg-slate-900/95 border-4 border-cyan-500 rounded-lg p-4 md:p-8 max-w-md relative mx-2 my-2 max-h-[95dvh] overflow-y-auto">
                       {/* X button for mobile - positioned in top right corner */}
