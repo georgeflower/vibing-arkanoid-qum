@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable/index";
 import { useNavigate, Link } from "react-router-dom";
 import CRTOverlay from "@/components/CRTOverlay";
 import { validatePassword, validateUsername, validateInitials } from "@/utils/passwordValidation";
