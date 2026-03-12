@@ -47,9 +47,10 @@ const ResetPassword = () => {
 
   return (
     <div
-      className="min-h-screen flex items-center justify-center p-4"
+      className="fixed inset-0 overflow-y-auto"
       style={{ background: "linear-gradient(180deg, hsl(220,25%,12%) 0%, hsl(220,30%,8%) 100%)" }}
     >
+    <div className="min-h-full flex items-center justify-center p-4">
       <CRTOverlay quality="medium" />
       <div className="relative z-10 w-full max-w-sm">
         <div className="amiga-box rounded-lg p-6 sm:p-8">
