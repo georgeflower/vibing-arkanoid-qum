@@ -71,42 +71,6 @@ export type Database = {
         }
         Relationships: []
       }
-      daily_challenge_scores: {
-        Row: {
-          all_objectives_met: boolean
-          challenge_date: string
-          created_at: string
-          id: string
-          objectives_met: Json
-          player_name: string
-          score: number
-          time_seconds: number
-          user_id: string | null
-        }
-        Insert: {
-          all_objectives_met?: boolean
-          challenge_date: string
-          created_at?: string
-          id?: string
-          objectives_met?: Json
-          player_name: string
-          score: number
-          time_seconds: number
-          user_id?: string | null
-        }
-        Update: {
-          all_objectives_met?: boolean
-          challenge_date?: string
-          created_at?: string
-          id?: string
-          objectives_met?: Json
-          player_name?: string
-          score?: number
-          time_seconds?: number
-          user_id?: string | null
-        }
-        Relationships: []
-      }
       high_scores: {
         Row: {
           beat_level_50: boolean | null
