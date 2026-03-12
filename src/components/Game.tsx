@@ -3099,6 +3099,15 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       } else if (e.key === "m" || e.key === "M") {
         const enabled = soundManager.toggleMute();
         toast.success(enabled ? "Music on" : "Music muted");
+      } else if (e.key === "q" || e.key === "Q") {
+        if (e.shiftKey) {
+          toggleAutoAdjust();
+        } else {
+          const levels: Array<"potato" | "low" | "medium" | "high"> = ["potato", "low", "medium", "high"];
+          const currentIndex = levels.indexOf(quality);
+          const nextIndex = (currentIndex + 1) % levels.length;
+          setQuality(levels[nextIndex]);
+        }
       }
 
       // ═══════════════════════════════════════════════════════════════
