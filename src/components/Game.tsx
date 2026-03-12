@@ -209,6 +209,15 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   // Detect updates but don't apply during gameplay - defer until back at menu
   useServiceWorkerUpdate({ shouldApplyUpdate: false });
 
+  // Parse resolution from settings
+  const parsedResolution = useMemo(() => {
+    const res = gameSettingsData.canvasResolution;
+    if (!res || res === "850x650") return undefined; // use default
+    const [w, h] = res.split("x").map(Number);
+    if (!w || !h) return undefined;
+    return { width: w, height: h };
+  }, [gameSettingsData.canvasResolution]);
+
   // Centralized scaled constants
   const {
     isMac,
@@ -224,7 +233,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     brickPadding: SCALED_BRICK_PADDING,
     brickOffsetTop: SCALED_BRICK_OFFSET_TOP,
     brickOffsetLeft: SCALED_BRICK_OFFSET_LEFT,
-  } = useScaledConstants();
+  } = useScaledConstants(parsedResolution);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   // SystemResourceMonitor — enabled only when detailed frame logging is active
   const systemResourceMonitorRef = useRef<SystemResourceMonitor | null>(null);
