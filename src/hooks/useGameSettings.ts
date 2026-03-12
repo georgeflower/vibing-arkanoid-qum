@@ -1,6 +1,7 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import type { QualityLevel } from "@/hooks/useAdaptiveQuality";
 import { soundManager } from "@/utils/sounds";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface ResolutionPreset {
   width: number;
@@ -32,8 +33,6 @@ export interface GameSettings {
   showFpsOverlay: boolean;
   showQualityIndicator: boolean;
   canvasResolution: string; // "850x650" format
-  // General
-  tutorialEnabled: boolean;
 }
 
 const STORAGE_KEY = "gameSettings";
@@ -49,7 +48,6 @@ const DEFAULT_SETTINGS: GameSettings = {
   showFpsOverlay: false,
   showQualityIndicator: true,
   canvasResolution: "850x650",
-  tutorialEnabled: true,
 };
 
 export const SOUND_DEFAULTS: Pick<GameSettings, "musicEnabled" | "sfxEnabled" | "musicVolume" | "sfxVolume" | "currentTrack"> = {
@@ -68,25 +66,50 @@ export const VIDEO_DEFAULTS: Pick<GameSettings, "qualityLevel" | "crtEnabled" | 
   canvasResolution: "850x650",
 };
 
-export const GENERAL_DEFAULTS: Pick<GameSettings, "tutorialEnabled"> = {
-  tutorialEnabled: true,
-};
-
 function loadSettings(): GameSettings {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       const parsed = JSON.parse(stored);
-      return { ...DEFAULT_SETTINGS, ...parsed };
+      // Strip removed keys like tutorialEnabled
+      const { tutorialEnabled, ...rest } = parsed;
+      return { ...DEFAULT_SETTINGS, ...rest };
     }
   } catch {}
   return { ...DEFAULT_SETTINGS };
 }
 
-function saveSettings(settings: GameSettings) {
+function saveSettingsToLocal(settings: GameSettings) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
   } catch {}
+}
+
+async function saveSettingsToCloud(settings: GameSettings): Promise<void> {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    await supabase
+      .from("player_profiles")
+      .update({ settings_json: settings as any })
+      .eq("user_id", session.user.id);
+  } catch {}
+}
+
+async function loadSettingsFromCloud(): Promise<GameSettings | null> {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return null;
+    const { data } = await supabase
+      .from("player_profiles")
+      .select("settings_json")
+      .eq("user_id", session.user.id)
+      .single();
+    if (data?.settings_json && typeof data.settings_json === "object") {
+      return { ...DEFAULT_SETTINGS, ...(data.settings_json as any) };
+    }
+  } catch {}
+  return null;
 }
 
 export function parseResolution(res: string): { width: number; height: number } {
@@ -96,12 +119,35 @@ export function parseResolution(res: string): { width: number; height: number } 
 
 export const useGameSettings = () => {
   const [settings, setSettingsRaw] = useState<GameSettings>(loadSettings);
+  const cloudLoadedRef = useRef(false);
+
+  // Load from cloud on mount (prefer cloud)
+  useEffect(() => {
+    if (cloudLoadedRef.current) return;
+    cloudLoadedRef.current = true;
+    loadSettingsFromCloud().then((cloud) => {
+      if (cloud) {
+        setSettingsRaw(cloud);
+        saveSettingsToLocal(cloud);
+      }
+    });
+  }, []);
 
   const updateSettings = useCallback((partial: Partial<GameSettings>) => {
     setSettingsRaw((prev) => {
       const next = { ...prev, ...partial };
-      saveSettings(next);
+      // Don't auto-save — the SettingsDialog will call saveSettings explicitly
       return next;
+    });
+  }, []);
+
+  // Explicit save: writes to localStorage + cloud
+  const saveSettings = useCallback((settingsToSave?: GameSettings) => {
+    setSettingsRaw((prev) => {
+      const toSave = settingsToSave ?? prev;
+      saveSettingsToLocal(toSave);
+      saveSettingsToCloud(toSave);
+      return toSave;
     });
   }, []);
 
@@ -121,15 +167,11 @@ export const useGameSettings = () => {
     updateSettings(VIDEO_DEFAULTS);
   }, [updateSettings]);
 
-  const resetGeneralDefaults = useCallback(() => {
-    updateSettings(GENERAL_DEFAULTS);
-  }, [updateSettings]);
-
   return {
     settings,
     updateSettings,
+    saveSettings,
     resetSoundDefaults,
     resetVideoDefaults,
-    resetGeneralDefaults,
   };
 };

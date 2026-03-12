@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -11,30 +11,37 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Slider } from "@/components/ui/slider";
-import { Settings, Volume2, Monitor, Gamepad2, RotateCcw } from "lucide-react";
+import { Settings, Volume2, Monitor, RotateCcw, Save } from "lucide-react";
 import { soundManager } from "@/utils/sounds";
 import type { GameState } from "@/types/game";
 import type { QualityLevel } from "@/hooks/useAdaptiveQuality";
 import {
   useGameSettings,
   RESOLUTION_PRESETS,
+  SOUND_DEFAULTS,
+  VIDEO_DEFAULTS,
   type GameSettings as GameSettingsType,
 } from "@/hooks/useGameSettings";
 
 interface SettingsDialogProps {
   gameState?: GameState;
   setGameState?: React.Dispatch<React.SetStateAction<GameState>>;
-  /** External trigger — when provided the dialog opens/closes via this prop */
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
-  /** Hide trigger button (when opened externally) */
   hideTrigger?: boolean;
+  /** Called when settings opens from pause menu — hides the pause overlay */
+  onPauseMenuHide?: () => void;
+  /** Called when settings closes — re-shows the pause overlay */
+  onPauseMenuShow?: () => void;
 }
 
-type TabId = "general" | "video" | "sound";
+type TabId = "video" | "sound";
+
+// CRT is disabled for potato and low quality
+const CRT_DISABLED_QUALITIES: QualityLevel[] = ["potato", "low"];
 
 const QUALITY_LEVELS: { value: QualityLevel; label: string; description: string }[] = [
-  { value: "potato", label: "🥔 Potato", description: "For ancient hardware — 50% resolution, no effects" },
+  { value: "potato", label: "🥔 Kartoffel", description: "For Rapture; RAPTURION the CENTURION of PENTURIONS — it's powered by a po-ta-to!" },
   { value: "low", label: "Low", description: "Minimal effects, 75% resolution" },
   { value: "medium", label: "Medium", description: "Balanced visuals & performance" },
   { value: "high", label: "High", description: "Full effects, maximum quality" },
@@ -46,95 +53,70 @@ export const SettingsDialog = ({
   open: externalOpen,
   onOpenChange: externalOnOpenChange,
   hideTrigger,
+  onPauseMenuHide,
+  onPauseMenuShow,
 }: SettingsDialogProps) => {
-  const { settings, updateSettings, resetSoundDefaults, resetVideoDefaults, resetGeneralDefaults } =
+  const { settings, updateSettings, saveSettings, resetSoundDefaults, resetVideoDefaults } =
     useGameSettings();
   const [internalOpen, setInternalOpen] = useState(false);
-  const [wasPlaying, setWasPlaying] = useState(false);
-  const [activeTab, setActiveTab] = useState<TabId>("general");
+  const [activeTab, setActiveTab] = useState<TabId>("video");
+
+  // Draft state — changes apply to draft, only committed on Save
+  const [draft, setDraft] = useState<GameSettingsType>({ ...settings });
 
   const trackNames = soundManager.getTrackNames();
 
   const isControlled = externalOpen !== undefined;
   const open = isControlled ? externalOpen : internalOpen;
 
+  const updateDraft = (partial: Partial<GameSettingsType>) => {
+    setDraft((prev) => {
+      const next = { ...prev, ...partial };
+      // Auto-uncheck CRT when selecting quality that doesn't support it
+      if (partial.qualityLevel && CRT_DISABLED_QUALITIES.includes(partial.qualityLevel)) {
+        next.crtEnabled = false;
+      }
+      return next;
+    });
+  };
+
   const handleOpenChange = (isOpen: boolean) => {
+    if (isOpen) {
+      // Snapshot current settings as draft
+      setDraft({ ...settings });
+      onPauseMenuHide?.();
+    } else {
+      // Closing without save — discard draft, revert settings to last saved
+      updateSettings(settings); // no-op but ensures state consistency
+      onPauseMenuShow?.();
+    }
+
     if (isControlled) {
       externalOnOpenChange?.(isOpen);
     } else {
       setInternalOpen(isOpen);
     }
+  };
 
-    if (isOpen) {
-      if (gameState === "playing" && setGameState) {
-        setWasPlaying(true);
-        setGameState("paused");
-      }
+  const handleSave = () => {
+    // Commit draft to real settings and persist
+    updateSettings(draft);
+    saveSettings(draft);
+    soundManager.playMenuClick();
+
+    // Close dialog
+    if (isControlled) {
+      externalOnOpenChange?.(false);
     } else {
-      if (wasPlaying && setGameState) {
-        setGameState("playing");
-        setWasPlaying(false);
-      }
+      setInternalOpen(false);
     }
+    onPauseMenuShow?.();
   };
 
   const tabs: { id: TabId; label: string; icon: React.ReactNode }[] = [
-    { id: "general", label: "General", icon: <Gamepad2 className="h-3.5 w-3.5" /> },
     { id: "video", label: "Video", icon: <Monitor className="h-3.5 w-3.5" /> },
     { id: "sound", label: "Sound", icon: <Volume2 className="h-3.5 w-3.5" /> },
   ];
-
-  const renderGeneralTab = () => (
-    <div className="space-y-5">
-      {/* Tutorial */}
-      <div className="flex items-center justify-between">
-        <Label className="retro-pixel-text text-xs" style={{ color: "hsl(0, 0%, 85%)" }}>
-          Show Tutorials
-        </Label>
-        <Switch
-          checked={settings.tutorialEnabled}
-          onCheckedChange={(v) => updateSettings({ tutorialEnabled: v })}
-        />
-      </div>
-
-      {/* Rapture / Nectarine shout-out */}
-      <div
-        className="mt-6 p-3 rounded-lg border"
-        style={{
-          borderColor: "hsl(200, 70%, 40%)",
-          backgroundColor: "hsl(220, 30%, 14%)",
-        }}
-      >
-        <p
-          className="retro-pixel-text text-[10px] leading-relaxed"
-          style={{ color: "hsl(200, 70%, 70%)" }}
-        >
-          🎵 <em>Greetings to 🇩🇪Rapture from Nectarine Demoscene Radio — keeping the scene alive
-          since 2002! If you know, you know.</em> 🎵
-        </p>
-        <p
-          className="retro-pixel-text text-[9px] mt-2 opacity-60"
-          style={{ color: "hsl(200, 70%, 60%)" }}
-        >
-          nectarine.demoscene.net — the soundtrack of our youth 💾
-        </p>
-      </div>
-
-      {/* Reset */}
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => {
-          soundManager.playMenuClick();
-          resetGeneralDefaults();
-        }}
-        onMouseEnter={() => soundManager.playMenuHover()}
-        className="w-full mt-2 border-muted-foreground/30 text-muted-foreground retro-pixel-text text-[10px]"
-      >
-        <RotateCcw className="h-3 w-3 mr-1" /> Reset General to Default
-      </Button>
-    </div>
-  );
 
   const renderVideoTab = () => (
     <div className="space-y-4">
@@ -144,10 +126,10 @@ export const SettingsDialog = ({
           Quality Preset
         </Label>
         <RadioGroup
-          value={settings.qualityLevel}
+          value={draft.qualityLevel}
           onValueChange={(v) => {
             soundManager.playMenuClick();
-            updateSettings({ qualityLevel: v as QualityLevel });
+            updateDraft({ qualityLevel: v as QualityLevel });
           }}
           className="space-y-1.5"
         >
@@ -186,10 +168,16 @@ export const SettingsDialog = ({
           CRT Scanline Effect
         </Label>
         <Switch
-          checked={settings.crtEnabled}
-          onCheckedChange={(v) => updateSettings({ crtEnabled: v })}
+          checked={draft.crtEnabled}
+          onCheckedChange={(v) => updateDraft({ crtEnabled: v })}
+          disabled={CRT_DISABLED_QUALITIES.includes(draft.qualityLevel)}
         />
       </div>
+      {CRT_DISABLED_QUALITIES.includes(draft.qualityLevel) && (
+        <p className="retro-pixel-text text-[8px]" style={{ color: "hsl(0, 60%, 55%)" }}>
+          CRT is disabled at this quality level
+        </p>
+      )}
 
       {/* FPS Overlay */}
       <div className="flex items-center justify-between">
@@ -197,8 +185,8 @@ export const SettingsDialog = ({
           Show FPS Overlay
         </Label>
         <Switch
-          checked={settings.showFpsOverlay}
-          onCheckedChange={(v) => updateSettings({ showFpsOverlay: v })}
+          checked={draft.showFpsOverlay}
+          onCheckedChange={(v) => updateDraft({ showFpsOverlay: v })}
         />
       </div>
 
@@ -208,8 +196,8 @@ export const SettingsDialog = ({
           Show Quality Indicator
         </Label>
         <Switch
-          checked={settings.showQualityIndicator}
-          onCheckedChange={(v) => updateSettings({ showQualityIndicator: v })}
+          checked={draft.showQualityIndicator}
+          onCheckedChange={(v) => updateDraft({ showQualityIndicator: v })}
         />
       </div>
 
@@ -219,10 +207,10 @@ export const SettingsDialog = ({
           Canvas Resolution
         </Label>
         <select
-          value={settings.canvasResolution}
+          value={draft.canvasResolution}
           onChange={(e) => {
             soundManager.playMenuClick();
-            updateSettings({ canvasResolution: e.target.value });
+            updateDraft({ canvasResolution: e.target.value });
           }}
           className="w-full rounded-md border px-3 py-2 text-xs retro-pixel-text"
           style={{
@@ -251,13 +239,36 @@ export const SettingsDialog = ({
         size="sm"
         onClick={() => {
           soundManager.playMenuClick();
-          resetVideoDefaults();
+          setDraft((prev) => ({ ...prev, ...VIDEO_DEFAULTS }));
         }}
         onMouseEnter={() => soundManager.playMenuHover()}
         className="w-full mt-2 border-muted-foreground/30 text-muted-foreground retro-pixel-text text-[10px]"
       >
         <RotateCcw className="h-3 w-3 mr-1" /> Reset Video to Default
       </Button>
+
+      {/* Rapture / Nectarine shout-out */}
+      <div
+        className="mt-4 p-3 rounded-lg border"
+        style={{
+          borderColor: "hsl(200, 70%, 40%)",
+          backgroundColor: "hsl(220, 30%, 14%)",
+        }}
+      >
+        <p
+          className="retro-pixel-text text-[10px] leading-relaxed"
+          style={{ color: "hsl(200, 70%, 70%)" }}
+        >
+          🎵 <em>Greetings to 🇩🇪Rapture from Nectarine Demoscene Radio — keeping the scene alive
+          since 2002! If you know, you know.</em> 🎵
+        </p>
+        <p
+          className="retro-pixel-text text-[9px] mt-2 opacity-60"
+          style={{ color: "hsl(200, 70%, 60%)" }}
+        >
+          nectarine.demoscene.net — the soundtrack of our youth 💾
+        </p>
+      </div>
     </div>
   );
 
@@ -270,21 +281,21 @@ export const SettingsDialog = ({
             Music
           </Label>
           <Switch
-            checked={settings.musicEnabled}
-            onCheckedChange={(v) => updateSettings({ musicEnabled: v })}
+            checked={draft.musicEnabled}
+            onCheckedChange={(v) => updateDraft({ musicEnabled: v })}
           />
         </div>
         <div className="space-y-1">
           <Label className="retro-pixel-text text-[10px]" style={{ color: "hsl(0, 0%, 65%)" }}>
-            Music Volume: {settings.musicVolume}%
+            Music Volume: {draft.musicVolume}%
           </Label>
           <Slider
-            value={[settings.musicVolume]}
-            onValueChange={([v]) => updateSettings({ musicVolume: v })}
+            value={[draft.musicVolume]}
+            onValueChange={([v]) => updateDraft({ musicVolume: v })}
             min={0}
             max={100}
             step={5}
-            disabled={!settings.musicEnabled}
+            disabled={!draft.musicEnabled}
             className="w-full"
           />
         </div>
@@ -297,21 +308,21 @@ export const SettingsDialog = ({
             Sound Effects
           </Label>
           <Switch
-            checked={settings.sfxEnabled}
-            onCheckedChange={(v) => updateSettings({ sfxEnabled: v })}
+            checked={draft.sfxEnabled}
+            onCheckedChange={(v) => updateDraft({ sfxEnabled: v })}
           />
         </div>
         <div className="space-y-1">
           <Label className="retro-pixel-text text-[10px]" style={{ color: "hsl(0, 0%, 65%)" }}>
-            SFX Volume: {settings.sfxVolume}%
+            SFX Volume: {draft.sfxVolume}%
           </Label>
           <Slider
-            value={[settings.sfxVolume]}
-            onValueChange={([v]) => updateSettings({ sfxVolume: v })}
+            value={[draft.sfxVolume]}
+            onValueChange={([v]) => updateDraft({ sfxVolume: v })}
             min={0}
             max={100}
             step={5}
-            disabled={!settings.sfxEnabled}
+            disabled={!draft.sfxEnabled}
             className="w-full"
           />
         </div>
@@ -323,13 +334,13 @@ export const SettingsDialog = ({
           Select Song
         </Label>
         <RadioGroup
-          value={settings.currentTrack.toString()}
+          value={draft.currentTrack.toString()}
           onValueChange={(v) => {
             const idx = parseInt(v);
-            updateSettings({ currentTrack: idx });
+            updateDraft({ currentTrack: idx });
             soundManager.setCurrentTrack(idx);
           }}
-          disabled={!settings.musicEnabled}
+          disabled={!draft.musicEnabled}
           className="space-y-1 max-h-40 overflow-y-auto custom-scrollbar pr-1"
         >
           {trackNames.map((name, index) => (
@@ -337,7 +348,7 @@ export const SettingsDialog = ({
               <RadioGroupItem value={index.toString()} id={`st-${index}`} />
               <Label
                 htmlFor={`st-${index}`}
-                className={`cursor-pointer retro-pixel-text text-[10px] ${!settings.musicEnabled ? "opacity-50" : ""}`}
+                className={`cursor-pointer retro-pixel-text text-[10px] ${!draft.musicEnabled ? "opacity-50" : ""}`}
                 style={{ color: "hsl(0, 0%, 85%)" }}
               >
                 {name}
@@ -353,7 +364,7 @@ export const SettingsDialog = ({
         size="sm"
         onClick={() => {
           soundManager.playMenuClick();
-          resetSoundDefaults();
+          setDraft((prev) => ({ ...prev, ...SOUND_DEFAULTS }));
         }}
         onMouseEnter={() => soundManager.playMenuHover()}
         className="w-full mt-2 border-muted-foreground/30 text-muted-foreground retro-pixel-text text-[10px]"
@@ -364,7 +375,7 @@ export const SettingsDialog = ({
   );
 
   const content = (
-    <DialogContent className="sm:max-w-md max-h-[85vh] overflow-hidden flex flex-col amiga-box">
+    <DialogContent className="sm:max-w-md max-h-[85vh] overflow-hidden flex flex-col amiga-box z-[300]">
       <DialogHeader>
         <DialogTitle
           className="retro-pixel-text text-sm flex items-center gap-2"
@@ -404,9 +415,19 @@ export const SettingsDialog = ({
 
       {/* Tab content */}
       <div className="flex-1 overflow-y-auto custom-scrollbar py-3 px-1">
-        {activeTab === "general" && renderGeneralTab()}
         {activeTab === "video" && renderVideoTab()}
         {activeTab === "sound" && renderSoundTab()}
+      </div>
+
+      {/* Save button */}
+      <div className="pt-2 border-t" style={{ borderColor: "hsl(200, 70%, 30%)" }}>
+        <Button
+          onClick={handleSave}
+          onMouseEnter={() => soundManager.playMenuHover()}
+          className="w-full bg-green-600 hover:bg-green-700 text-white retro-pixel-text text-xs py-2"
+        >
+          <Save className="h-3.5 w-3.5 mr-1.5" /> SAVE SETTINGS
+        </Button>
       </div>
     </DialogContent>
   );
