@@ -161,6 +161,13 @@ export const useAdaptiveQuality = (options: AdaptiveQualityOptions = {}) => {
   const [quality, setQuality] = useState<QualityLevel>(forcedInitial);
   const [autoAdjustEnabled, setAutoAdjustEnabled] = useState(autoAdjust);
   const [lockedToLow, setLockedToLow] = useState(false);
+  // Allow external quality override (from settings)
+  const setExternalQuality = useCallback((q: QualityLevel) => {
+    const capped = !ENABLE_HIGH_QUALITY && q === "high" ? "medium" : q;
+    setQuality(capped);
+    fpsHistoryRef.current = [];
+    lastAdjustmentTimeRef.current = performance.now();
+  }, []);
   const gpuToastShown = useRef(false);
 
   const fpsHistoryRef = useRef<number[]>([]);
