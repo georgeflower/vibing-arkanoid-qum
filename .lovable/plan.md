@@ -1,63 +1,38 @@
 
 
-# Fix Mobile Settings Dialog & Ball Speed Slowdown
+# Revert Game Area to Fixed Size (Pre-Expansion)
 
-## Issue 1: Settings dialog doesn't work on mobile pause menu
+## Problem
+Two previous changes ("Expand game area to frame space" and "Expand game area to fill space") made the game canvas dynamically resize to fill all available space within the metal frame on desktop. The user wants the playable area to return to its original fixed size.
 
-**Root cause**: The `SettingsDialog` at line 8768 is rendered *inside* the pause overlay. When the user taps it, `onPauseMenuHide` fires → `settingsOpenFromPause = true` → the pause overlay condition (line 8673: `!settingsOpenFromPause`) becomes false → the pause overlay unmounts → the `SettingsDialog` inside it unmounts too, killing its internal dialog state. The standalone `SettingsDialog` at line 8794 should take over, but on mobile touch events, the unmount/remount race prevents the dialog from opening.
+## Current behavior
+- `useViewportFrame` makes the metal frame fill the entire viewport on desktop
+- `useCanvasResize` uses ResizeObserver to dynamically size the game canvas to fill the `metal-game-area` container
+- The canvas display size grows to match available space
 
-**Fix**: Replace the `<SettingsDialog>` inside the pause overlay with a plain `<Button>` that sets `settingsOpenFromPause = true`. The standalone `SettingsDialog` (line 8794, already wired with `open={true}`) handles the actual dialog. This eliminates the unmount race entirely.
+## Desired behavior
+The game canvas stays at its logical size (850×650 scaled by `scaleFactor`) and is simply centered within the frame — no dynamic expansion.
 
-### Change: `src/components/Game.tsx` (line 8768-8774)
-Replace:
-```tsx
-<SettingsDialog
-  gameState={gameState}
-  setGameState={setGameState}
-  onPauseMenuHide={() => setSettingsOpenFromPause(true)}
-  onPauseMenuShow={() => setSettingsOpenFromPause(false)}
-  onSettingsSaved={(s) => setQuality(s.qualityLevel)}
-/>
-```
-With:
-```tsx
-<Button
-  onClick={() => {
-    soundManager.playMenuClick();
-    setSettingsOpenFromPause(true);
-  }}
-  onMouseEnter={() => soundManager.playMenuHover()}
-  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs md:text-sm py-2 md:py-3 retro-pixel-text"
->
-  <Settings className="w-4 h-4 mr-1 inline" /> SETTINGS
-</Button>
-```
+## Changes
 
----
+### 1. `src/components/Game.tsx`
+- **Remove** `useViewportFrame` import and hook call (lines 22, 1651-1654)
+- **Remove** `useCanvasResize` import and hook call (lines 23, 1657-1667), along with destructured `displayWidth`, `displayHeight`, `dynamicScale`
+- Remove `gameAreaRef` if only used for `useCanvasResize` (check first)
+- On desktop, set the `game-glow` div's width/height explicitly to `SCALED_CANVAS_WIDTH` × `SCALED_CANVAS_HEIGHT` (same as mobile path but without the scale transform), so the canvas is fixed-size and centered
 
-## Issue 2: Ball speed slowing down without slowdown power-up
+### 2. `src/hooks/useViewportFrame.ts`
+- Delete file (no longer used)
 
-**Root cause**: `const speedMultiplier = world.speedMultiplier` (line 412) is read once per render cycle. The tutorial dismiss handlers at lines 8482/8512 capture this stale value:
+### 3. `src/hooks/useCanvasResize.ts`
+- Delete file (no longer used)
 
-```
-baseSpeedMultiplierRef.current = speedMultiplier;  // stale!
-setSpeedMultiplier(speedMultiplier * 0.1);
-```
+### 4. `src/index.css`
+- Remove the `.metal-frame.desktop-fullscreen` CSS block (lines ~265-290) since the class is no longer applied
+- Remove `max-width` constraint on `.metal-game-area` that references side panel widths — let it auto-size around the fixed canvas
+- Keep `.metal-frame` as `width: fit-content` so it wraps the fixed-size content naturally
 
-If `speedMultiplier` is stale (e.g., still holds the initial value while `world.speedMultiplier` has been updated by brick-hit accumulation), the "Get Ready" ramp targets the wrong speed. Worse, if a previous ramp set `world.speedMultiplier` to 0.1x and the component re-renders, `speedMultiplier` captures that 0.1x value, causing compounding slowdowns.
-
-**Fix**: Read `world.speedMultiplier` directly in the tutorial dismiss handlers instead of using the stale `speedMultiplier` closure variable.
-
-### Change: `src/components/Game.tsx` (lines 8481-8483 and 8511-8513)
-Replace `speedMultiplier` with `world.speedMultiplier`:
-```tsx
-baseSpeedMultiplierRef.current = world.speedMultiplier;
-setSpeedMultiplier(world.speedMultiplier * 0.1);
-```
-
----
-
-## Issue 3: Settings changes from menu don't affect game quality
-
-This already works for *new* games (settings saved to localStorage, loaded on Game mount). The `onSettingsSaved` callback on the standalone dialog at line 8804 calls `setQuality`. No additional fix needed beyond Issue 1 (making the dialog actually open on mobile).
+### 5. Verify
+- `gameAreaRef` usage — if it's only for `useCanvasResize`, remove the ref. If used elsewhere (e.g. click handlers), keep it.
+- `gameGlowRef` — same check; if only used by `useCanvasResize` for imperative sizing, it can be simplified but likely still needed for CRT overlay positioning.
 

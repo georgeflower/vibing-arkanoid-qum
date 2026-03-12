@@ -54,7 +54,7 @@ import { debugLogger } from "@/utils/debugLogger";
 import { particlePool } from "@/utils/particlePool";
 
 // ═══════════════════════════════════════════════════════════════
-import { Maximize2, Minimize2, Home, X } from "lucide-react";
+import { Maximize2, Minimize2, Home, X, Settings } from "lucide-react";
 import { QualityIndicator } from "./QualityIndicator";
 import type {
   Brick,
@@ -8479,8 +8479,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                           // Resume game FIRST if it was paused for tutorial (before dismissTutorial sets tutorialActive=false)
                           if (tutorialStep.pauseGame) {
                             // Store current speed multiplier and start "Get Ready" sequence
-                            baseSpeedMultiplierRef.current = speedMultiplier;
-                            setSpeedMultiplier(speedMultiplier * 0.1); // Start at 10% speed
+                            baseSpeedMultiplierRef.current = world.speedMultiplier;
+                            setSpeedMultiplier(world.speedMultiplier * 0.1); // Start at 10% speed
                             getReadyStartTimeRef.current = Date.now();
                             setGetReadyActive(true);
 
@@ -8509,8 +8509,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                           // Resume game FIRST before skipping tutorials
                           if (gameState === "paused") {
                             // Also trigger "Get Ready" when skipping
-                            baseSpeedMultiplierRef.current = speedMultiplier;
-                            setSpeedMultiplier(speedMultiplier * 0.1);
+                            baseSpeedMultiplierRef.current = world.speedMultiplier;
+                            setSpeedMultiplier(world.speedMultiplier * 0.1);
                             getReadyStartTimeRef.current = Date.now();
                             setGetReadyActive(true);
 
@@ -8765,13 +8765,16 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                         >
                           RESUME
                         </Button>
-                        <SettingsDialog
-                          gameState={gameState}
-                          setGameState={setGameState}
-                          onPauseMenuHide={() => setSettingsOpenFromPause(true)}
-                          onPauseMenuShow={() => setSettingsOpenFromPause(false)}
-                          onSettingsSaved={(s) => setQuality(s.qualityLevel)}
-                        />
+                        <Button
+                          onClick={() => {
+                            soundManager.playMenuClick();
+                            setSettingsOpenFromPause(true);
+                          }}
+                          onMouseEnter={() => soundManager.playMenuHover()}
+                          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs md:text-sm py-2 md:py-3 retro-pixel-text"
+                        >
+                          <Settings className="w-4 h-4 mr-1 inline" /> SETTINGS
+                        </Button>
                         <Button
                           onClick={() => {
                             hasAutoFullscreenedRef.current = false;
