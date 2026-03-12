@@ -3,13 +3,14 @@ import { useIsMobile } from "@/hooks/use-mobile";
 
 interface CRTOverlayProps {
   quality: QualityLevel;
+  crtEnabled?: boolean;
 }
 
-const CRTOverlay = ({ quality }: CRTOverlayProps) => {
+const CRTOverlay = ({ quality, crtEnabled = true }: CRTOverlayProps) => {
   const isMobile = useIsMobile();
   
-  // Disable CRT on mobile devices AND on LOW quality (eliminates compositor overhead)
-  if (isMobile || quality === 'low') {
+  // Disable CRT on mobile, potato/low quality, or when user toggled off
+  if (isMobile || quality === 'low' || quality === 'potato' || !crtEnabled) {
     return null;
   }
   

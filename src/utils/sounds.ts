@@ -668,7 +668,7 @@ class SoundManager {
     gainNode.connect(ctx.destination);
 
     // Apply 20% volume boost for power-up sounds
-    gainNode.gain.value = volume * 1.2;
+    gainNode.gain.value = volume * 1.2 * this.sfxVolume;
 
     source.start(0);
   }
