@@ -1308,7 +1308,7 @@ class SoundManager {
     // Initialize track if not already loaded
     if (!this.musicTracks[this.currentTrackIndex]) {
       const audio = new Audio(this.trackUrls[this.currentTrackIndex]);
-      audio.volume = 0.3;
+      audio.volume = this.musicVolume;
       audio.addEventListener('ended', () => this.handleTrackEnd());
       this.musicTracks[this.currentTrackIndex] = audio;
     }
