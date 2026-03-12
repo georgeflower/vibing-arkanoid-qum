@@ -109,8 +109,8 @@ Deno.serve(async (req) => {
         starting_lives: typeof starting_lives === "number" ? Math.min(Math.max(starting_lives, 1), 10) : 3,
         game_mode: typeof game_mode === "string" ? game_mode.slice(0, 20) : "campaign",
       };
-      if (typeof user_id === "string" && user_id.length > 0 && user_id.length <= 36) {
-        insertData.user_id = user_id;
+      if (authenticatedUserId) {
+        insertData.user_id = authenticatedUserId;
       }
       const { error } = await supabase.from("high_scores").insert(insertData);
       insertError = error;
