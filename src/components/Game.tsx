@@ -8531,11 +8531,11 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                       score={score}
                       timeSeconds={totalPlayTime}
                       streak={dailyChallengeStreak}
-                      dailyScores={dailyChallengeScores}
+                      timedOut={dailyChallengeTimedOut}
                       onRetry={() => {
                         setShowDailyChallengeResult(false);
                         setDailyChallengeResult(null);
-                        setDailyChallengeScores([]);
+                        setDailyChallengeTimedOut(false);
                         // Re-initialize the game for a retry
                         setGameState("ready");
                         setScore(0);
