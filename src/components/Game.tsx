@@ -1855,7 +1855,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       bulletPool.releaseAll();
 
       if (isDailyChallenge && dailyChallengeData) {
-        // Daily challenge boss defeated — evaluate and show high score entry
+        // Daily challenge boss defeated — evaluate and show result directly
         setGameState("won");
         soundManager.stopBossMusic();
         soundManager.stopBackgroundMusic();
@@ -1869,7 +1869,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
           bestCombo: hitStreakRef.current,
         });
         setDailyChallengeResult(challengeResult);
-        setShowDailyChallengeScoreEntry(true);
+        setShowDailyChallengeResult(true);
         soundManager.playHighScoreMusic();
         toast.success("⚡ Daily Boss Challenge Complete!");
       } else if (isBossRush) {
