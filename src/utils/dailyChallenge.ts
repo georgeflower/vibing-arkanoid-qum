@@ -760,7 +760,7 @@ const SATURDAY_BOSS_TYPES: Array<{ name: string; bossLevel: number; icon: string
 // ── Main generator ───────────────────────────────────────────
 export function getDailyChallenge(date: Date = new Date()): DailyChallenge {
   const dateString = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-  const seed = hashString(`daily-challenge-${dateString}`);
+  const seed = hashString(`daily-challenge-v2-${dateString}`);
   const rng = mulberry32(seed);
 
   // Saturday = boss challenge (getDay() === 6)
