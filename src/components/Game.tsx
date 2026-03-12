@@ -8765,13 +8765,16 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                         >
                           RESUME
                         </Button>
-                        <SettingsDialog
-                          gameState={gameState}
-                          setGameState={setGameState}
-                          onPauseMenuHide={() => setSettingsOpenFromPause(true)}
-                          onPauseMenuShow={() => setSettingsOpenFromPause(false)}
-                          onSettingsSaved={(s) => setQuality(s.qualityLevel)}
-                        />
+                        <Button
+                          onClick={() => {
+                            soundManager.playMenuClick();
+                            setSettingsOpenFromPause(true);
+                          }}
+                          onMouseEnter={() => soundManager.playMenuHover()}
+                          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs md:text-sm py-2 md:py-3 retro-pixel-text"
+                        >
+                          <Settings className="w-4 h-4 mr-1 inline" /> SETTINGS
+                        </Button>
                         <Button
                           onClick={() => {
                             hasAutoFullscreenedRef.current = false;
