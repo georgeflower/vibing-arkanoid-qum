@@ -263,6 +263,7 @@ const Auth = () => {
         </div>
       </div>
     </div>
+    </div>
   );
 };
 
