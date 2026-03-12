@@ -59,8 +59,8 @@ export const DailyChallengeOverlay = ({ onPlay, onClose }: DailyChallengeOverlay
   const shapeIcon = getShapeIcon(challenge.shapeName);
 
   return (
-    <div className="fixed inset-0 w-full h-screen bg-gradient-to-b from-[hsl(220,25%,12%)] to-[hsl(220,30%,8%)] flex items-center justify-center p-2 sm:p-4 overflow-hidden animate-fade-in z-50">
-      <Card className="relative w-full max-w-md p-6 bg-[hsl(220,20%,15%)] border-[hsl(45,100%,50%)]">
+    <div className="fixed inset-0 w-full h-screen bg-gradient-to-b from-[hsl(220,25%,12%)] to-[hsl(220,30%,8%)] flex items-center justify-center p-2 sm:p-4 overflow-y-auto animate-fade-in z-50">
+      <Card className="relative w-full max-w-md max-h-[90vh] overflow-y-auto p-6 bg-[hsl(220,20%,15%)] border-[hsl(45,100%,50%)]">
         <button
           onClick={() => { soundManager.playMenuClick(); onClose(); }}
           className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors z-10"

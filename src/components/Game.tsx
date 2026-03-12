@@ -8536,13 +8536,9 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                         setShowDailyChallengeResult(false);
                         setDailyChallengeResult(null);
                         setDailyChallengeTimedOut(false);
-                        // Re-initialize the game for a retry
-                        setGameState("ready");
-                        setScore(0);
-                        setLevel(1);
-                        setLives(settings.startingLives);
                         dailyChallengeLivesLostRef.current = 0;
                         dailyChallengePowerUpsRef.current = 0;
+                        handleRetryLevel();
                       }}
                       onBackToDaily={() => {
                         setShowDailyChallengeResult(false);
