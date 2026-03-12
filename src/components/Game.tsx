@@ -8322,7 +8322,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       }`}
     >
       {/* CRT Overlay - inside fullscreen container (Phase 5: Toggle by debug setting) */}
-      {qualitySettings.backgroundEffects && gameSettingsData.crtEnabled && debugSettings.enableCRTEffects && <CRTOverlay quality={quality} crtEnabled={gameSettingsData.crtEnabled} />}
+      {gameSettingsData.crtEnabled && debugSettings.enableCRTEffects && <CRTOverlay quality={quality} crtEnabled={gameSettingsData.crtEnabled} />}
 
       {/* Mobile fullscreen prompt overlay */}
       {showFullscreenPrompt && isMobileDevice && (
