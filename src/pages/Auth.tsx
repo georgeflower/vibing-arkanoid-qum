@@ -169,7 +169,7 @@ const Auth = () => {
                 <input type="password" value={password} onChange={(e) => setPassword(e.target.value)}
                   className="w-full px-3 py-2 rounded text-sm" placeholder="••••••••••"
                   style={{ background: "hsl(0,0%,15%)", border: "1px solid hsl(0,0%,30%)", color: "hsl(0,0%,90%)" }}
-                  required minLength={10} />
+                  required minLength={8} />
                 {mode === "signup" && password.length > 0 && pwValidation && (
                   <>
                     <PasswordStrengthBar strength={pwValidation.strength} />
