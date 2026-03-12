@@ -432,8 +432,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   const [showDailyChallengeResult, setShowDailyChallengeResult] = useState(false);
   const [dailyChallengeResult, setDailyChallengeResult] = useState<DailyChallengeResult | null>(null);
   const [dailyChallengeStreak, setDailyChallengeStreak] = useState(0);
-  const [dailyChallengeScores, setDailyChallengeScores] = useState<import("@/utils/dailyChallengeSubmit").DailyChallengeScoreEntry[]>([]);
-  const [showDailyChallengeScoreEntry, setShowDailyChallengeScoreEntry] = useState(false);
+  const [dailyChallengeTimedOut, setDailyChallengeTimedOut] = useState(false);
   const dailyChallengeLivesLostRef = useRef(0);
   const dailyChallengePowerUpsRef = useRef(0);
   // ═══ PHASE 1: enemies lives in world.enemies (engine/state.ts) ═══
