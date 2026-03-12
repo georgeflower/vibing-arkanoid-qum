@@ -14,6 +14,12 @@ export interface ParticleLimits {
 }
 
 export const PARTICLE_LIMITS: Record<QualityLevel, ParticleLimits> = {
+  potato: {
+    maxTotal: 0,
+    maxPerExplosion: 0,
+    maxPerHighScore: 0,
+    maxPerGameOver: 0,
+  },
   low: {
     maxTotal: 30,
     maxPerExplosion: 5,

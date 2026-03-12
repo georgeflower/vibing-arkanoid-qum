@@ -9,6 +9,8 @@ class SoundManager {
   private savedBackgroundMusicIndex: number = 0;
   private musicEnabled = true;
   private sfxEnabled = true;
+  private musicVolume = 0.3;
+  private sfxVolume = 0.7;
   private analyser: AnalyserNode | null = null;
   private frequencyData: Uint8Array | null = null;
   private bossMusicSource: MediaElementAudioSourceNode | null = null;
@@ -52,7 +54,7 @@ class SoundManager {
     // Initialize track if not already loaded
     if (!this.musicTracks[this.currentTrackIndex]) {
       const audio = new Audio(this.trackUrls[this.currentTrackIndex]);
-      audio.volume = 0.3;
+      audio.volume = this.musicVolume;
       audio.addEventListener('ended', () => this.handleTrackEnd());
       this.musicTracks[this.currentTrackIndex] = audio;
     }
@@ -108,6 +110,28 @@ class SoundManager {
     return this.sfxEnabled;
   }
 
+  setMusicVolume(volume: number) {
+    this.musicVolume = Math.max(0, Math.min(1, volume));
+    // Update volume on all currently loaded tracks
+    this.musicTracks.forEach(track => {
+      if (track) track.volume = this.musicVolume;
+    });
+    if (this.highScoreMusic) this.highScoreMusic.volume = this.musicVolume;
+    if (this.bossMusic) this.bossMusic.volume = this.musicVolume;
+  }
+
+  getMusicVolume(): number {
+    return this.musicVolume;
+  }
+
+  setSfxVolume(volume: number) {
+    this.sfxVolume = Math.max(0, Math.min(1, volume));
+  }
+
+  getSfxVolume(): number {
+    return this.sfxVolume;
+  }
+
   setCurrentTrack(trackIndex: number) {
     const wasPlaying = this.musicTracks[this.currentTrackIndex] && 
                        !this.musicTracks[this.currentTrackIndex].paused;
@@ -150,7 +174,7 @@ class SoundManager {
     if (!this.highScoreMusic) {
       this.highScoreMusic = new Audio('/High_score.mp3');
       this.highScoreMusic.loop = true;
-      this.highScoreMusic.volume = 0.4;
+      this.highScoreMusic.volume = this.musicVolume;
     }
     this.highScoreMusic.play().catch(() => {});
   }
@@ -644,7 +668,7 @@ class SoundManager {
     gainNode.connect(ctx.destination);
 
     // Apply 20% volume boost for power-up sounds
-    gainNode.gain.value = volume * 1.2;
+    gainNode.gain.value = volume * 1.2 * this.sfxVolume;
 
     source.start(0);
   }
@@ -1231,7 +1255,7 @@ class SoundManager {
     // Create and play new boss music with looping
     this.bossMusic = new Audio(bossTrackUrl);
     this.bossMusic.loop = true;
-    this.bossMusic.volume = 0.3;
+    this.bossMusic.volume = this.musicVolume;
     
     // Set up AnalyserNode for frequency analysis
     try {
@@ -1284,7 +1308,7 @@ class SoundManager {
     // Initialize track if not already loaded
     if (!this.musicTracks[this.currentTrackIndex]) {
       const audio = new Audio(this.trackUrls[this.currentTrackIndex]);
-      audio.volume = 0.3;
+      audio.volume = this.musicVolume;
       audio.addEventListener('ended', () => this.handleTrackEnd());
       this.musicTracks[this.currentTrackIndex] = audio;
     }

@@ -26,6 +26,8 @@ import { useTutorial } from "@/hooks/useTutorial";
 import { useLevelProgress } from "@/hooks/useLevelProgress";
 import { FINAL_LEVEL, ENABLE_DEBUG_FEATURES, ENABLE_HIGH_QUALITY } from "@/constants/game";
 import { BOSS_RUSH_CONFIG } from "@/constants/bossRushConfig";
+import { SettingsDialog } from "./SettingsDialog";
+import { useGameSettings } from "@/hooks/useGameSettings";
 
 interface MainMenuProps {
   onStartGame: (settings: GameSettings) => void;
@@ -36,6 +38,8 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
   const [difficulty, setDifficulty] = useState<Difficulty>("normal");
   const [gameMode, setGameMode] = useState<GameMode>("normal");
   const { tutorialEnabled, setTutorialEnabled, resetTutorials, skipAllTutorials } = useTutorial();
+  const { settings: gameSettings } = useGameSettings();
+  const [showSettings, setShowSettings] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
   const [showHighScores, setShowHighScores] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
@@ -783,7 +787,7 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
       className="min-h-screen w-full flex items-center justify-center p-4 bg-contain bg-center bg-no-repeat bg-[hsl(220,25%,12%)] relative"
       style={{ backgroundImage: `url(${startScreenImg})` }}
     >
-      {qualitySettings.backgroundEffects && <CRTOverlay quality={quality} />}
+      {qualitySettings.backgroundEffects && <CRTOverlay quality={quality} crtEnabled={gameSettings.crtEnabled} />}
       <Card className="max-w-sm w-full max-h-[90vh] overflow-y-auto smooth-scroll custom-scrollbar p-6 bg-black/60 backdrop-blur-sm border-[hsl(200,70%,50%)]">
         {/* Settings */}
         <div className="space-y-4">
@@ -981,6 +985,24 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
           >
             About
            </Button>
+
+          <Button
+            onClick={() => {
+              soundManager.playMenuClick();
+              setShowSettings(true);
+            }}
+            onMouseEnter={() => soundManager.playMenuHover()}
+            variant="outline"
+            className="w-full border-[hsl(0,0%,50%)] text-[hsl(0,0%,70%)] hover:bg-[hsl(0,0%,30%)] hover:text-white"
+          >
+            ⚙️ Settings
+          </Button>
+
+          <SettingsDialog
+            open={showSettings}
+            onOpenChange={setShowSettings}
+            hideTrigger
+          />
 
           <Button
             onClick={() => {

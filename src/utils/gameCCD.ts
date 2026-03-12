@@ -48,7 +48,7 @@ export function processBallWithCCD(
     boss?: Boss | null;
     resurrectedBosses?: Boss[];
     enemies?: Enemy[];
-    qualityLevel?: 'low' | 'medium' | 'high';
+    qualityLevel?: 'potato' | 'low' | 'medium' | 'high';
   }
 ): CCDResult {
   // Only measure timing when debug is enabled (avoid syscall overhead on mobile)

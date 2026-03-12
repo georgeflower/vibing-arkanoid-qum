@@ -28,6 +28,8 @@ import { DailyChallengeResultOverlay } from "./DailyChallengeResultOverlay";
 import { getDailyChallenge, evaluateObjectives, type DailyChallenge, type DailyChallengeResult } from "@/utils/dailyChallenge";
 import { submitDailyChallenge } from "@/utils/dailyChallengeSubmit";
 import { supabase } from "@/integrations/supabase/client";
+import { SettingsDialog } from "./SettingsDialog";
+import { useGameSettings } from "@/hooks/useGameSettings";
 
 // ═══════════════════════════════════════════════════════════════
 // ████████╗ DEBUG IMPORTS - REMOVE BEFORE PRODUCTION ████████╗
@@ -166,6 +168,9 @@ interface GameProps {
 export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   // Import debug flag from shared constants
   // To enable/disable debug features, edit ENABLE_DEBUG_FEATURES in src/constants/game.ts
+
+  // Game settings (persisted to localStorage)
+  const { settings: gameSettingsData } = useGameSettings();
 
   // Fetch logged-in user's initials for auto-fill on high score entry
   const userInitialsRef = useRef<string | null>(null);
@@ -3094,6 +3099,15 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       } else if (e.key === "m" || e.key === "M") {
         const enabled = soundManager.toggleMute();
         toast.success(enabled ? "Music on" : "Music muted");
+      } else if (e.key === "q" || e.key === "Q") {
+        if (e.shiftKey) {
+          toggleAutoAdjust();
+        } else {
+          const levels: Array<"potato" | "low" | "medium" | "high"> = ["potato", "low", "medium", "high"];
+          const currentIndex = levels.indexOf(quality);
+          const nextIndex = (currentIndex + 1) % levels.length;
+          setQuality(levels[nextIndex]);
+        }
       }
 
       // ═══════════════════════════════════════════════════════════════
@@ -3133,7 +3147,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
             toggleAutoAdjust();
           } else {
             // Q: Cycle quality levels
-            const levels: Array<"low" | "medium" | "high"> = ["low", "medium", "high"];
+            const levels: Array<"potato" | "low" | "medium" | "high"> = ["potato", "low", "medium", "high"];
             const currentIndex = levels.indexOf(quality);
             const nextIndex = (currentIndex + 1) % levels.length;
             const nextQuality = levels[nextIndex];
@@ -8140,7 +8154,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       }`}
     >
       {/* CRT Overlay - inside fullscreen container (Phase 5: Toggle by debug setting) */}
-      {qualitySettings.backgroundEffects && debugSettings.enableCRTEffects && <CRTOverlay quality={quality} />}
+      {qualitySettings.backgroundEffects && gameSettingsData.crtEnabled && debugSettings.enableCRTEffects && <CRTOverlay quality={quality} crtEnabled={gameSettingsData.crtEnabled} />}
 
       {/* Mobile fullscreen prompt overlay */}
       {showFullscreenPrompt && isMobileDevice && (
@@ -8711,7 +8725,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                           Press ESC or P to continue
                         </div>
 
-                        <div className="flex gap-2 md:gap-4 mt-3 md:mt-6 w-full">
+                        <div className="flex gap-2 md:gap-4 mt-3 md:mt-6 w-full flex-wrap">
                           <Button
                             onClick={() => {
                               soundManager.playMenuClick();
@@ -8733,6 +8747,10 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                           >
                             RESUME
                           </Button>
+                          <SettingsDialog
+                            gameState={gameState}
+                            setGameState={setGameState}
+                          />
                           <Button
                             onClick={() => {
                               hasAutoFullscreenedRef.current = false;
@@ -8792,8 +8810,10 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
                     {/* Mobile Debug Button is now in MobileGameControls */}
 
-                    {/* Quality Indicator - Always visible */}
-                    <QualityIndicator quality={quality} autoAdjustEnabled={autoAdjustEnabled} fps={currentFps} />
+                    {/* Quality Indicator - controlled by settings */}
+                    {gameSettingsData.showQualityIndicator && (
+                      <QualityIndicator quality={quality} autoAdjustEnabled={autoAdjustEnabled} fps={currentFps} />
+                    )}
 
                     {/* Substep Debug Overlay */}
                     <SubstepDebugOverlay getDebugInfo={getSubstepDebugInfo} visible={debugSettings.showSubstepDebug} />

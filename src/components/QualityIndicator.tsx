@@ -16,6 +16,8 @@ export const QualityIndicator = ({ quality, autoAdjustEnabled, fps }: QualityInd
         return 'hsl(50, 90%, 55%)';
       case 'low':
         return 'hsl(0, 70%, 55%)';
+      case 'potato':
+        return 'hsl(30, 50%, 40%)';
     }
   };
 

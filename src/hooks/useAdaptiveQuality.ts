@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { debugToast as toast } from "@/utils/debugToast";
 import { ENABLE_HIGH_QUALITY } from "@/constants/game";
 
-export type QualityLevel = "low" | "medium" | "high";
+export type QualityLevel = "potato" | "low" | "medium" | "high";
 
 export interface QualitySettings {
   level: QualityLevel;
@@ -34,6 +34,20 @@ interface AdaptiveQualityOptions {
 }
 
 const QUALITY_PRESETS: Record<QualityLevel, Omit<QualitySettings, "level" | "autoAdjust">> = {
+  potato: {
+    particleMultiplier: 0,
+    shadowsEnabled: false,
+    glowEnabled: false,
+    screenShakeMultiplier: 0,
+    explosionParticles: 0,
+    backgroundEffects: false,
+    resolutionScale: 0.5,
+    chaosGlowEnabled: false,
+    animatedDashesEnabled: false,
+    shieldArcsEnabled: false,
+    superWarningEffects: false,
+    ambientFlickerEnabled: false,
+  },
   low: {
     particleMultiplier: 0.15,
     shadowsEnabled: false,
@@ -147,6 +161,13 @@ export const useAdaptiveQuality = (options: AdaptiveQualityOptions = {}) => {
   const [quality, setQuality] = useState<QualityLevel>(forcedInitial);
   const [autoAdjustEnabled, setAutoAdjustEnabled] = useState(autoAdjust);
   const [lockedToLow, setLockedToLow] = useState(false);
+  // Allow external quality override (from settings)
+  const setExternalQuality = useCallback((q: QualityLevel) => {
+    const capped = !ENABLE_HIGH_QUALITY && q === "high" ? "medium" : q;
+    setQuality(capped);
+    fpsHistoryRef.current = [];
+    lastAdjustmentTimeRef.current = performance.now();
+  }, []);
   const gpuToastShown = useRef(false);
 
   const fpsHistoryRef = useRef<number[]>([]);
@@ -157,6 +178,7 @@ export const useAdaptiveQuality = (options: AdaptiveQualityOptions = {}) => {
   const lastPerformanceLogMs = useRef<number>(0);
   const lowQualityDropCountRef = useRef<number>(0);
   const qualityStatsRef = useRef<Record<QualityLevel, { min: number; max: number; samples: number; sum: number }>>({
+    potato: { min: Infinity, max: 0, samples: 0, sum: 0 },
     low: { min: Infinity, max: 0, samples: 0, sum: 0 },
     medium: { min: Infinity, max: 0, samples: 0, sum: 0 },
     high: { min: Infinity, max: 0, samples: 0, sum: 0 },
