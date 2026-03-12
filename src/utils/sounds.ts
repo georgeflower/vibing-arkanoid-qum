@@ -1255,7 +1255,7 @@ class SoundManager {
     // Create and play new boss music with looping
     this.bossMusic = new Audio(bossTrackUrl);
     this.bossMusic.loop = true;
-    this.bossMusic.volume = 0.3;
+    this.bossMusic.volume = this.musicVolume;
     
     // Set up AnalyserNode for frequency analysis
     try {
