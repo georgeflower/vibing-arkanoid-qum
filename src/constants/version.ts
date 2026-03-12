@@ -1,6 +1,18 @@
-export const GAME_VERSION = "0.9.977";
+export const GAME_VERSION = "0.9.978";
 
 export const CHANGELOG = [
+  {
+    version: "0.9.978",
+    changes: [
+      "Daily Challenge overhaul: new challenge epoch starting 2026-03-13 with Flower as the first shape",
+      "Time limit enforcement: running out of time now correctly fails the challenge (no objectives, no submission)",
+      "Removed daily challenge high score table — focus is now on objectives and streaks",
+      "All player achievements and daily streaks reset for the fresh start",
+      "Daily challenge overlay now scrollable on mobile devices",
+      "Daily challenge retry button now fully reinitializes the level",
+      "Fixed PWA service worker caching stale versions in dev/preview",
+    ],
+  },
   {
     version: "0.9.977",
     changes: [
