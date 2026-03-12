@@ -8509,8 +8509,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                           // Resume game FIRST before skipping tutorials
                           if (gameState === "paused") {
                             // Also trigger "Get Ready" when skipping
-                            baseSpeedMultiplierRef.current = speedMultiplier;
-                            setSpeedMultiplier(speedMultiplier * 0.1);
+                            baseSpeedMultiplierRef.current = world.speedMultiplier;
+                            setSpeedMultiplier(world.speedMultiplier * 0.1);
                             getReadyStartTimeRef.current = Date.now();
                             setGetReadyActive(true);
 
