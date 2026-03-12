@@ -40,7 +40,7 @@ export interface PhysicsConfig {
   level: number;
   canvasSize: { w: number; h: number };
   minBrickDimension: number;
-  qualityLevel: "low" | "medium" | "high";
+  qualityLevel: "potato" | "low" | "medium" | "high";
   difficulty: string;
   maxTotalSpeed: number;
   isBossRush: boolean;

@@ -3133,7 +3133,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
             toggleAutoAdjust();
           } else {
             // Q: Cycle quality levels
-            const levels: Array<"low" | "medium" | "high"> = ["low", "medium", "high"];
+            const levels: Array<"potato" | "low" | "medium" | "high"> = ["potato", "low", "medium", "high"];
             const currentIndex = levels.indexOf(quality);
             const nextIndex = (currentIndex + 1) % levels.length;
             const nextQuality = levels[nextIndex];
