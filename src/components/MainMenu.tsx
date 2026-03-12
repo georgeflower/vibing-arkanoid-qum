@@ -989,6 +989,24 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
           <Button
             onClick={() => {
               soundManager.playMenuClick();
+              setShowSettings(true);
+            }}
+            onMouseEnter={() => soundManager.playMenuHover()}
+            variant="outline"
+            className="w-full border-[hsl(0,0%,50%)] text-[hsl(0,0%,70%)] hover:bg-[hsl(0,0%,30%)] hover:text-white"
+          >
+            ⚙️ Settings
+          </Button>
+
+          <SettingsDialog
+            open={showSettings}
+            onOpenChange={setShowSettings}
+            hideTrigger
+          />
+
+          <Button
+            onClick={() => {
+              soundManager.playMenuClick();
               navigate(isLoggedIn ? "/profile" : "/auth");
             }}
             onMouseEnter={() => soundManager.playMenuHover()}
