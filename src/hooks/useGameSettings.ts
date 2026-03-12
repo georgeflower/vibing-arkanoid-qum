@@ -143,6 +143,7 @@ export const useGameSettings = () => {
       const toSave = settingsToSave ?? prev;
       saveSettingsToLocal(toSave);
       saveSettingsToCloud(toSave);
+      window.dispatchEvent(new CustomEvent('gameSettingsChanged'));
       return toSave;
     });
   }, []);
