@@ -169,6 +169,9 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   // Import debug flag from shared constants
   // To enable/disable debug features, edit ENABLE_DEBUG_FEATURES in src/constants/game.ts
 
+  // Game settings (persisted to localStorage)
+  const { settings: gameSettingsData } = useGameSettings();
+
   // Fetch logged-in user's initials for auto-fill on high score entry
   const userInitialsRef = useRef<string | null>(null);
   useEffect(() => {
