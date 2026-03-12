@@ -727,7 +727,11 @@ export function renderFrame(
       ctx.strokeStyle = highlightOn ? "hsl(190, 100%, 55%)" : "hsl(190, 80%, 35%)";
       ctx.lineWidth = 3;
       ctx.beginPath();
-      ctx.roundRect(paddle.x - 4, paddle.y - 4, paddle.width + 8, paddle.height + 8, 6);
+      if (isPotato) {
+        ctx.rect(paddle.x - 4, paddle.y - 4, paddle.width + 8, paddle.height + 8);
+      } else {
+        ctx.roundRect(paddle.x - 4, paddle.y - 4, paddle.width + 8, paddle.height + 8, 6);
+      }
       ctx.stroke();
       ctx.restore();
     }
