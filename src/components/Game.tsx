@@ -2365,7 +2365,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       }
     }
     return newBricks;
-  }, []);
+  }, [SCALED_CANVAS_WIDTH, SCALED_CANVAS_HEIGHT, SCALED_PADDLE_WIDTH, SCALED_PADDLE_HEIGHT, SCALED_PADDLE_START_Y, SCALED_BRICK_WIDTH, SCALED_BRICK_HEIGHT, SCALED_BRICK_PADDING, SCALED_BRICK_OFFSET_LEFT, SCALED_BRICK_OFFSET_TOP]);
 
   // Initialize power-up assignments for bricks
   const initPowerUpAssignments = useCallback(
