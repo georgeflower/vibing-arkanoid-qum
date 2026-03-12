@@ -1,31 +1,38 @@
 
 
-# Fix: Canvas Resolution Not Updating From Pause Menu Settings
+# Revert Game Area to Fixed Size (Pre-Expansion)
 
-## Root Cause
+## Problem
+Two previous changes ("Expand game area to frame space" and "Expand game area to fill space") made the game canvas dynamically resize to fill all available space within the metal frame on desktop. The user wants the playable area to return to its original fixed size.
 
-The `SettingsDialog` and `Game.tsx` each create **separate instances** of `useGameSettings()`. When the dialog saves settings, it updates its own hook instance and writes to localStorage, but Game.tsx's instance (`gameSettingsData`) is never notified. The `onSettingsSaved` callback only calls `setQuality()` — it doesn't propagate canvas resolution, CRT, or other settings back to the game.
+## Current behavior
+- `useViewportFrame` makes the metal frame fill the entire viewport on desktop
+- `useCanvasResize` uses ResizeObserver to dynamically size the game canvas to fill the `metal-game-area` container
+- The canvas display size grows to match available space
 
-## Fix
+## Desired behavior
+The game canvas stays at its logical size (850×650 scaled by `scaleFactor`) and is simply centered within the frame — no dynamic expansion.
 
-Expand the `onSettingsSaved` callback in Game.tsx to also update the Game's own `useGameSettings` instance with the full saved settings object.
+## Changes
 
-### Changes
+### 1. `src/components/Game.tsx`
+- **Remove** `useViewportFrame` import and hook call (lines 22, 1651-1654)
+- **Remove** `useCanvasResize` import and hook call (lines 23, 1657-1667), along with destructured `displayWidth`, `displayHeight`, `dynamicScale`
+- Remove `gameAreaRef` if only used for `useCanvasResize` (check first)
+- On desktop, set the `game-glow` div's width/height explicitly to `SCALED_CANVAS_WIDTH` × `SCALED_CANVAS_HEIGHT` (same as mobile path but without the scale transform), so the canvas is fixed-size and centered
 
-**`src/components/Game.tsx`**
-1. Destructure `updateSettings` from `useGameSettings()` (line 173) — currently only `settings` is destructured.
-2. Update the `onSettingsSaved` handler (line 8807) to call both `setQuality(s.qualityLevel)` **and** `updateSettings(s)` to sync all settings (resolution, CRT, FPS overlay, etc.) into the game's live state.
+### 2. `src/hooks/useViewportFrame.ts`
+- Delete file (no longer used)
 
-```tsx
-// Line 173: add updateSettings
-const { settings: gameSettingsData, updateSettings: updateGameSettings } = useGameSettings();
+### 3. `src/hooks/useCanvasResize.ts`
+- Delete file (no longer used)
 
-// Line 8807: sync all settings, not just quality
-onSettingsSaved={(s) => {
-  setQuality(s.qualityLevel);
-  updateGameSettings(s);
-}}
-```
+### 4. `src/index.css`
+- Remove the `.metal-frame.desktop-fullscreen` CSS block (lines ~265-290) since the class is no longer applied
+- Remove `max-width` constraint on `.metal-game-area` that references side panel widths — let it auto-size around the fixed canvas
+- Keep `.metal-frame` as `width: fit-content` so it wraps the fixed-size content naturally
 
-This ensures `gameSettingsData.canvasResolution` updates → `parsedResolution` recalculates → `useScaledConstants` produces new dimensions → `GameCanvas` re-renders at the new resolution. All other settings (CRT, FPS overlay, quality indicator) also update immediately.
+### 5. Verify
+- `gameAreaRef` usage — if it's only for `useCanvasResize`, remove the ref. If used elsewhere (e.g. click handlers), keep it.
+- `gameGlowRef` — same check; if only used by `useCanvasResize` for imperative sizing, it can be simplified but likely still needed for CRT overlay positioning.
 
