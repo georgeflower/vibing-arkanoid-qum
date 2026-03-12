@@ -711,7 +711,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       world.highlightFlash = updater;
     }
   }, []);
-  const highlightFlashTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const highlightFlashTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // ═══ PHASE 1: lastBossSpawnTime lives in world.lastBossSpawnTime (engine/state.ts) ═══
   const lastBossSpawnTime = world.lastBossSpawnTime;
   const setLastBossSpawnTime = useCallback((updater: number | ((prev: number) => number)) => {
@@ -750,9 +750,9 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   // Boss power-up states
   const [reflectShieldActive, setReflectShieldActive] = useState(false);
   const [homingBallActive, setHomingBallActive] = useState(false);
-  const bossStunnerTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const reflectShieldTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const homingBallTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const bossStunnerTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const reflectShieldTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const homingBallTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Boss power-up end times (for countdown display)
   const [bossStunnerEndTime, setBossStunnerEndTime] = useState<number | null>(null);
@@ -1209,15 +1209,15 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   const megaBossTrapJustHappenedRef = useRef<number>(0);
 
   // Performance optimization refs
-  const screenShakeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const screenShakeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastToastTimeRef = useRef<Record<string, number>>({});
   const TOAST_THROTTLE_MS = 500;
   const nextEnemyId = useRef(1);
-  const timerIntervalRef = useRef<NodeJS.Timeout>();
-  const totalPlayTimeIntervalRef = useRef<NodeJS.Timeout>();
+  const timerIntervalRef = useRef<ReturnType<typeof setInterval>>();
+  const totalPlayTimeIntervalRef = useRef<ReturnType<typeof setInterval>>();
   const totalPlayTimeStartedRef = useRef(false);
   const enemyProjectileTimersRef = useRef<Map<number, EnemyProjectileTimer>>(new Map());
-  const launchAngleIntervalRef = useRef<NodeJS.Timeout>();
+  const launchAngleIntervalRef = useRef<ReturnType<typeof setInterval>>();
   const fullscreenContainerRef = useRef<HTMLDivElement>(null);
   const gameContainerRef = useRef<HTMLDivElement>(null);
   //const gameAreaRef = useRef<HTMLDivElement>(null);
@@ -8038,7 +8038,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
   // Adaptive header and frame visibility based on vertical space
   useEffect(() => {
-    let debounceTimer: NodeJS.Timeout;
+    let debounceTimer: ReturnType<typeof setTimeout>;
     const checkFrameVisibility = () => {
       if (!fullscreenContainerRef.current) return;
       const containerHeight = fullscreenContainerRef.current.clientHeight;
