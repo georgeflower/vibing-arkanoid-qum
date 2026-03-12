@@ -3865,7 +3865,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
           bestCombo: hitStreakRef.current,
         });
         setDailyChallengeResult(challengeResult);
-        setShowDailyChallengeScoreEntry(true);
+        setShowDailyChallengeResult(true);
         soundManager.playHighScoreMusic();
         toast.success("⚡ Daily Challenge Complete!");
       } else if (level >= FINAL_LEVEL) {
