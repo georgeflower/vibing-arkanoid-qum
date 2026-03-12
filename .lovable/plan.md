@@ -1,38 +1,62 @@
 
 
-# Revert Game Area to Fixed Size (Pre-Expansion)
+# Fix: CRT/FPS/Quality Indicator Not Working + Settings Revert Bug
 
-## Problem
-Two previous changes ("Expand game area to frame space" and "Expand game area to fill space") made the game canvas dynamically resize to fill all available space within the metal frame on desktop. The user wants the playable area to return to its original fixed size.
+## Two Issues
 
-## Current behavior
-- `useViewportFrame` makes the metal frame fill the entire viewport on desktop
-- `useCanvasResize` uses ResizeObserver to dynamically size the game canvas to fill the `metal-game-area` container
-- The canvas display size grows to match available space
+### Issue 1: CRT, FPS overlay, Quality indicator not working
 
-## Desired behavior
-The game canvas stays at its logical size (850×650 scaled by `scaleFactor`) and is simply centered within the frame — no dynamic expansion.
+**CRT**: Line 8325 in Game.tsx requires `qualitySettings.backgroundEffects` to be `true`, but potato and low quality both set `backgroundEffects: false`. CRT should be independent of background effects — the user toggle in settings should be sufficient.
 
-## Changes
+**FPS overlay**: `gameSettingsData.showFpsOverlay` is never actually used. The FPS overlay is wired to `debugSettings.showFrameProfiler` instead. Need to also check `gameSettingsData.showFpsOverlay`.
 
-### 1. `src/components/Game.tsx`
-- **Remove** `useViewportFrame` import and hook call (lines 22, 1651-1654)
-- **Remove** `useCanvasResize` import and hook call (lines 23, 1657-1667), along with destructured `displayWidth`, `displayHeight`, `dynamicScale`
-- Remove `gameAreaRef` if only used for `useCanvasResize` (check first)
-- On desktop, set the `game-glow` div's width/height explicitly to `SCALED_CANVAS_WIDTH` × `SCALED_CANVAS_HEIGHT` (same as mobile path but without the scale transform), so the canvas is fixed-size and centered
+**Quality indicator**: Uses `gameSettingsData.showQualityIndicator` which should work, but may be blocked by the same stale-state issue below.
 
-### 2. `src/hooks/useViewportFrame.ts`
-- Delete file (no longer used)
+### Issue 2: Settings revert when reopening dialog mid-game
 
-### 3. `src/hooks/useCanvasResize.ts`
-- Delete file (no longer used)
+`useGameSettings()` is a standard React hook — each component calling it gets its own independent `useState`. When the SettingsDialog saves and Game.tsx calls `updateGameSettings(s)`, that only updates Game's copy. The dialog's own hook instance retains the old values. When the dialog reopens, it snapshots its own stale `settings` as the draft.
 
-### 4. `src/index.css`
-- Remove the `.metal-frame.desktop-fullscreen` CSS block (lines ~265-290) since the class is no longer applied
-- Remove `max-width` constraint on `.metal-game-area` that references side panel widths — let it auto-size around the fixed canvas
-- Keep `.metal-frame` as `width: fit-content` so it wraps the fixed-size content naturally
+**Root cause**: No shared state between hook instances. `saveSettings` writes to localStorage/cloud but doesn't notify other instances.
 
-### 5. Verify
-- `gameAreaRef` usage — if it's only for `useCanvasResize`, remove the ref. If used elsewhere (e.g. click handlers), keep it.
-- `gameGlowRef` — same check; if only used by `useCanvasResize` for imperative sizing, it can be simplified but likely still needed for CRT overlay positioning.
+## Fix Plan
+
+### 1. `src/hooks/useGameSettings.ts` — Add cross-instance sync via `storage` event + custom event
+
+Add a `BroadcastChannel` or `CustomEvent` pattern so when one instance saves, all other instances update. Simplest approach: after `saveSettingsToLocal`, dispatch a custom window event. All instances listen for it and re-read from localStorage.
+
+```ts
+// After saveSettingsToLocal:
+window.dispatchEvent(new CustomEvent('gameSettingsChanged'));
+
+// In the hook, add useEffect listener:
+useEffect(() => {
+  const handler = () => setSettingsRaw(loadSettings());
+  window.addEventListener('gameSettingsChanged', handler);
+  return () => window.removeEventListener('gameSettingsChanged', handler);
+}, []);
+```
+
+### 2. `src/components/Game.tsx` — Fix CRT condition (line 8325)
+
+Remove `qualitySettings.backgroundEffects &&` from the CRT condition. CRT is controlled by the user's `crtEnabled` toggle and `debugSettings.enableCRTEffects`. The `CRTOverlay` component already handles disabling itself for potato/low quality internally.
+
+```tsx
+// Before:
+{qualitySettings.backgroundEffects && gameSettingsData.crtEnabled && debugSettings.enableCRTEffects && <CRTOverlay ... />}
+
+// After:
+{gameSettingsData.crtEnabled && debugSettings.enableCRTEffects && <CRTOverlay ... />}
+```
+
+### 3. `src/components/Game.tsx` — Wire FPS overlay to settings
+
+Add `gameSettingsData.showFpsOverlay` as an additional condition for the FrameProfilerOverlay:
+
+```tsx
+<FrameProfilerOverlay visible={debugSettings.showFrameProfiler || gameSettingsData.showFpsOverlay} />
+```
+
+### Summary of file changes
+- **`src/hooks/useGameSettings.ts`**: Add `gameSettingsChanged` event dispatch in `saveSettings` and listener in the hook for cross-instance sync
+- **`src/components/Game.tsx`**: Remove `qualitySettings.backgroundEffects` from CRT condition; wire `showFpsOverlay` to FrameProfilerOverlay
 
