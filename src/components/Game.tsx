@@ -8650,125 +8650,125 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                     }}
                   />
 
-                  {/* Pause Overlay - only show when NOT in tutorial mode */}
-                  {gameState === "paused" && !showDebugDashboard && !tutorialActive && (
-                    <div className="absolute inset-0 flex items-start justify-center bg-black/70 z-50 pt-4 md:pt-16 overflow-y-auto">
-                      <div className="bg-slate-900/95 border-4 border-cyan-500 rounded-lg p-4 md:p-8 max-w-md relative mx-2 my-2 max-h-[90vh] overflow-y-auto">
-                        {/* X button for mobile - positioned in top right corner */}
-                        {isMobileDevice && (
-                          <button
-                            onClick={() => {
-                              setGameState("playing");
-                              gameLoopRef.current?.start();
-                            }}
-                            className="absolute top-2 right-2 text-white hover:text-cyan-300 transition-colors p-2"
-                            title="Resume Game"
-                          >
-                            <X size={28} />
-                          </button>
-                        )}
+                </div>
 
-                        <h2
-                          className="retro-pixel-text text-xl md:text-2xl mb-3 md:mb-6 text-center animate-pulse"
-                          style={{ color: "hsl(48, 100%, 60%)" }}
+                {/* Pause Overlay - moved outside game-glow to fix portal/scroll issues */}
+                {gameState === "paused" && !showDebugDashboard && !tutorialActive && (
+                  <div className="fixed inset-0 flex items-start justify-center bg-black/70 z-[200] pt-4 md:pt-16 overflow-y-auto">
+                    <div className="bg-slate-900/95 border-4 border-cyan-500 rounded-lg p-4 md:p-8 max-w-md relative mx-2 my-2 max-h-[95dvh] overflow-y-auto">
+                      {/* X button for mobile - positioned in top right corner */}
+                      {isMobileDevice && (
+                        <button
+                          onClick={() => {
+                            setGameState("playing");
+                            gameLoopRef.current?.start();
+                          }}
+                          className="absolute top-2 right-2 text-white hover:text-cyan-300 transition-colors p-2"
+                          title="Resume Game"
                         >
-                          GAME PAUSED
-                        </h2>
+                          <X size={28} />
+                        </button>
+                      )}
 
-                        <div className="space-y-2 md:space-y-3 text-white retro-pixel-text text-xs md:text-sm">
-                          <div className="border-b border-cyan-500/30 pb-2 md:pb-3 mb-2 md:mb-4">
-                            <div className="flex justify-between items-center">
-                              <span className="text-cyan-300 font-bold">ESC or P</span>
-                              <span>Resume Game</span>
-                            </div>
-                          </div>
+                      <h2
+                        className="retro-pixel-text text-xl md:text-2xl mb-3 md:mb-6 text-center animate-pulse"
+                        style={{ color: "hsl(48, 100%, 60%)" }}
+                      >
+                        GAME PAUSED
+                      </h2>
 
-                          <h3 className="text-cyan-400 font-bold text-sm md:text-base mb-1 md:mb-2">Controls:</h3>
-                          <div className="flex justify-between">
-                            <span className="text-cyan-300">Mouse/Touch</span>
-                            <span>Move Paddle</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-cyan-300">Mouse Click</span>
-                            <span>Launch Ball</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-cyan-300">Mouse Click</span>
-                            <span>Fire Turrets</span>
-                          </div>
-
-                          <h3 className="text-cyan-400 font-bold text-sm md:text-base mt-2 md:mt-4 mb-1 md:mb-2">
-                            Game:
-                          </h3>
-                          <div className="flex justify-between">
-                            <span className="text-cyan-300">F</span>
-                            <span>Fullscreen Toggle</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-cyan-300">M</span>
-                            <span>Mute Music</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-cyan-300">N</span>
-                            <span>Next Track</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-cyan-300">B</span>
-                            <span>Previous Track</span>
+                      <div className="space-y-2 md:space-y-3 text-white retro-pixel-text text-xs md:text-sm">
+                        <div className="border-b border-cyan-500/30 pb-2 md:pb-3 mb-2 md:mb-4">
+                          <div className="flex justify-between items-center">
+                            <span className="text-cyan-300 font-bold">ESC or P</span>
+                            <span>Resume Game</span>
                           </div>
                         </div>
 
-                        <div
-                          className="mt-2 md:mt-4 text-center retro-pixel-text text-[10px] md:text-xs animate-pulse"
-                          style={{ color: "hsl(48, 100%, 60%)" }}
-                        >
-                          Press ESC or P to continue
+                        <h3 className="text-cyan-400 font-bold text-sm md:text-base mb-1 md:mb-2">Controls:</h3>
+                        <div className="flex justify-between">
+                          <span className="text-cyan-300">Mouse/Touch</span>
+                          <span>Move Paddle</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-cyan-300">Mouse Click</span>
+                          <span>Launch Ball</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-cyan-300">Mouse Click</span>
+                          <span>Fire Turrets</span>
                         </div>
 
-                        <div className="flex gap-2 md:gap-4 mt-3 md:mt-6 w-full flex-wrap">
-                          <Button
-                            onClick={() => {
-                              soundManager.playMenuClick();
-                              setGameState("playing");
-                              // Only resume music if it's not already playing
-                              if (!soundManager.isMusicPlaying() && !soundManager.isBossMusicPlaying()) {
-                                soundManager.resumeBackgroundMusic();
-                              }
-                              const canvas = canvasRef.current;
-                              if (canvas && canvas.requestPointerLock) {
-                                canvas.requestPointerLock();
-                              }
-                              if (gameLoopRef.current) {
-                                gameLoopRef.current.resume();
-                              }
-                            }}
-                            onMouseEnter={() => soundManager.playMenuHover()}
-                            className="flex-1 bg-green-600 hover:bg-green-700 text-white text-xs md:text-sm py-2 md:py-3 retro-pixel-text"
-                          >
-                            RESUME
-                          </Button>
-                          <SettingsDialog
-                            gameState={gameState}
-                            setGameState={setGameState}
-                          />
-                          <Button
-                            onClick={() => {
-                              hasAutoFullscreenedRef.current = false;
-                              soundManager.stopBackgroundMusic();
-                              soundManager.stopBossMusic();
-                              soundManager.playMenuClick();
-                              onReturnToMenu();
-                            }}
-                            onMouseEnter={() => soundManager.playMenuHover()}
-                            className="flex-1 bg-red-600 hover:bg-red-700 text-white text-xs md:text-sm py-2 md:py-3 retro-pixel-text"
-                          >
-                            MAIN MENU
-                          </Button>
+                        <h3 className="text-cyan-400 font-bold text-sm md:text-base mt-2 md:mt-4 mb-1 md:mb-2">
+                          Game:
+                        </h3>
+                        <div className="flex justify-between">
+                          <span className="text-cyan-300">F</span>
+                          <span>Fullscreen Toggle</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-cyan-300">M</span>
+                          <span>Mute Music</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-cyan-300">N</span>
+                          <span>Next Track</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-cyan-300">B</span>
+                          <span>Previous Track</span>
                         </div>
                       </div>
+
+                      <div
+                        className="mt-2 md:mt-4 text-center retro-pixel-text text-[10px] md:text-xs animate-pulse"
+                        style={{ color: "hsl(48, 100%, 60%)" }}
+                      >
+                        Press ESC or P to continue
+                      </div>
+
+                      <div className="flex gap-2 md:gap-4 mt-3 md:mt-6 w-full flex-wrap">
+                        <Button
+                          onClick={() => {
+                            soundManager.playMenuClick();
+                            setGameState("playing");
+                            if (!soundManager.isMusicPlaying() && !soundManager.isBossMusicPlaying()) {
+                              soundManager.resumeBackgroundMusic();
+                            }
+                            const canvas = canvasRef.current;
+                            if (canvas && canvas.requestPointerLock) {
+                              canvas.requestPointerLock();
+                            }
+                            if (gameLoopRef.current) {
+                              gameLoopRef.current.resume();
+                            }
+                          }}
+                          onMouseEnter={() => soundManager.playMenuHover()}
+                          className="flex-1 bg-green-600 hover:bg-green-700 text-white text-xs md:text-sm py-2 md:py-3 retro-pixel-text"
+                        >
+                          RESUME
+                        </Button>
+                        <SettingsDialog
+                          gameState={gameState}
+                          setGameState={setGameState}
+                        />
+                        <Button
+                          onClick={() => {
+                            hasAutoFullscreenedRef.current = false;
+                            soundManager.stopBackgroundMusic();
+                            soundManager.stopBossMusic();
+                            soundManager.playMenuClick();
+                            onReturnToMenu();
+                          }}
+                          onMouseEnter={() => soundManager.playMenuHover()}
+                          className="flex-1 bg-red-600 hover:bg-red-700 text-white text-xs md:text-sm py-2 md:py-3 retro-pixel-text"
+                        >
+                          MAIN MENU
+                        </Button>
+                      </div>
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
 
                 {/* Tutorial Overlay moved inside scaled game-glow container above */}
 
