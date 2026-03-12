@@ -8479,8 +8479,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                           // Resume game FIRST if it was paused for tutorial (before dismissTutorial sets tutorialActive=false)
                           if (tutorialStep.pauseGame) {
                             // Store current speed multiplier and start "Get Ready" sequence
-                            baseSpeedMultiplierRef.current = speedMultiplier;
-                            setSpeedMultiplier(speedMultiplier * 0.1); // Start at 10% speed
+                            baseSpeedMultiplierRef.current = world.speedMultiplier;
+                            setSpeedMultiplier(world.speedMultiplier * 0.1); // Start at 10% speed
                             getReadyStartTimeRef.current = Date.now();
                             setGetReadyActive(true);
 
