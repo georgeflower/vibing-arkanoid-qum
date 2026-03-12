@@ -296,13 +296,6 @@ export const useHighScores = (leaderboardType: LeaderboardType = 'all-time', dif
         }
       }
 
-      // Get current user id if logged in
-      let currentUserId: string | undefined;
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user?.id) currentUserId = session.user.id;
-      } catch {}
-
       const response = await supabase.functions.invoke('submit-score', {
         body: {
           type: 'high_score',
@@ -314,7 +307,6 @@ export const useHighScores = (leaderboardType: LeaderboardType = 'all-time', dif
           collected_all_letters: collectedAllLetters,
           starting_lives: startingLives,
           game_mode: gameMode,
-          user_id: currentUserId,
         },
       });
 

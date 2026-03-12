@@ -59,8 +59,17 @@ Deno.serve(async (req) => {
       score = 0,
       timeSeconds = 0,
       objectivesMet = [],
-      allObjectivesMet = false,
     } = body;
+
+    // Derive allObjectivesMet server-side from objectivesMet array
+    // Valid objective IDs that the game can produce
+    const VALID_OBJECTIVE_IDS = new Set(["no_deaths", "time_limit", "destroy_all", "score_target", "no_powerups", "combo_5"]);
+    const validatedObjectives = Array.isArray(objectivesMet)
+      ? objectivesMet.filter((id: unknown) => typeof id === "string" && VALID_OBJECTIVE_IDS.has(id))
+      : [];
+    // A daily challenge typically has 2-4 objectives; allObjectivesMet is true only if at least 2 were met
+    // This is derived server-side, never trusted from the client
+    const allObjectivesMet = validatedObjectives.length >= 2 && validatedObjectives.length === objectivesMet.length;
 
     // Validate
     if (!challengeDate || typeof score !== "number" || typeof timeSeconds !== "number") {
