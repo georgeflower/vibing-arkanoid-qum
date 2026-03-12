@@ -94,7 +94,7 @@ src/
 
 ## 🤝 Contributing
 
-This project is **100% open source** and mostlt **vibe coded** with Lovable and GitHub Claude & Co-Pilot. Contributions, bug reports, and feature requests are welcome!
+This project is **100% open source** and mostly **vibe coded** with Lovable and GitHub Claude & Co-Pilot. Contributions, bug reports, and feature requests are welcome!
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/my-feature`)
