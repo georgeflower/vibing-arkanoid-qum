@@ -170,7 +170,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   // To enable/disable debug features, edit ENABLE_DEBUG_FEATURES in src/constants/game.ts
 
   // Game settings (persisted to localStorage)
-  const { settings: gameSettingsData } = useGameSettings();
+  const { settings: gameSettingsData, updateSettings: updateGameSettings } = useGameSettings();
 
   // Fetch logged-in user's initials for auto-fill on high score entry
   const userInitialsRef = useRef<string | null>(null);
@@ -8159,6 +8159,35 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     }
   };
 
+  // Pause menu action handlers (shared between onClick and onTouchEnd)
+  const handlePauseResume = () => {
+    soundManager.playMenuClick();
+    setGameState("playing");
+    if (!soundManager.isMusicPlaying() && !soundManager.isBossMusicPlaying()) {
+      soundManager.resumeBackgroundMusic();
+    }
+    const canvas = canvasRef.current;
+    if (canvas && canvas.requestPointerLock) {
+      canvas.requestPointerLock();
+    }
+    if (gameLoopRef.current) {
+      gameLoopRef.current.resume();
+    }
+  };
+
+  const handlePauseOpenSettings = () => {
+    soundManager.playMenuClick();
+    setSettingsOpenFromPause(true);
+  };
+
+  const handlePauseMainMenu = () => {
+    hasAutoFullscreenedRef.current = false;
+    soundManager.stopBackgroundMusic();
+    soundManager.stopBossMusic();
+    soundManager.playMenuClick();
+    onReturnToMenu();
+  };
+
   return (
     <div
       ref={fullscreenContainerRef}
@@ -8746,45 +8775,41 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
                       <div className="flex gap-2 md:gap-4 mt-3 md:mt-6 w-full flex-wrap">
                         <Button
-                          onClick={() => {
-                            soundManager.playMenuClick();
-                            setGameState("playing");
-                            if (!soundManager.isMusicPlaying() && !soundManager.isBossMusicPlaying()) {
-                              soundManager.resumeBackgroundMusic();
-                            }
-                            const canvas = canvasRef.current;
-                            if (canvas && canvas.requestPointerLock) {
-                              canvas.requestPointerLock();
-                            }
-                            if (gameLoopRef.current) {
-                              gameLoopRef.current.resume();
-                            }
+                          onTouchEnd={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            handlePauseResume();
                           }}
+                          onClick={handlePauseResume}
                           onMouseEnter={() => soundManager.playMenuHover()}
-                          className="flex-1 bg-green-600 hover:bg-green-700 text-white text-xs md:text-sm py-2 md:py-3 retro-pixel-text"
+                          className="flex-1 bg-green-600 hover:bg-green-700 text-white text-xs md:text-sm py-2 md:py-3 retro-pixel-text touch-manipulation"
+                          style={{ touchAction: "manipulation" }}
                         >
                           RESUME
                         </Button>
                         <Button
-                          onClick={() => {
-                            soundManager.playMenuClick();
-                            setSettingsOpenFromPause(true);
+                          onTouchEnd={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            handlePauseOpenSettings();
                           }}
+                          onClick={handlePauseOpenSettings}
                           onMouseEnter={() => soundManager.playMenuHover()}
-                          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs md:text-sm py-2 md:py-3 retro-pixel-text"
+                          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs md:text-sm py-2 md:py-3 retro-pixel-text touch-manipulation"
+                          style={{ touchAction: "manipulation" }}
                         >
                           <Settings className="w-4 h-4 mr-1 inline" /> SETTINGS
                         </Button>
                         <Button
-                          onClick={() => {
-                            hasAutoFullscreenedRef.current = false;
-                            soundManager.stopBackgroundMusic();
-                            soundManager.stopBossMusic();
-                            soundManager.playMenuClick();
-                            onReturnToMenu();
+                          onTouchEnd={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            handlePauseMainMenu();
                           }}
+                          onClick={handlePauseMainMenu}
                           onMouseEnter={() => soundManager.playMenuHover()}
-                          className="flex-1 bg-red-600 hover:bg-red-700 text-white text-xs md:text-sm py-2 md:py-3 retro-pixel-text"
+                          className="flex-1 bg-red-600 hover:bg-red-700 text-white text-xs md:text-sm py-2 md:py-3 retro-pixel-text touch-manipulation"
+                          style={{ touchAction: "manipulation" }}
                         >
                           MAIN MENU
                         </Button>
@@ -8804,7 +8829,10 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                     }}
                     hideTrigger
                     onPauseMenuShow={() => setSettingsOpenFromPause(false)}
-                    onSettingsSaved={(s) => setQuality(s.qualityLevel)}
+                    onSettingsSaved={(s) => {
+                      setQuality(s.qualityLevel);
+                      updateGameSettings(s);
+                    }}
                   />
                 )}
 
