@@ -8810,8 +8810,10 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
                     {/* Mobile Debug Button is now in MobileGameControls */}
 
-                    {/* Quality Indicator - Always visible */}
-                    <QualityIndicator quality={quality} autoAdjustEnabled={autoAdjustEnabled} fps={currentFps} />
+                    {/* Quality Indicator - controlled by settings */}
+                    {gameSettingsData.showQualityIndicator && (
+                      <QualityIndicator quality={quality} autoAdjustEnabled={autoAdjustEnabled} fps={currentFps} />
+                    )}
 
                     {/* Substep Debug Overlay */}
                     <SubstepDebugOverlay getDebugInfo={getSubstepDebugInfo} visible={debugSettings.showSubstepDebug} />
