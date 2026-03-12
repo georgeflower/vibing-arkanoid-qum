@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -27,8 +28,29 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Extract user_id from JWT if present (server-side, never trust client body)
+    let authenticatedUserId: string | null = null;
+    const authHeader = req.headers.get("Authorization");
+    if (authHeader?.startsWith("Bearer ")) {
+      try {
+        const supabaseUser = createClient(
+          Deno.env.get("SUPABASE_URL")!,
+          Deno.env.get("SUPABASE_ANON_KEY")!,
+          { global: { headers: { Authorization: authHeader } } }
+        );
+        const { data: claimsData, error: claimsError } = await supabaseUser.auth.getClaims(
+          authHeader.replace("Bearer ", "")
+        );
+        if (!claimsError && claimsData?.claims?.sub) {
+          authenticatedUserId = claimsData.claims.sub as string;
+        }
+      } catch {
+        // Not authenticated — proceed as guest
+      }
+    }
+
     const body = await req.json();
-    const { type, player_name, score, level, completion_time_ms, boss_level, difficulty, beat_level_50, collected_all_letters, starting_lives, game_mode, user_id } = body;
+    const { type, player_name, score, level, completion_time_ms, boss_level, difficulty, beat_level_50, collected_all_letters, starting_lives, game_mode } = body;
 
     // Validate type
     if (type !== "high_score" && type !== "boss_rush") {
@@ -87,8 +109,8 @@ Deno.serve(async (req) => {
         starting_lives: typeof starting_lives === "number" ? Math.min(Math.max(starting_lives, 1), 10) : 3,
         game_mode: typeof game_mode === "string" ? game_mode.slice(0, 20) : "campaign",
       };
-      if (typeof user_id === "string" && user_id.length > 0 && user_id.length <= 36) {
-        insertData.user_id = user_id;
+      if (authenticatedUserId) {
+        insertData.user_id = authenticatedUserId;
       }
       const { error } = await supabase.from("high_scores").insert(insertData);
       insertError = error;

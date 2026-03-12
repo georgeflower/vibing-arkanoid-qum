@@ -7645,7 +7645,6 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         score: scoreRef.current,
         timeSeconds: totalPlayTime,
         objectivesMet: dailyChallengeResult.objectivesMet,
-        allObjectivesMet: dailyChallengeResult.allObjectivesMet,
       });
 
       if (response.success) {

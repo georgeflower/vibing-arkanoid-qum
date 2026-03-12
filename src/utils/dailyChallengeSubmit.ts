@@ -5,7 +5,6 @@ export interface DailyChallengeSubmission {
   score: number;
   timeSeconds: number;
   objectivesMet: string[];
-  allObjectivesMet: boolean;
 }
 
 export interface DailyChallengeSubmitResult {
