@@ -4382,12 +4382,31 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
               );
 
               if (existingBrick) {
+                // NEVER upgrade indestructible bricks
+                if (existingBrick.isIndestructible) {
+                  enemy.isBuilding = false;
+                  enemy.buildProgress = -(3000 + Math.random() * 2000);
+                  enemy.buildTarget = undefined;
+                  continue;
+                }
                 // Upgrade: increase hits (max 3)
                 if (existingBrick.hitsRemaining < 3) {
                   existingBrick.maxHits = Math.min(3, existingBrick.maxHits + 1);
                   existingBrick.hitsRemaining = Math.min(3, existingBrick.hitsRemaining + 1);
                 }
               } else {
+                // Don't build if an indestructible brick overlaps this grid position
+                const nearbyIndestructible = world.bricks.find(
+                  (b) => b.visible && b.isIndestructible &&
+                  Math.abs(b.x - targetX) < SCALED_BRICK_WIDTH &&
+                  Math.abs(b.y - targetY) < SCALED_BRICK_HEIGHT
+                );
+                if (nearbyIndestructible) {
+                  enemy.isBuilding = false;
+                  enemy.buildProgress = -(3000 + Math.random() * 2000);
+                  enemy.buildTarget = undefined;
+                  continue;
+                }
                 // Build new brick
                 const levelColors = getBrickColors(level);
                 const nextBrickId = world.bricks.reduce(
