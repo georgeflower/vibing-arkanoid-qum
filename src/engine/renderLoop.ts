@@ -24,8 +24,9 @@ let currentTargetFps = TARGET_FPS_HIGH;
 let minFrameInterval = 1000 / currentTargetFps;
 
 /** Update the render target FPS based on quality level */
-export function setRenderTargetFps(qualityLevel: "low" | "medium" | "high"): void {
-  const newTarget = qualityLevel === "low" ? TARGET_FPS_LOW : TARGET_FPS_HIGH;
+export function setRenderTargetFps(qualityLevel: "potato" | "low" | "medium" | "high"): void {
+  const TARGET_FPS_POTATO = 30;
+  const newTarget = qualityLevel === "potato" ? TARGET_FPS_POTATO : qualityLevel === "low" ? TARGET_FPS_LOW : TARGET_FPS_HIGH;
   if (newTarget !== currentTargetFps) {
     currentTargetFps = newTarget;
     minFrameInterval = 1000 / currentTargetFps;

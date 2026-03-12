@@ -110,6 +110,28 @@ class SoundManager {
     return this.sfxEnabled;
   }
 
+  setMusicVolume(volume: number) {
+    this.musicVolume = Math.max(0, Math.min(1, volume));
+    // Update volume on all currently loaded tracks
+    this.musicTracks.forEach(track => {
+      if (track) track.volume = this.musicVolume;
+    });
+    if (this.highScoreMusic) this.highScoreMusic.volume = this.musicVolume;
+    if (this.bossMusic) this.bossMusic.volume = this.musicVolume;
+  }
+
+  getMusicVolume(): number {
+    return this.musicVolume;
+  }
+
+  setSfxVolume(volume: number) {
+    this.sfxVolume = Math.max(0, Math.min(1, volume));
+  }
+
+  getSfxVolume(): number {
+    return this.sfxVolume;
+  }
+
   setCurrentTrack(trackIndex: number) {
     const wasPlaying = this.musicTracks[this.currentTrackIndex] && 
                        !this.musicTracks[this.currentTrackIndex].paused;

@@ -178,6 +178,7 @@ export const useAdaptiveQuality = (options: AdaptiveQualityOptions = {}) => {
   const lastPerformanceLogMs = useRef<number>(0);
   const lowQualityDropCountRef = useRef<number>(0);
   const qualityStatsRef = useRef<Record<QualityLevel, { min: number; max: number; samples: number; sum: number }>>({
+    potato: { min: Infinity, max: 0, samples: 0, sum: 0 },
     low: { min: Infinity, max: 0, samples: 0, sum: 0 },
     medium: { min: Infinity, max: 0, samples: 0, sum: 0 },
     high: { min: Infinity, max: 0, samples: 0, sum: 0 },
