@@ -760,7 +760,7 @@ const SATURDAY_BOSS_TYPES: Array<{ name: string; bossLevel: number; icon: string
 // ── Main generator ───────────────────────────────────────────
 export function getDailyChallenge(date: Date = new Date()): DailyChallenge {
   const dateString = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-  const seed = hashString(`daily-challenge-${dateString}`);
+  const seed = hashString(`daily-challenge-v2-${dateString}`);
   const rng = mulberry32(seed);
 
   // Saturday = boss challenge (getDay() === 6)
@@ -802,9 +802,10 @@ export function getDailyChallenge(date: Date = new Date()): DailyChallenge {
     };
   }
 
-  // Normal day — pick a shape
-  const shapeIndex = Math.floor(rng() * SHAPE_TEMPLATES.length);
-  const shape = SHAPE_TEMPLATES[shapeIndex];
+  // Normal day — pick a shape (force Flower on launch day 2026-03-13)
+  const isLaunchDay = dateString === "2026-03-13";
+  const shapeIndex = isLaunchDay ? SHAPE_TEMPLATES.findIndex(s => s.name === "Flower") : Math.floor(rng() * SHAPE_TEMPLATES.length);
+  const shape = SHAPE_TEMPLATES[shapeIndex >= 0 ? shapeIndex : 0];
 
   // Pick modifier
   const modifierIndex = Math.floor(rng() * MODIFIER_POOL.length);

@@ -60,7 +60,6 @@ Deno.serve(async (req) => {
       timeSeconds = 0,
       objectivesMet = [],
       allObjectivesMet = false,
-      playerName,
     } = body;
 
     // Validate
@@ -80,18 +79,9 @@ Deno.serve(async (req) => {
       .single();
 
     if (existing) {
-      // Already completed - still return daily scores
-      const { data: dailyScores } = await supabaseAdmin
-        .from("daily_challenge_scores")
-        .select("player_name, score, time_seconds, objectives_met, all_objectives_met")
-        .eq("challenge_date", challengeDate)
-        .order("score", { ascending: false })
-        .limit(3);
-
       return new Response(JSON.stringify({ 
         error: "Already completed today", 
         alreadyCompleted: true,
-        dailyScores: dailyScores || [],
       }), {
         status: 409,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -117,60 +107,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Resolve player name from profile if not provided
-    let resolvedName = playerName || "???";
-    if (!playerName) {
-      const { data: profile } = await supabaseAdmin
-        .from("player_profiles")
-        .select("display_name, initials")
-        .eq("user_id", userId)
-        .single();
-      if (profile) {
-        resolvedName = profile.initials || profile.display_name || "???";
-      }
-    }
-
-    // Insert into daily_challenge_scores (top 3 per day)
-    const { data: existingScores } = await supabaseAdmin
-      .from("daily_challenge_scores")
-      .select("id, score")
-      .eq("challenge_date", challengeDate)
-      .order("score", { ascending: false });
-
-    const currentScores = existingScores || [];
-
-    if (currentScores.length < 3) {
-      // Less than 3 scores, just insert
-      await supabaseAdmin.from("daily_challenge_scores").insert({
-        challenge_date: challengeDate,
-        player_name: resolvedName,
-        user_id: userId,
-        score,
-        time_seconds: timeSeconds,
-        objectives_met: objectivesMet,
-        all_objectives_met: allObjectivesMet,
-      });
-    } else {
-      // Check if this score beats the lowest
-      const lowestScore = currentScores[currentScores.length - 1];
-      if (score > lowestScore.score) {
-        // Delete the lowest and insert new
-        await supabaseAdmin
-          .from("daily_challenge_scores")
-          .delete()
-          .eq("id", lowestScore.id);
-        await supabaseAdmin.from("daily_challenge_scores").insert({
-          challenge_date: challengeDate,
-          player_name: resolvedName,
-          user_id: userId,
-          score,
-          time_seconds: timeSeconds,
-          objectives_met: objectivesMet,
-          all_objectives_met: allObjectivesMet,
-        });
-      }
-    }
-
     // Fetch profile for streak calculation
     const { data: profile, error: profileError } = await supabaseAdmin
       .from("player_profiles")
@@ -179,14 +115,7 @@ Deno.serve(async (req) => {
       .single();
 
     if (profileError || !profile) {
-      const { data: dailyScores } = await supabaseAdmin
-        .from("daily_challenge_scores")
-        .select("player_name, score, time_seconds, objectives_met, all_objectives_met")
-        .eq("challenge_date", challengeDate)
-        .order("score", { ascending: false })
-        .limit(3);
-
-      return new Response(JSON.stringify({ success: true, streak: 0, newAchievements: 0, dailyScores: dailyScores || [] }), {
+      return new Response(JSON.stringify({ success: true, streak: 0, newAchievements: 0 }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -238,16 +167,8 @@ Deno.serve(async (req) => {
       console.error("Profile update error:", updateError);
     }
 
-    // Fetch final daily scores
-    const { data: dailyScores } = await supabaseAdmin
-      .from("daily_challenge_scores")
-      .select("player_name, score, time_seconds, objectives_met, all_objectives_met")
-      .eq("challenge_date", challengeDate)
-      .order("score", { ascending: false })
-      .limit(3);
-
     return new Response(
-      JSON.stringify({ success: true, streak: newStreak, newAchievements: newlyUnlocked, dailyScores: dailyScores || [] }),
+      JSON.stringify({ success: true, streak: newStreak, newAchievements: newlyUnlocked }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
