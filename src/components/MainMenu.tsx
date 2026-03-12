@@ -39,7 +39,7 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
   const [gameMode, setGameMode] = useState<GameMode>("normal");
   const { settings: gameSettings } = useGameSettings();
   const [showSettings, setShowSettings] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
+  const [showInstructions, setShowInstructions] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
   const [showHighScores, setShowHighScores] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
