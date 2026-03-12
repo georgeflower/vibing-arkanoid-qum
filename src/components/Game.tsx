@@ -1670,7 +1670,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     }
 
     if (isDailyChallenge && dailyChallengeData) {
-      // Daily challenge game over — evaluate objectives and show high score entry
+      // Daily challenge game over — evaluate objectives and show result directly
       const challengeResult = evaluateObjectives(dailyChallengeData, {
         livesLost: dailyChallengeLivesLostRef.current,
         timeSeconds: totalPlayTime,
@@ -1680,7 +1680,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         bestCombo: hitStreakRef.current,
       });
       setDailyChallengeResult(challengeResult);
-      setShowDailyChallengeScoreEntry(true);
+      setShowDailyChallengeResult(true);
       soundManager.playHighScoreMusic();
       toast.error("Daily Challenge Over!");
     } else if (isBossRush) {
