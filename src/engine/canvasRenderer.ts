@@ -605,7 +605,6 @@ export function renderFrame(
   // ═══ Draw paddle ═══
   if (paddle) {
     const img = assets.paddleImage;
-    const isPotato = qualitySettings.level === "potato";
     ctx.save();
     if (!isPotato && isImageValid(img)) {
       if (qualitySettings.shadowsEnabled) {
