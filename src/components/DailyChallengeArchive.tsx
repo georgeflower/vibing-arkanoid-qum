@@ -81,7 +81,7 @@ export const DailyChallengeArchive = ({ onPlay, onClose }: DailyChallengeArchive
   };
 
   return (
-    <div className="fixed inset-0 w-full h-screen bg-gradient-to-b from-[hsl(220,25%,12%)] to-[hsl(220,30%,8%)] flex items-center justify-center p-2 sm:p-4 overflow-hidden animate-fade-in z-50">
+    <div className="fixed inset-0 w-full h-screen bg-gradient-to-b from-[hsl(220,25%,12%)] to-[hsl(220,30%,8%)] flex items-center justify-center p-2 sm:p-4 overflow-y-auto animate-fade-in z-50">
       <Card className="relative w-full max-w-lg p-4 bg-[hsl(220,20%,15%)] border-[hsl(45,100%,50%)] max-h-[90vh] flex flex-col">
         <button
           onClick={() => { soundManager.playMenuClick(); onClose(); }}

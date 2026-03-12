@@ -36,7 +36,7 @@ export const HighScoreDisplay = ({ onClose, leaderboardType = 'all-time', initia
   }, [onClose]);
 
   return (
-    <div ref={containerRef} className="fixed inset-0 w-full h-screen overflow-hidden swipe-container animate-fade-in bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900">
+    <div ref={containerRef} className="fixed inset-0 w-full h-screen overflow-y-auto swipe-container animate-fade-in bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900">
       <div className="absolute inset-0 w-full h-full flex items-center justify-center p-4">
         <div className="relative z-10 bg-slate-900/90 backdrop-blur-md rounded-lg p-8 border-2 border-cyan-500/50 max-w-3xl w-full animate-scale-in">
           <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors z-20" title="Close">
