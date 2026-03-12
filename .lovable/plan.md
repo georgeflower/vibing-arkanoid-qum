@@ -1,38 +1,36 @@
 
 
-# Revert Game Area to Fixed Size (Pre-Expansion)
+# Fix Mobile Scrollability Issues
 
 ## Problem
-Two previous changes ("Expand game area to frame space" and "Expand game area to fill space") made the game canvas dynamically resize to fill all available space within the metal frame on desktop. The user wants the playable area to return to its original fixed size.
+Several pages and overlays use `min-h-screen flex items-center justify-center` without allowing overflow scrolling, causing content to be cut off on small mobile screens (360x605).
 
-## Current behavior
-- `useViewportFrame` makes the metal frame fill the entire viewport on desktop
-- `useCanvasResize` uses ResizeObserver to dynamically size the game canvas to fill the `metal-game-area` container
-- The canvas display size grows to match available space
+## Affected Components
 
-## Desired behavior
-The game canvas stays at its logical size (850×650 scaled by `scaleFactor`) and is simply centered within the frame — no dynamic expansion.
+### Pages (full-screen, not scrollable)
+1. **Auth.tsx** (line 123-125) — `min-h-screen flex items-center justify-center p-4` with no overflow. Signup mode has many fields that overflow on mobile.
+2. **ResetPassword.tsx** (line 49-51) — Same pattern, `min-h-screen flex items-center justify-center p-4`.
 
-## Changes
+### Overlays/Popups (potentially clipped)
+3. **HighScoreDisplay.tsx** (line 39) — `overflow-hidden` on root, inner content may clip.
+4. **DailyChallengeArchive.tsx** (line 84) — `overflow-hidden` on outer container.
+5. **DailyChallengeResultOverlay.tsx** — Already has `overflow-y-auto` on outer div, looks OK.
 
-### 1. `src/components/Game.tsx`
-- **Remove** `useViewportFrame` import and hook call (lines 22, 1651-1654)
-- **Remove** `useCanvasResize` import and hook call (lines 23, 1657-1667), along with destructured `displayWidth`, `displayHeight`, `dynamicScale`
-- Remove `gameAreaRef` if only used for `useCanvasResize` (check first)
-- On desktop, set the `game-glow` div's width/height explicitly to `SCALED_CANVAS_WIDTH` × `SCALED_CANVAS_HEIGHT` (same as mobile path but without the scale transform), so the canvas is fixed-size and centered
+### Pages already using fixed+overflow pattern (likely OK)
+- Profile.tsx, PublicProfile.tsx, PrivacyPolicy.tsx, TermsOfService.tsx — All use `position: fixed, inset: 0, overflowY: "auto"` which should scroll fine.
 
-### 2. `src/hooks/useViewportFrame.ts`
-- Delete file (no longer used)
+## Fix Strategy
 
-### 3. `src/hooks/useCanvasResize.ts`
-- Delete file (no longer used)
+For each affected component, wrap content in a scrollable container:
 
-### 4. `src/index.css`
-- Remove the `.metal-frame.desktop-fullscreen` CSS block (lines ~265-290) since the class is no longer applied
-- Remove `max-width` constraint on `.metal-game-area` that references side panel widths — let it auto-size around the fixed canvas
-- Keep `.metal-frame` as `width: fit-content` so it wraps the fixed-size content naturally
+1. **Auth.tsx**: Change outer div to `overflow-y-auto` with `fixed inset-0` pattern, keep inner flex centering via a `min-h-screen` wrapper inside.
+2. **ResetPassword.tsx**: Same fix as Auth.
+3. **HighScoreDisplay.tsx**: Change `overflow-hidden` to `overflow-y-auto` on root container, and ensure inner card doesn't use fixed max-height that clips.
+4. **DailyChallengeArchive.tsx**: Change `overflow-hidden` to `overflow-y-auto` on outer container.
 
-### 5. Verify
-- `gameAreaRef` usage — if it's only for `useCanvasResize`, remove the ref. If used elsewhere (e.g. click handlers), keep it.
-- `gameGlowRef` — same check; if only used by `useCanvasResize` for imperative sizing, it can be simplified but likely still needed for CRT overlay positioning.
+## Implementation Details
+
+- Auth.tsx & ResetPassword.tsx: Change outer div to `fixed inset-0 overflow-y-auto` with background, then use an inner `min-h-screen flex items-center justify-center p-4` div that acts as the centering wrapper (content will scroll when it overflows).
+- HighScoreDisplay.tsx: Replace `overflow-hidden` with `overflow-y-auto` on the root fixed div.
+- DailyChallengeArchive.tsx: Replace `overflow-hidden` with `overflow-y-auto` on the root fixed div.
 
