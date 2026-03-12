@@ -8322,7 +8322,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       }`}
     >
       {/* CRT Overlay - inside fullscreen container (Phase 5: Toggle by debug setting) */}
-      {qualitySettings.backgroundEffects && gameSettingsData.crtEnabled && debugSettings.enableCRTEffects && <CRTOverlay quality={quality} crtEnabled={gameSettingsData.crtEnabled} />}
+      {gameSettingsData.crtEnabled && debugSettings.enableCRTEffects && <CRTOverlay quality={quality} crtEnabled={gameSettingsData.crtEnabled} />}
 
       {/* Mobile fullscreen prompt overlay */}
       {showFullscreenPrompt && isMobileDevice && (
@@ -9006,7 +9006,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                     <SubstepDebugOverlay getDebugInfo={getSubstepDebugInfo} visible={debugSettings.showSubstepDebug} />
 
                     {/* Frame Profiler Overlay - Phase 1 */}
-                    <FrameProfilerOverlay visible={debugSettings.showFrameProfiler} />
+                    <FrameProfilerOverlay visible={debugSettings.showFrameProfiler || gameSettingsData.showFpsOverlay} />
 
                     {/* Pool Stats Overlay */}
                     <PoolStatsOverlay visible={debugSettings.showPoolStats} />

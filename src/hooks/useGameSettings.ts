@@ -129,6 +129,13 @@ export const useGameSettings = () => {
     });
   }, []);
 
+  // Cross-instance sync: when another hook instance saves, re-read from localStorage
+  useEffect(() => {
+    const handler = () => setSettingsRaw(loadSettings());
+    window.addEventListener('gameSettingsChanged', handler);
+    return () => window.removeEventListener('gameSettingsChanged', handler);
+  }, []);
+
   const updateSettings = useCallback((partial: Partial<GameSettings>) => {
     setSettingsRaw((prev) => {
       const next = { ...prev, ...partial };
@@ -143,6 +150,7 @@ export const useGameSettings = () => {
       const toSave = settingsToSave ?? prev;
       saveSettingsToLocal(toSave);
       saveSettingsToCloud(toSave);
+      window.dispatchEvent(new CustomEvent('gameSettingsChanged'));
       return toSave;
     });
   }, []);
