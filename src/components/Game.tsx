@@ -1589,6 +1589,13 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       isFullscreen,
     });
 
+  // ═══ Sync settings quality → adaptive quality system ═══
+  useEffect(() => {
+    if (gameSettingsData.qualityLevel && gameSettingsData.qualityLevel !== quality) {
+      setQuality(gameSettingsData.qualityLevel);
+    }
+  }, [gameSettingsData.qualityLevel, setQuality]);
+
   // ═══ Sync React state → renderState singleton (for decoupled canvas rendering) ═══
   useEffect(() => {
     renderState.gameState = gameState;
