@@ -8751,6 +8751,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                         <SettingsDialog
                           gameState={gameState}
                           setGameState={setGameState}
+                          onPauseMenuHide={() => setSettingsOpenFromPause(true)}
+                          onPauseMenuShow={() => setSettingsOpenFromPause(false)}
                         />
                         <Button
                           onClick={() => {
