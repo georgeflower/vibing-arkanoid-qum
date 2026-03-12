@@ -9136,6 +9136,28 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                       </div>
                     )}
                   </div>
+                  {/* Timer row below compact HUD */}
+                  <div className="flex justify-center bg-black/30 backdrop-blur-sm px-3 py-1.5 rounded">
+                    {isDailyChallenge && settings.dailyChallengeConfig?.timeLimit && settings.dailyChallengeConfig.timeLimit > 0 ? (
+                      <div
+                        className={`retro-pixel-text text-sm ${Math.max(0, settings.dailyChallengeConfig.timeLimit - totalPlayTime) <= 30 ? "animate-pulse" : ""}`}
+                        style={{
+                          color: Math.max(0, settings.dailyChallengeConfig.timeLimit - totalPlayTime) <= 30
+                            ? "hsl(0, 80%, 65%)"
+                            : "hsl(45, 100%, 50%)"
+                        }}
+                      >
+                        TIME LEFT: {Math.max(0, settings.dailyChallengeConfig.timeLimit - totalPlayTime)}s
+                      </div>
+                    ) : (
+                      <div
+                        className="retro-pixel-text text-sm"
+                        style={{ color: "hsl(210, 60%, 65%)" }}
+                      >
+                        TIMER: {timer}s
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 
