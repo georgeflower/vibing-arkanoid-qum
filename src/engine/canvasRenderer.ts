@@ -449,6 +449,7 @@ export function renderFrame(
   const level = rs.level;
   const qualitySettings = rs.qualitySettings;
   const gameState = rs.gameState;
+  const isPotato = qualitySettings.level === "potato";
 
   // Shorthand world reads
   const {
