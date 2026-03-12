@@ -25,7 +25,6 @@ import { X, ChevronUp, ChevronDown } from "lucide-react";
 import { useLevelProgress } from "@/hooks/useLevelProgress";
 import { FINAL_LEVEL, ENABLE_DEBUG_FEATURES, ENABLE_HIGH_QUALITY } from "@/constants/game";
 import { BOSS_RUSH_CONFIG } from "@/constants/bossRushConfig";
-import { BOSS_RUSH_CONFIG } from "@/constants/bossRushConfig";
 import { SettingsDialog } from "./SettingsDialog";
 import { useGameSettings } from "@/hooks/useGameSettings";
 
@@ -39,7 +38,6 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
   const [gameMode, setGameMode] = useState<GameMode>("normal");
   const { settings: gameSettings } = useGameSettings();
   const [showSettings, setShowSettings] = useState(false);
-  const [showInstructions, setShowInstructions] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
   const [showHighScores, setShowHighScores] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
