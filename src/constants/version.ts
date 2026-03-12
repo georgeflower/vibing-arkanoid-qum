@@ -1,6 +1,14 @@
-export const GAME_VERSION = "0.9.978";
+export const GAME_VERSION = "0.9.979";
 
 export const CHANGELOG = [
+  {
+    version: "0.9.979",
+    changes: [
+      "Google Sign-In — log in with your Google account for quick, passwordless access",
+      "Fixed mobile scrollability on signup, reset password, high scores, and daily challenge archive screens",
+      "PWA OAuth fix — service worker no longer intercepts OAuth redirect routes",
+    ],
+  },
   {
     version: "0.9.978",
     changes: [
