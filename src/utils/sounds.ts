@@ -9,6 +9,8 @@ class SoundManager {
   private savedBackgroundMusicIndex: number = 0;
   private musicEnabled = true;
   private sfxEnabled = true;
+  private musicVolume = 0.3;
+  private sfxVolume = 0.7;
   private analyser: AnalyserNode | null = null;
   private frequencyData: Uint8Array | null = null;
   private bossMusicSource: MediaElementAudioSourceNode | null = null;
