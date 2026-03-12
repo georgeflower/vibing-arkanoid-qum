@@ -26,6 +26,8 @@ import { useTutorial } from "@/hooks/useTutorial";
 import { useLevelProgress } from "@/hooks/useLevelProgress";
 import { FINAL_LEVEL, ENABLE_DEBUG_FEATURES, ENABLE_HIGH_QUALITY } from "@/constants/game";
 import { BOSS_RUSH_CONFIG } from "@/constants/bossRushConfig";
+import { SettingsDialog } from "./SettingsDialog";
+import { useGameSettings } from "@/hooks/useGameSettings";
 
 interface MainMenuProps {
   onStartGame: (settings: GameSettings) => void;
