@@ -9006,7 +9006,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                     <SubstepDebugOverlay getDebugInfo={getSubstepDebugInfo} visible={debugSettings.showSubstepDebug} />
 
                     {/* Frame Profiler Overlay - Phase 1 */}
-                    <FrameProfilerOverlay visible={debugSettings.showFrameProfiler} />
+                    <FrameProfilerOverlay visible={debugSettings.showFrameProfiler || gameSettingsData.showFpsOverlay} />
 
                     {/* Pool Stats Overlay */}
                     <PoolStatsOverlay visible={debugSettings.showPoolStats} />
