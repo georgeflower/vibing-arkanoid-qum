@@ -7635,46 +7635,33 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     setShowHighScoreDisplay(true);
   };
 
-  const handleDailyChallengeScoreSubmit = async (name: string) => {
+  const handleDailyChallengeSubmit = async () => {
     try {
-      if (!dailyChallengeData || !dailyChallengeResult) {
-        console.error("Missing daily challenge data or result");
-        return;
-      }
+      if (!dailyChallengeData || !dailyChallengeResult) return;
+      if (dailyChallengeTimedOut) return; // Don't submit timed-out challenges
 
-      // Store player initials for future use
-      userInitialsRef.current = name;
-
-      // Submit daily challenge with player name
       const response = await submitDailyChallenge({
         challengeDate: dailyChallengeData.dateString,
         score: scoreRef.current,
         timeSeconds: totalPlayTime,
         objectivesMet: dailyChallengeResult.objectivesMet,
         allObjectivesMet: dailyChallengeResult.allObjectivesMet,
-        playerName: name,
       });
 
       if (response.success) {
         setDailyChallengeStreak(response.streak);
       }
-      setDailyChallengeScores(response.dailyScores || []);
-
-      toast.success("🎉 DAILY CHALLENGE SCORE SAVED! 🎉");
-
-      // Delay transition to show celebration (consistent with other score submissions)
-      setTimeout(() => {
-        setShowDailyChallengeScoreEntry(false);
-        setShowDailyChallengeResult(true);
-      }, 1000);
     } catch (err) {
-      console.error("Failed to submit daily challenge score:", err);
-      toast.error("Failed to submit daily challenge score");
-      // Show result overlay immediately on error (consistent with other score submissions)
-      setShowDailyChallengeScoreEntry(false);
-      setShowDailyChallengeResult(true);
+      console.error("Failed to submit daily challenge:", err);
     }
   };
+
+  // Auto-submit daily challenge when result is shown (not timed out)
+  useEffect(() => {
+    if (showDailyChallengeResult && dailyChallengeResult && !dailyChallengeTimedOut) {
+      handleDailyChallengeSubmit();
+    }
+  }, [showDailyChallengeResult, dailyChallengeTimedOut]);
 
   // Auto-submit high scores when user has stored initials
   const autoSubmittedRef = useRef<string | null>(null);
@@ -7687,14 +7674,11 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     } else if (showBossRushScoreEntry && autoSubmittedRef.current !== 'bossRush') {
       autoSubmittedRef.current = 'bossRush';
       handleBossRushScoreSubmit(initials);
-    } else if (showDailyChallengeScoreEntry && autoSubmittedRef.current !== 'dailyChallenge') {
-      autoSubmittedRef.current = 'dailyChallenge';
-      handleDailyChallengeScoreSubmit(initials);
     }
-    if (!showHighScoreEntry && !showBossRushScoreEntry && !showDailyChallengeScoreEntry) {
+    if (!showHighScoreEntry && !showBossRushScoreEntry) {
       autoSubmittedRef.current = null;
     }
-  }, [showHighScoreEntry, showBossRushScoreEntry, showDailyChallengeScoreEntry]);
+  }, [showHighScoreEntry, showBossRushScoreEntry]);
 
   const handleEndScreenContinue = () => {
     setShowEndScreen(false);
