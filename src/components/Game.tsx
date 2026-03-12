@@ -1209,15 +1209,15 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   const megaBossTrapJustHappenedRef = useRef<number>(0);
 
   // Performance optimization refs
-  const screenShakeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const screenShakeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastToastTimeRef = useRef<Record<string, number>>({});
   const TOAST_THROTTLE_MS = 500;
   const nextEnemyId = useRef(1);
-  const timerIntervalRef = useRef<NodeJS.Timeout>();
-  const totalPlayTimeIntervalRef = useRef<NodeJS.Timeout>();
+  const timerIntervalRef = useRef<ReturnType<typeof setInterval>>();
+  const totalPlayTimeIntervalRef = useRef<ReturnType<typeof setInterval>>();
   const totalPlayTimeStartedRef = useRef(false);
   const enemyProjectileTimersRef = useRef<Map<number, EnemyProjectileTimer>>(new Map());
-  const launchAngleIntervalRef = useRef<NodeJS.Timeout>();
+  const launchAngleIntervalRef = useRef<ReturnType<typeof setInterval>>();
   const fullscreenContainerRef = useRef<HTMLDivElement>(null);
   const gameContainerRef = useRef<HTMLDivElement>(null);
   //const gameAreaRef = useRef<HTMLDivElement>(null);
