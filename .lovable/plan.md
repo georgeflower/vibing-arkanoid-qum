@@ -1,38 +1,18 @@
 
 
-# Revert Game Area to Fixed Size (Pre-Expansion)
-
-## Problem
-Two previous changes ("Expand game area to frame space" and "Expand game area to fill space") made the game canvas dynamically resize to fill all available space within the metal frame on desktop. The user wants the playable area to return to its original fixed size.
-
-## Current behavior
-- `useViewportFrame` makes the metal frame fill the entire viewport on desktop
-- `useCanvasResize` uses ResizeObserver to dynamically size the game canvas to fill the `metal-game-area` container
-- The canvas display size grows to match available space
-
-## Desired behavior
-The game canvas stays at its logical size (850×650 scaled by `scaleFactor`) and is simply centered within the frame — no dynamic expansion.
+# Potato Quality: 25% Resolution, Maximum Performance
 
 ## Changes
 
-### 1. `src/components/Game.tsx`
-- **Remove** `useViewportFrame` import and hook call (lines 22, 1651-1654)
-- **Remove** `useCanvasResize` import and hook call (lines 23, 1657-1667), along with destructured `displayWidth`, `displayHeight`, `dynamicScale`
-- Remove `gameAreaRef` if only used for `useCanvasResize` (check first)
-- On desktop, set the `game-glow` div's width/height explicitly to `SCALED_CANVAS_WIDTH` × `SCALED_CANVAS_HEIGHT` (same as mobile path but without the scale transform), so the canvas is fixed-size and centered
+**`src/hooks/useAdaptiveQuality.ts`** (line 44)
+- Change `resolutionScale: 0.5` → `resolutionScale: 0.25` in the `potato` preset
 
-### 2. `src/hooks/useViewportFrame.ts`
-- Delete file (no longer used)
+That's the only code change needed. Here's why:
 
-### 3. `src/hooks/useCanvasResize.ts`
-- Delete file (no longer used)
+- **CRT already disabled** for potato quality (CRTOverlay returns null when `quality === 'potato'`)
+- **All effects already off** (particles 0, glow off, shadows off, screen shake off, background effects off, all granular toggles off)
+- **FPS already capped at 30** in renderLoop for potato
+- **Zoom compensation already works** — the render loop renders at 25% resolution (e.g. 212×162 for an 850×650 canvas) using an offscreen canvas with `ctx.setTransform(0.25, ...)`, then upscales via `drawImage` to fill the visible canvas. The game logic coordinates stay at full resolution — only GPU rasterization is reduced.
 
-### 4. `src/index.css`
-- Remove the `.metal-frame.desktop-fullscreen` CSS block (lines ~265-290) since the class is no longer applied
-- Remove `max-width` constraint on `.metal-game-area` that references side panel widths — let it auto-size around the fixed canvas
-- Keep `.metal-frame` as `width: fit-content` so it wraps the fixed-size content naturally
-
-### 5. Verify
-- `gameAreaRef` usage — if it's only for `useCanvasResize`, remove the ref. If used elsewhere (e.g. click handlers), keep it.
-- `gameGlowRef` — same check; if only used by `useCanvasResize` for imperative sizing, it can be simplified but likely still needed for CRT overlay positioning.
+This gives potato quality ~6× fewer pixels to rasterize compared to the current 50% setting (0.25² = 6.25% vs 0.5² = 25% of full pixel count), making it viable on very old hardware.
 
