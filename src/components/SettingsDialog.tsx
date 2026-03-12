@@ -1,12 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -43,7 +37,11 @@ type TabId = "video" | "sound";
 const CRT_DISABLED_QUALITIES: QualityLevel[] = ["potato", "low"];
 
 const QUALITY_LEVELS: { value: QualityLevel; label: string; description: string }[] = [
-  { value: "potato", label: "🥔 Kartoffel", description: "For Rapture; RAPTURION the CENTURION of PENTURIONS — it's powered by a po-ta-to!" },
+  {
+    value: "potato",
+    label: "🥔 Kartoffel",
+    description: "For Rapture; RAPTURION the CENTURION of PENTURIONS — it's powered by a po-ta-to!",
+  },
   { value: "low", label: "Low", description: "Minimal effects, 75% resolution" },
   { value: "medium", label: "Medium", description: "Balanced visuals & performance" },
   { value: "high", label: "High", description: "Full effects, maximum quality" },
@@ -59,8 +57,7 @@ export const SettingsDialog = ({
   onPauseMenuShow,
   onSettingsSaved,
 }: SettingsDialogProps) => {
-  const { settings, updateSettings, saveSettings, resetSoundDefaults, resetVideoDefaults } =
-    useGameSettings();
+  const { settings, updateSettings, saveSettings, resetSoundDefaults, resetVideoDefaults } = useGameSettings();
   const [internalOpen, setInternalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<TabId>("video");
 
@@ -148,20 +145,14 @@ export const SettingsDialog = ({
                 >
                   {q.label}
                 </Label>
-                <span
-                  className="retro-pixel-text text-[9px]"
-                  style={{ color: "hsl(0, 0%, 55%)" }}
-                >
+                <span className="retro-pixel-text text-[9px]" style={{ color: "hsl(0, 0%, 55%)" }}>
                   {q.description}
                 </span>
               </div>
             </div>
           ))}
         </RadioGroup>
-        <p
-          className="retro-pixel-text text-[9px] mt-1"
-          style={{ color: "hsl(0, 0%, 50%)" }}
-        >
+        <p className="retro-pixel-text text-[9px] mt-1" style={{ color: "hsl(0, 0%, 50%)" }}>
           Press <strong>Q</strong> to cycle quality • <strong>Shift+Q</strong> toggle auto
         </p>
       </div>
@@ -188,10 +179,7 @@ export const SettingsDialog = ({
         <Label className="retro-pixel-text text-xs" style={{ color: "hsl(0, 0%, 85%)" }}>
           Show FPS Overlay
         </Label>
-        <Switch
-          checked={draft.showFpsOverlay}
-          onCheckedChange={(v) => updateDraft({ showFpsOverlay: v })}
-        />
+        <Switch checked={draft.showFpsOverlay} onCheckedChange={(v) => updateDraft({ showFpsOverlay: v })} />
       </div>
 
       {/* Quality indicator */}
@@ -229,10 +217,7 @@ export const SettingsDialog = ({
             </option>
           ))}
         </select>
-        <p
-          className="retro-pixel-text text-[9px]"
-          style={{ color: "hsl(0, 0%, 50%)" }}
-        >
+        <p className="retro-pixel-text text-[9px]" style={{ color: "hsl(0, 0%, 50%)" }}>
           Lower resolutions improve performance on slower hardware
         </p>
       </div>
@@ -259,17 +244,10 @@ export const SettingsDialog = ({
           backgroundColor: "hsl(220, 30%, 14%)",
         }}
       >
-        <p
-          className="retro-pixel-text text-[10px] leading-relaxed"
-          style={{ color: "hsl(200, 70%, 70%)" }}
-        >
-          🎵 <em>Greetings to 🇩🇪Rapture from Nectarine Demoscene Radio — keeping the scene alive
-          since 2002! If you know, you know.</em> 🎵
+        <p className="retro-pixel-text text-[10px] leading-relaxed" style={{ color: "hsl(200, 70%, 70%)" }}>
+          🎵 <em>Greetings to Nectarine Demoscene Radio — keeping the scene alive since 2002! </em> 🎵
         </p>
-        <p
-          className="retro-pixel-text text-[9px] mt-2 opacity-60"
-          style={{ color: "hsl(200, 70%, 60%)" }}
-        >
+        <p className="retro-pixel-text text-[9px] mt-2 opacity-60" style={{ color: "hsl(200, 70%, 60%)" }}>
           nectarine.demoscene.net — the soundtrack of our youth 💾
         </p>
       </div>
@@ -284,10 +262,7 @@ export const SettingsDialog = ({
           <Label className="retro-pixel-text text-xs" style={{ color: "hsl(0, 0%, 85%)" }}>
             Music
           </Label>
-          <Switch
-            checked={draft.musicEnabled}
-            onCheckedChange={(v) => updateDraft({ musicEnabled: v })}
-          />
+          <Switch checked={draft.musicEnabled} onCheckedChange={(v) => updateDraft({ musicEnabled: v })} />
         </div>
         <div className="space-y-1">
           <Label className="retro-pixel-text text-[10px]" style={{ color: "hsl(0, 0%, 65%)" }}>
@@ -311,10 +286,7 @@ export const SettingsDialog = ({
           <Label className="retro-pixel-text text-xs" style={{ color: "hsl(0, 0%, 85%)" }}>
             Sound Effects
           </Label>
-          <Switch
-            checked={draft.sfxEnabled}
-            onCheckedChange={(v) => updateDraft({ sfxEnabled: v })}
-          />
+          <Switch checked={draft.sfxEnabled} onCheckedChange={(v) => updateDraft({ sfxEnabled: v })} />
         </div>
         <div className="space-y-1">
           <Label className="retro-pixel-text text-[10px]" style={{ color: "hsl(0, 0%, 65%)" }}>
@@ -381,10 +353,7 @@ export const SettingsDialog = ({
   const content = (
     <DialogContent className="sm:max-w-md max-h-[85vh] overflow-hidden flex flex-col amiga-box z-[300]">
       <DialogHeader>
-        <DialogTitle
-          className="retro-pixel-text text-sm flex items-center gap-2"
-          style={{ color: "hsl(0, 0%, 85%)" }}
-        >
+        <DialogTitle className="retro-pixel-text text-sm flex items-center gap-2" style={{ color: "hsl(0, 0%, 85%)" }}>
           <Settings className="h-4 w-4" />
           Settings
         </DialogTitle>
@@ -401,9 +370,7 @@ export const SettingsDialog = ({
             }}
             onMouseEnter={() => soundManager.playMenuHover()}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-t-md retro-pixel-text text-[10px] transition-colors ${
-              activeTab === tab.id
-                ? "border-b-2"
-                : "opacity-60 hover:opacity-90"
+              activeTab === tab.id ? "border-b-2" : "opacity-60 hover:opacity-90"
             }`}
             style={{
               color: activeTab === tab.id ? "hsl(200, 70%, 70%)" : "hsl(0, 0%, 60%)",
