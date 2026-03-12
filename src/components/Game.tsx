@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { world, type LaserWarning, type SuperWarning, type BulletImpact } from "@/engine/state";
 import { renderState } from "@/engine/renderState";
 import { GameCanvas } from "./GameCanvas";
