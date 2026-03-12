@@ -8188,13 +8188,6 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
           onSubmit={handleBossRushScoreSubmit}
           defaultName={userInitialsRef.current ?? undefined}
         />
-      ) : showDailyChallengeScoreEntry ? (
-        <HighScoreEntry
-          score={score}
-          level={level}
-          onSubmit={handleDailyChallengeScoreSubmit}
-          defaultName={userInitialsRef.current ?? undefined}
-        />
       ) : (
         <>
           {showHighScoreEntry ? (
