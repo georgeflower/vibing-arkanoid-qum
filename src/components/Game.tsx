@@ -8772,6 +8772,20 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                   </div>
                 )}
 
+                {/* Settings dialog when opened from pause (renders on top, pause hidden) */}
+                {settingsOpenFromPause && (
+                  <SettingsDialog
+                    gameState={gameState}
+                    setGameState={setGameState}
+                    open={true}
+                    onOpenChange={(isOpen) => {
+                      if (!isOpen) setSettingsOpenFromPause(false);
+                    }}
+                    hideTrigger
+                    onPauseMenuShow={() => setSettingsOpenFromPause(false)}
+                  />
+                )}
+
                 {/* Tutorial Overlay moved inside scaled game-glow container above */}
 
                 {/* Mobile Controls - Pause button, Music toggle, Debug button */}
