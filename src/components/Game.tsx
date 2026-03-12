@@ -28,6 +28,8 @@ import { DailyChallengeResultOverlay } from "./DailyChallengeResultOverlay";
 import { getDailyChallenge, evaluateObjectives, type DailyChallenge, type DailyChallengeResult } from "@/utils/dailyChallenge";
 import { submitDailyChallenge } from "@/utils/dailyChallengeSubmit";
 import { supabase } from "@/integrations/supabase/client";
+import { SettingsDialog } from "./SettingsDialog";
+import { useGameSettings } from "@/hooks/useGameSettings";
 
 // ═══════════════════════════════════════════════════════════════
 // ████████╗ DEBUG IMPORTS - REMOVE BEFORE PRODUCTION ████████╗
