@@ -8725,7 +8725,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                           Press ESC or P to continue
                         </div>
 
-                        <div className="flex gap-2 md:gap-4 mt-3 md:mt-6 w-full">
+                        <div className="flex gap-2 md:gap-4 mt-3 md:mt-6 w-full flex-wrap">
                           <Button
                             onClick={() => {
                               soundManager.playMenuClick();
@@ -8747,6 +8747,10 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                           >
                             RESUME
                           </Button>
+                          <SettingsDialog
+                            gameState={gameState}
+                            setGameState={setGameState}
+                          />
                           <Button
                             onClick={() => {
                               hasAutoFullscreenedRef.current = false;
