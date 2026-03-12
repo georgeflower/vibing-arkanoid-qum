@@ -174,7 +174,7 @@ class SoundManager {
     if (!this.highScoreMusic) {
       this.highScoreMusic = new Audio('/High_score.mp3');
       this.highScoreMusic.loop = true;
-      this.highScoreMusic.volume = 0.4;
+      this.highScoreMusic.volume = this.musicVolume;
     }
     this.highScoreMusic.play().catch(() => {});
   }
