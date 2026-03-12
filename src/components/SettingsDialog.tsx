@@ -57,6 +57,7 @@ export const SettingsDialog = ({
   hideTrigger,
   onPauseMenuHide,
   onPauseMenuShow,
+  onSettingsSaved,
 }: SettingsDialogProps) => {
   const { settings, updateSettings, saveSettings, resetSoundDefaults, resetVideoDefaults } =
     useGameSettings();
