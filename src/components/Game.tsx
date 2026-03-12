@@ -711,7 +711,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       world.highlightFlash = updater;
     }
   }, []);
-  const highlightFlashTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const highlightFlashTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // ═══ PHASE 1: lastBossSpawnTime lives in world.lastBossSpawnTime (engine/state.ts) ═══
   const lastBossSpawnTime = world.lastBossSpawnTime;
   const setLastBossSpawnTime = useCallback((updater: number | ((prev: number) => number)) => {
