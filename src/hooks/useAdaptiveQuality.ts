@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { debugToast as toast } from "@/utils/debugToast";
 import { ENABLE_HIGH_QUALITY } from "@/constants/game";
 
-export type QualityLevel = "low" | "medium" | "high";
+export type QualityLevel = "potato" | "low" | "medium" | "high";
 
 export interface QualitySettings {
   level: QualityLevel;
