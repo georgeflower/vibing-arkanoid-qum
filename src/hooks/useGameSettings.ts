@@ -15,9 +15,6 @@ export const RESOLUTION_PRESETS: ResolutionPreset[] = [
   { width: 640, height: 480, label: "640×480 (VGA)" },
   { width: 800, height: 600, label: "800×600 (SVGA)" },
   { width: 850, height: 650, label: "850×650 (Default)" },
-  { width: 1024, height: 768, label: "1024×768 (XGA)" },
-  { width: 1280, height: 960, label: "1280×960 (SXGA)" },
-  { width: 1600, height: 1200, label: "1600×1200 (UXGA)" },
 ];
 
 export interface GameSettings {
