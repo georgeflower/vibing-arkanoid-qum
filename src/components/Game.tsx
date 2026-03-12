@@ -8221,6 +8221,31 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                 </h1>
               </div>
 
+              {/* Mobile Timer Row - shown on mobile when frames are visible */}
+              {isMobileDevice && framesVisible && (
+                <div className="flex justify-center py-1 pointer-events-none" style={{ textShadow: "1px 1px 2px rgba(0,0,0,0.8)" }}>
+                  {isDailyChallenge && settings.dailyChallengeConfig?.timeLimit && settings.dailyChallengeConfig.timeLimit > 0 ? (
+                    <div
+                      className={`retro-pixel-text text-sm ${Math.max(0, settings.dailyChallengeConfig.timeLimit - totalPlayTime) <= 30 ? "animate-pulse" : ""}`}
+                      style={{
+                        color: Math.max(0, settings.dailyChallengeConfig.timeLimit - totalPlayTime) <= 30
+                          ? "hsl(0, 80%, 65%)"
+                          : "hsl(45, 100%, 50%)"
+                      }}
+                    >
+                      TIME LEFT: {Math.max(0, settings.dailyChallengeConfig.timeLimit - totalPlayTime)}s
+                    </div>
+                  ) : (
+                    <div
+                      className="retro-pixel-text text-sm"
+                      style={{ color: "hsl(210, 60%, 65%)" }}
+                    >
+                      TIMER: {timer}s
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Main Content with Side Panels */}
               <div className="metal-main-content">
                 {/* Left Panel */}
