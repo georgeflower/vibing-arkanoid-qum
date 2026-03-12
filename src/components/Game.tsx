@@ -54,7 +54,7 @@ import { debugLogger } from "@/utils/debugLogger";
 import { particlePool } from "@/utils/particlePool";
 
 // ═══════════════════════════════════════════════════════════════
-import { Maximize2, Minimize2, Home, X } from "lucide-react";
+import { Maximize2, Minimize2, Home, X, Settings } from "lucide-react";
 import { QualityIndicator } from "./QualityIndicator";
 import type {
   Brick,
