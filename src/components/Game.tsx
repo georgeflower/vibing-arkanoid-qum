@@ -836,6 +836,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   const [currentFps, setCurrentFps] = useState(60);
   const [showDebugDashboard, setShowDebugDashboard] = useState(false);
   const [debugDashboardPausedGame, setDebugDashboardPausedGame] = useState(false);
+  const [settingsOpenFromPause, setSettingsOpenFromPause] = useState(false);
   const {
     settings: debugSettings,
     toggleSetting: toggleDebugSetting,
