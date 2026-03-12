@@ -7,6 +7,13 @@ interface QualityIndicatorProps {
   fps?: number;
 }
 
+const DISPLAY_NAMES: Record<QualityLevel, string> = {
+  potato: "Kartoffel",
+  low: "Low",
+  medium: "Medium",
+  high: "High",
+};
+
 export const QualityIndicator = ({ quality, autoAdjustEnabled, fps }: QualityIndicatorProps) => {
   const getQualityColor = (level: QualityLevel) => {
     switch (level) {
@@ -22,13 +29,13 @@ export const QualityIndicator = ({ quality, autoAdjustEnabled, fps }: QualityInd
   };
 
   const getFpsColor = (fpsValue: number) => {
-    if (fpsValue >= 55) return 'hsl(120, 60%, 50%)'; // Green
-    if (fpsValue >= 50) return 'hsl(50, 90%, 55%)'; // Yellow
-    return 'hsl(0, 70%, 55%)'; // Red
+    if (fpsValue >= 55) return 'hsl(120, 60%, 50%)';
+    if (fpsValue >= 50) return 'hsl(50, 90%, 55%)';
+    return 'hsl(0, 70%, 55%)';
   };
 
   return (
-    <div className="fixed bottom-4 left-4 z-40 pointer-events-none select-none">
+    <div className="fixed top-4 right-4 z-40 pointer-events-none select-none">
       <div className="flex flex-col gap-1 bg-black/70 backdrop-blur-sm px-3 py-2 rounded-lg border border-border/20">
         <div className="flex items-center gap-2">
           <Settings size={14} className="text-muted-foreground" />
@@ -38,7 +45,7 @@ export const QualityIndicator = ({ quality, autoAdjustEnabled, fps }: QualityInd
               className="text-xs font-bold uppercase font-mono"
               style={{ color: getQualityColor(quality) }}
             >
-              {quality}
+              {DISPLAY_NAMES[quality]}
             </span>
             {autoAdjustEnabled && (
               <span className="text-[10px] text-muted-foreground/70 font-mono ml-1">
@@ -56,14 +63,11 @@ export const QualityIndicator = ({ quality, autoAdjustEnabled, fps }: QualityInd
             >
               {Math.round(fps)}
             </span>
-            <span className="text-muted-foreground/50 text-[10px]">
-              (55↑ 50↓)
-            </span>
           </div>
         )}
       </div>
       <div className="text-[10px] text-muted-foreground/50 mt-1 text-center font-mono">
-        Press Q to cycle • Shift+Q to toggle auto
+        Press Q to cycle • Shift+Q toggle auto
       </div>
     </div>
   );

@@ -131,6 +131,7 @@ export type Database = {
           is_public: boolean
           last_daily_challenge_date: string | null
           power_up_usage: Json
+          settings_json: Json | null
           total_bosses_killed: number
           total_bricks_destroyed: number
           total_daily_challenges_completed: number
@@ -159,6 +160,7 @@ export type Database = {
           is_public?: boolean
           last_daily_challenge_date?: string | null
           power_up_usage?: Json
+          settings_json?: Json | null
           total_bosses_killed?: number
           total_bricks_destroyed?: number
           total_daily_challenges_completed?: number
@@ -187,6 +189,7 @@ export type Database = {
           is_public?: boolean
           last_daily_challenge_date?: string | null
           power_up_usage?: Json
+          settings_json?: Json | null
           total_bosses_killed?: number
           total_bricks_destroyed?: number
           total_daily_challenges_completed?: number

@@ -56,7 +56,8 @@ export function processBallWithCCD(
   const perfStart = shouldMeasurePerf ? performance.now() : 0;
   
   // Quality-aware substep limits
-  const qualitySubstepCaps = {
+  const qualitySubstepCaps: Record<string, number> = {
+    potato: 4,
     low: 8,
     medium: 12,
     high: 20

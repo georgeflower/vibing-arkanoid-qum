@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { world, type LaserWarning, type SuperWarning, type BulletImpact } from "@/engine/state";
 import { renderState } from "@/engine/renderState";
 import { GameCanvas } from "./GameCanvas";
@@ -209,6 +209,15 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   // Detect updates but don't apply during gameplay - defer until back at menu
   useServiceWorkerUpdate({ shouldApplyUpdate: false });
 
+  // Parse resolution from settings
+  const parsedResolution = useMemo(() => {
+    const res = gameSettingsData.canvasResolution;
+    if (!res || res === "850x650") return undefined; // use default
+    const [w, h] = res.split("x").map(Number);
+    if (!w || !h) return undefined;
+    return { width: w, height: h };
+  }, [gameSettingsData.canvasResolution]);
+
   // Centralized scaled constants
   const {
     isMac,
@@ -224,7 +233,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     brickPadding: SCALED_BRICK_PADDING,
     brickOffsetTop: SCALED_BRICK_OFFSET_TOP,
     brickOffsetLeft: SCALED_BRICK_OFFSET_LEFT,
-  } = useScaledConstants();
+  } = useScaledConstants(parsedResolution);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   // SystemResourceMonitor — enabled only when detailed frame logging is active
   const systemResourceMonitorRef = useRef<SystemResourceMonitor | null>(null);
@@ -836,6 +845,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   const [currentFps, setCurrentFps] = useState(60);
   const [showDebugDashboard, setShowDebugDashboard] = useState(false);
   const [debugDashboardPausedGame, setDebugDashboardPausedGame] = useState(false);
+  const [settingsOpenFromPause, setSettingsOpenFromPause] = useState(false);
   const {
     settings: debugSettings,
     toggleSetting: toggleDebugSetting,
@@ -8653,7 +8663,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                 </div>
 
                 {/* Pause Overlay - moved outside game-glow to fix portal/scroll issues */}
-                {gameState === "paused" && !showDebugDashboard && !tutorialActive && (
+                {gameState === "paused" && !showDebugDashboard && !tutorialActive && !settingsOpenFromPause && (
                   <div className="fixed inset-0 flex items-start justify-center bg-black/70 z-[200] pt-4 md:pt-16 overflow-y-auto">
                     <div className="bg-slate-900/95 border-4 border-cyan-500 rounded-lg p-4 md:p-8 max-w-md relative mx-2 my-2 max-h-[95dvh] overflow-y-auto">
                       {/* X button for mobile - positioned in top right corner */}
@@ -8751,6 +8761,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                         <SettingsDialog
                           gameState={gameState}
                           setGameState={setGameState}
+                          onPauseMenuHide={() => setSettingsOpenFromPause(true)}
+                          onPauseMenuShow={() => setSettingsOpenFromPause(false)}
                         />
                         <Button
                           onClick={() => {
@@ -8768,6 +8780,20 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                       </div>
                     </div>
                   </div>
+                )}
+
+                {/* Settings dialog when opened from pause (renders on top, pause hidden) */}
+                {settingsOpenFromPause && (
+                  <SettingsDialog
+                    gameState={gameState}
+                    setGameState={setGameState}
+                    open={true}
+                    onOpenChange={(isOpen) => {
+                      if (!isOpen) setSettingsOpenFromPause(false);
+                    }}
+                    hideTrigger
+                    onPauseMenuShow={() => setSettingsOpenFromPause(false)}
+                  />
                 )}
 
                 {/* Tutorial Overlay moved inside scaled game-glow container above */}
@@ -8809,11 +8835,6 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                     />
 
                     {/* Mobile Debug Button is now in MobileGameControls */}
-
-                    {/* Quality Indicator - controlled by settings */}
-                    {gameSettingsData.showQualityIndicator && (
-                      <QualityIndicator quality={quality} autoAdjustEnabled={autoAdjustEnabled} fps={currentFps} />
-                    )}
 
                     {/* Substep Debug Overlay */}
                     <SubstepDebugOverlay getDebugInfo={getSubstepDebugInfo} visible={debugSettings.showSubstepDebug} />
@@ -8858,6 +8879,11 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                   </>
                 )}
                 {/* ═══════════════════════════════════════════════════════════════ */}
+
+                {/* Quality Indicator - always available, controlled by settings */}
+                {gameSettingsData.showQualityIndicator && (
+                  <QualityIndicator quality={quality} autoAdjustEnabled={autoAdjustEnabled} fps={currentFps} />
+                )}
 
                 {/* Right Panel - Stats and Controls */}
                 <div

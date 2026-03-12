@@ -48,16 +48,27 @@ export interface ScaledConstants {
   bulletSpeed: number;
 }
 
-export function useScaledConstants(): ScaledConstants {
+export function useScaledConstants(resolutionOverride?: { width: number; height: number }): ScaledConstants {
+  const overrideW = resolutionOverride?.width;
+  const overrideH = resolutionOverride?.height;
+
   return useMemo(() => {
     // Detect Mac and apply 10% scale reduction
     const isMac =
       /Mac|iPhone|iPad|iPod/.test(navigator.platform) ||
       /Macintosh/.test(navigator.userAgent);
-    const scaleFactor = isMac ? 0.9 : 1;
+    const macFactor = isMac ? 0.9 : 1;
 
-    const canvasWidth = CANVAS_WIDTH * scaleFactor;
-    const canvasHeight = CANVAS_HEIGHT * scaleFactor;
+    // Base dimensions: use override or default constants
+    const baseWidth = overrideW ?? CANVAS_WIDTH;
+    const baseHeight = overrideH ?? CANVAS_HEIGHT;
+
+    // Scale factor relative to default canvas size (for entity sizing)
+    const resScale = baseWidth / CANVAS_WIDTH;
+    const scaleFactor = macFactor * resScale;
+
+    const canvasWidth = baseWidth * macFactor;
+    const canvasHeight = baseHeight * macFactor;
     const paddleWidth = PADDLE_WIDTH * scaleFactor;
     const paddleHeight = PADDLE_HEIGHT * scaleFactor;
     const ballRadius = BALL_RADIUS * scaleFactor;
@@ -88,5 +99,5 @@ export function useScaledConstants(): ScaledConstants {
       bulletHeight: 12 * scaleFactor,
       bulletSpeed: 8 * scaleFactor,
     };
-  }, []);
+  }, [overrideW, overrideH]);
 }
