@@ -419,6 +419,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   }, []);
   // High-priority paddle position ref for immediate input response during low FPS
   const paddleXRef = useRef(0);
+  // Track previous canvas dimensions for mid-game resolution rescaling
+  const prevCanvasDimsRef = useRef({ w: SCALED_CANVAS_WIDTH, h: SCALED_CANVAS_HEIGHT });
   const [showHighScoreEntry, setShowHighScoreEntry] = useState(false);
   const [showHighScoreDisplay, setShowHighScoreDisplay] = useState(false);
   const [showEndScreen, setShowEndScreen] = useState(false);
