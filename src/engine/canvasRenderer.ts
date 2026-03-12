@@ -1010,7 +1010,6 @@ export function renderFrame(
   });
 
   // ═══ Draw power-ups ═══
-  const isPotato = qualitySettings.level === "potato";
   powerUps.forEach((powerUp) => {
     if (!powerUp.active) return;
     const img = assets.powerUpImages[powerUp.type];
