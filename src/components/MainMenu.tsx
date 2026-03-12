@@ -22,7 +22,7 @@ import { useAdaptiveQuality } from "@/hooks/useAdaptiveQuality";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { TopScoresDisplay } from "./TopScoresDisplay";
 import { X, ChevronUp, ChevronDown } from "lucide-react";
-import { useTutorial } from "@/hooks/useTutorial";
+import { X, ChevronUp, ChevronDown } from "lucide-react";
 import { useLevelProgress } from "@/hooks/useLevelProgress";
 import { FINAL_LEVEL, ENABLE_DEBUG_FEATURES, ENABLE_HIGH_QUALITY } from "@/constants/game";
 import { BOSS_RUSH_CONFIG } from "@/constants/bossRushConfig";
