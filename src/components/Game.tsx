@@ -750,9 +750,9 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   // Boss power-up states
   const [reflectShieldActive, setReflectShieldActive] = useState(false);
   const [homingBallActive, setHomingBallActive] = useState(false);
-  const bossStunnerTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const reflectShieldTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const homingBallTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const bossStunnerTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const reflectShieldTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const homingBallTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Boss power-up end times (for countdown display)
   const [bossStunnerEndTime, setBossStunnerEndTime] = useState<number | null>(null);
