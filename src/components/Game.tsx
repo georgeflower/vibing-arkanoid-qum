@@ -55,7 +55,7 @@ import { particlePool } from "@/utils/particlePool";
 
 // ═══════════════════════════════════════════════════════════════
 import { Maximize2, Minimize2, Home, X, Settings } from "lucide-react";
-import { QualityIndicator } from "./QualityIndicator";
+
 import type {
   Brick,
   Ball,
