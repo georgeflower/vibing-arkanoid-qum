@@ -201,21 +201,6 @@ export const SettingsDialog = ({
         <RotateCcw className="h-3 w-3 mr-1" /> Reset Video to Default
       </Button>
 
-      {/* Rapture / Nectarine shout-out */}
-      <div
-        className="mt-4 p-3 rounded-lg border"
-        style={{
-          borderColor: "hsl(200, 70%, 40%)",
-          backgroundColor: "hsl(220, 30%, 14%)",
-        }}
-      >
-        <p className="retro-pixel-text text-[10px] leading-relaxed" style={{ color: "hsl(200, 70%, 70%)" }}>
-          🎵 <em>Greetings to Nectarine Demoscene Radio — keeping the scene alive since 2002! </em> 🎵
-        </p>
-        <p className="retro-pixel-text text-[9px] mt-2 opacity-60" style={{ color: "hsl(200, 70%, 60%)" }}>
-          nectarine.demoscene.net — the soundtrack of our youth 💾
-        </p>
-      </div>
     </div>
   );
 

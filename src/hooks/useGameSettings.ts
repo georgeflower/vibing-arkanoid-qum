@@ -3,19 +3,6 @@ import type { QualityLevel } from "@/hooks/useAdaptiveQuality";
 import { soundManager } from "@/utils/sounds";
 import { supabase } from "@/integrations/supabase/client";
 
-export interface ResolutionPreset {
-  width: number;
-  height: number;
-  label: string;
-}
-
-export const RESOLUTION_PRESETS: ResolutionPreset[] = [
-  { width: 640, height: 400, label: "640×400 (Amiga)" },
-  { width: 640, height: 480, label: "640×480 (VGA)" },
-  { width: 800, height: 600, label: "800×600 (SVGA)" },
-  { width: 850, height: 650, label: "850×650 (Default)" },
-];
-
 export interface GameSettings {
   // Sound
   musicEnabled: boolean;
@@ -27,11 +14,15 @@ export interface GameSettings {
   qualityLevel: QualityLevel;
   crtEnabled: boolean;
   showFpsOverlay: boolean;
-  showQualityIndicator: boolean;
-  canvasResolution: string; // "850x650" format
+  canvasResolution: string; // derived from qualityLevel, not user-configurable
 }
 
 const STORAGE_KEY = "gameSettings";
+
+/** Derive canvas resolution from quality level */
+export function getResolutionForQuality(quality: QualityLevel): string {
+  return quality === "potato" ? "640x480" : "850x650";
+}
 
 const DEFAULT_SETTINGS: GameSettings = {
   musicEnabled: true,
@@ -42,7 +33,6 @@ const DEFAULT_SETTINGS: GameSettings = {
   qualityLevel: "high",
   crtEnabled: true,
   showFpsOverlay: false,
-  showQualityIndicator: true,
   canvasResolution: "850x650",
 };
 
@@ -54,22 +44,23 @@ export const SOUND_DEFAULTS: Pick<GameSettings, "musicEnabled" | "sfxEnabled" | 
   currentTrack: 0,
 };
 
-export const VIDEO_DEFAULTS: Pick<GameSettings, "qualityLevel" | "crtEnabled" | "showFpsOverlay" | "showQualityIndicator" | "canvasResolution"> = {
+export const VIDEO_DEFAULTS: Pick<GameSettings, "qualityLevel" | "crtEnabled" | "showFpsOverlay"> = {
   qualityLevel: "high",
   crtEnabled: true,
   showFpsOverlay: false,
-  showQualityIndicator: true,
-  canvasResolution: "850x650",
 };
 
-function loadSettings(): GameSettings {
+export function loadSettings(): GameSettings {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       const parsed = JSON.parse(stored);
-      // Strip removed keys like tutorialEnabled
-      const { tutorialEnabled, ...rest } = parsed;
-      return { ...DEFAULT_SETTINGS, ...rest };
+      // Strip removed keys
+      const { tutorialEnabled, showQualityIndicator, ...rest } = parsed;
+      const merged = { ...DEFAULT_SETTINGS, ...rest };
+      // Ensure resolution matches quality
+      merged.canvasResolution = getResolutionForQuality(merged.qualityLevel);
+      return merged;
     }
   } catch {}
   return { ...DEFAULT_SETTINGS };
@@ -102,7 +93,11 @@ async function loadSettingsFromCloud(): Promise<GameSettings | null> {
       .eq("user_id", session.user.id)
       .single();
     if (data?.settings_json && typeof data.settings_json === "object") {
-      return { ...DEFAULT_SETTINGS, ...(data.settings_json as any) };
+      const merged = { ...DEFAULT_SETTINGS, ...(data.settings_json as any) };
+      // Strip removed keys and enforce resolution
+      delete (merged as any).showQualityIndicator;
+      merged.canvasResolution = getResolutionForQuality(merged.qualityLevel);
+      return merged;
     }
   } catch {}
   return null;
@@ -139,7 +134,6 @@ export const useGameSettings = () => {
   const updateSettings = useCallback((partial: Partial<GameSettings>) => {
     setSettingsRaw((prev) => {
       const next = { ...prev, ...partial };
-      // Don't auto-save — the SettingsDialog will call saveSettings explicitly
       return next;
     });
   }, []);

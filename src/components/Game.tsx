@@ -9077,10 +9077,6 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                 )}
                 {/* ═══════════════════════════════════════════════════════════════ */}
 
-                {/* Quality Indicator - always available, controlled by settings */}
-                {gameSettingsData.showQualityIndicator && (
-                  <QualityIndicator quality={quality} autoAdjustEnabled={autoAdjustEnabled} fps={currentFps} />
-                )}
 
                 {/* Right Panel - Stats and Controls */}
                 <div
