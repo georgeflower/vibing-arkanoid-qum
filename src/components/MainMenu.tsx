@@ -258,15 +258,15 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
             <X size={24} />
           </button>
 
-          <h2 className="text-base sm:text-lg md:text-xl font-bold mb-2 sm:mb-3 text-center text-[hsl(200,70%,50%)]">
+          <h2 className="text-sm sm:text-lg md:text-xl font-bold mb-1.5 sm:mb-3 text-center text-[hsl(200,70%,50%)]">
             What's New in v{GAME_VERSION}
           </h2>
 
-          <div className="space-y-2 sm:space-y-3 text-white">
+          <div className="space-y-1.5 sm:space-y-3 text-white">
             {/* Faster, Smoother Engine */}
-            <div className="bg-gradient-to-r from-[hsl(45,100%,50%)]/20 to-[hsl(30,100%,60%)]/20 p-2 sm:p-3 rounded-lg border-2 border-[hsl(45,100%,50%)]/50">
-              <h3 className="font-bold text-xs sm:text-sm mb-1 text-[hsl(45,100%,50%)]">⚡ Faster, Smoother Engine</h3>
-              <ul className="list-disc list-inside space-y-0.5 text-[10px] sm:text-xs">
+            <div className="bg-gradient-to-r from-[hsl(45,100%,50%)]/20 to-[hsl(30,100%,60%)]/20 p-1.5 sm:p-3 rounded-lg border-2 border-[hsl(45,100%,50%)]/50">
+              <h3 className="font-bold text-[10px] sm:text-sm mb-0.5 sm:mb-1 text-[hsl(45,100%,50%)]">⚡ Faster, Smoother Engine</h3>
+              <ul className="list-disc list-inside space-y-0.5 text-[9px] sm:text-xs">
                 <li>
                   The game now runs on a{" "}
                   <span className="text-[hsl(45,100%,50%)] font-bold">fixed‑timestep simulation</span>, keeping gameplay
