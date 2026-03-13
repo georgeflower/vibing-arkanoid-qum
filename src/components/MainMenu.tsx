@@ -234,10 +234,10 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
     return (
       <div
         ref={whatsNewRef}
-        className="fixed inset-0 w-full h-screen bg-gradient-to-b from-[hsl(220,25%,12%)] to-[hsl(220,30%,8%)] flex items-center justify-center p-2 sm:p-4 overflow-hidden swipe-container animate-fade-in"
+        className="fixed inset-0 w-full h-screen bg-gradient-to-b from-[hsl(220,25%,12%)] to-[hsl(220,30%,8%)] flex items-center justify-center p-2 sm:p-4 overflow-y-auto swipe-container animate-fade-in"
       >
         {qualitySettings.backgroundEffects && <CRTOverlay quality={quality} />}
-        <Card className="relative w-full h-full max-w-2xl max-h-screen overflow-y-auto p-4 sm:p-6 md:p-8 bg-[hsl(220,20%,15%)] border-[hsl(200,70%,50%)] animate-scale-in">
+        <Card className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6 md:p-8 bg-[hsl(220,20%,15%)] border-[hsl(200,70%,50%)] animate-scale-in">
           <button
             onClick={() => {
               soundManager.playMenuClick();
@@ -356,10 +356,10 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
     return (
       <div
         ref={aboutRef}
-        className="fixed inset-0 w-full h-screen bg-gradient-to-b from-[hsl(220,25%,12%)] to-[hsl(220,30%,8%)] flex items-center justify-center p-2 sm:p-4 overflow-hidden swipe-container animate-fade-in"
+        className="fixed inset-0 w-full h-screen bg-gradient-to-b from-[hsl(220,25%,12%)] to-[hsl(220,30%,8%)] flex items-center justify-center p-2 sm:p-4 overflow-y-auto swipe-container animate-fade-in"
       >
         {qualitySettings.backgroundEffects && <CRTOverlay quality={quality} />}
-        <Card className="relative w-full h-full max-w-5xl max-h-screen overflow-y-auto p-4 sm:p-6 md:p-8 bg-[hsl(220,20%,15%)] border-[hsl(200,70%,50%)] animate-scale-in">
+        <Card className="relative w-full max-w-5xl max-h-[90vh] overflow-y-auto p-4 sm:p-6 md:p-8 bg-[hsl(220,20%,15%)] border-[hsl(200,70%,50%)] animate-scale-in">
           <button
             onClick={() => {
               soundManager.playMenuClick();
@@ -529,10 +529,10 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
     return (
       <div
         ref={instructionsRef}
-        className="fixed inset-0 w-full h-screen bg-gradient-to-b from-[hsl(220,25%,12%)] to-[hsl(220,30%,8%)] flex items-center justify-center p-2 sm:p-4 overflow-hidden swipe-container animate-fade-in"
+        className="fixed inset-0 w-full h-screen bg-gradient-to-b from-[hsl(220,25%,12%)] to-[hsl(220,30%,8%)] flex items-center justify-center p-2 sm:p-4 overflow-y-auto swipe-container animate-fade-in"
       >
         {qualitySettings.backgroundEffects && <CRTOverlay quality={quality} />}
-        <Card className="relative w-full h-full max-w-5xl max-h-screen overflow-y-auto p-4 sm:p-6 md:p-8 bg-[hsl(220,20%,15%)] border-[hsl(200,70%,50%)] animate-scale-in">
+        <Card className="relative w-full max-w-5xl max-h-[90vh] overflow-y-auto p-4 sm:p-6 md:p-8 bg-[hsl(220,20%,15%)] border-[hsl(200,70%,50%)] animate-scale-in">
           <button
             onClick={() => {
               soundManager.playMenuClick();

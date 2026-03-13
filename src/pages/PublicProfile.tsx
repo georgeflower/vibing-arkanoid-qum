@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import CRTOverlay from "@/components/CRTOverlay";
 import { ACHIEVEMENTS } from "@/constants/achievements";
+import { X } from "lucide-react";
 
 const POWER_UP_LABELS: Record<string, string> = {
   multiball: "Multi-Ball", turrets: "Turrets", fireball: "Fireball", life: "Extra Life",
@@ -18,6 +19,7 @@ const formatPlayTime = (seconds: number): string => {
 
 const PublicProfile = () => {
   const { username } = useParams<{ username: string }>();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -73,9 +75,18 @@ const PublicProfile = () => {
   ];
 
   return (
-    <div className="min-h-screen" style={{ background: "linear-gradient(180deg, hsl(220,25%,12%) 0%, hsl(220,30%,8%) 100%)", overflowY: "auto", height: "100vh", position: "fixed", inset: 0 }}>
+    <div className="fixed inset-0 overflow-y-auto" style={{ background: "linear-gradient(180deg, hsl(220,25%,12%) 0%, hsl(220,30%,8%) 100%)" }}>
       <CRTOverlay quality="medium" />
-      <div className="relative z-10 max-w-2xl mx-auto px-4 py-8">
+      <div className="relative z-10 max-w-2xl mx-auto px-4 py-8 pb-16">
+        {/* Close button */}
+        <button
+          onClick={() => navigate(-1)}
+          className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors z-20"
+          title="Close"
+        >
+          <X size={24} />
+        </button>
+
         {/* Beta Status Indicator */}
         <div className="mb-4 flex justify-center">
           <span className="text-[10px] font-bold px-2 py-0.5 rounded" style={{ background: "hsl(45,100%,50%,0.2)", color: "hsl(45,100%,60%)", border: "1px solid hsl(45,100%,50%,0.5)" }}>
