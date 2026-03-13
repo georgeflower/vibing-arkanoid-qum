@@ -89,6 +89,13 @@ export const ACHIEVEMENTS: Achievement[] = [
     check: (p) => p.best_level >= 20,
   },
   {
+    id: "qumran_collector",
+    name: "QUMRAN Collector",
+    description: "Collect all Q-U-M-R-A-N letters in a single game",
+    icon: "✡️",
+    check: (p) => p.session_collected_all_letters === true,
+  },
+  {
     id: "godlike",
     name: "Godlike",
     description: "Beat level 20 on Godlike difficulty",
