@@ -71,6 +71,7 @@ Deno.serve(async (req) => {
       level = 0,
       comboStreak = 0,
       difficulty = "normal",
+      collectedAllLetters = false,
     } = body;
 
     // Validate inputs
