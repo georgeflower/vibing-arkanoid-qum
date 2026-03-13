@@ -11,7 +11,8 @@ import type { GameState } from "@/types/game";
 import type { QualityLevel } from "@/hooks/useAdaptiveQuality";
 import {
   useGameSettings,
-  RESOLUTION_PRESETS,
+  loadSettings,
+  getResolutionForQuality,
   SOUND_DEFAULTS,
   VIDEO_DEFAULTS,
   type GameSettings as GameSettingsType,
