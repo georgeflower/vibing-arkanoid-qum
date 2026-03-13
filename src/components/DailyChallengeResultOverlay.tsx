@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { soundManager } from "@/utils/sounds";
 import type { DailyChallenge, DailyChallengeResult } from "@/utils/dailyChallenge";
@@ -27,6 +28,29 @@ export const DailyChallengeResultOverlay = ({
   onBackToDaily,
   onReturnToMenu,
 }: DailyChallengeResultOverlayProps) => {
+  // Release pointer lock when overlay is active
+  useEffect(() => {
+    if (!active) return;
+
+    // Release pointer lock immediately if it's currently locked
+    if (document.pointerLockElement) {
+      document.exitPointerLock();
+    }
+
+    // Also listen for pointer lock changes and release if it gets locked again
+    const handlePointerLockChange = () => {
+      // Only call exitPointerLock if something is actually locked
+      if (document.pointerLockElement) {
+        document.exitPointerLock();
+      }
+    };
+
+    document.addEventListener("pointerlockchange", handlePointerLockChange);
+    return () => {
+      document.removeEventListener("pointerlockchange", handlePointerLockChange);
+    };
+  }, [active]);
+
   if (!active) return null;
 
   const formatTime = (s: number) => {
