@@ -88,7 +88,11 @@ export const HighScoreDisplay = ({ onClose, leaderboardType = 'all-time', initia
                         <span className="text-white font-bold flex items-center gap-1 truncate">
                           {entry.beatLevel50 && <span>👑</span>}
                           {entry.profileLink ? (
-                            <Link to={`/player/${entry.profileLink.username}`} className="truncate underline hover:text-cyan-300 transition-colors">
+                            <Link
+                              to={`/player/${entry.profileLink.username}`}
+                              state={{ returnToHighScores: true }}
+                              className="truncate underline hover:text-cyan-300 transition-colors"
+                            >
                               {entry.name}
                             </Link>
                           ) : (

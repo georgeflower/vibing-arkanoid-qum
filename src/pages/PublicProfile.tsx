@@ -158,7 +158,7 @@ const PublicProfile = () => {
         </div>
 
         <div className="flex justify-center">
-          <button onClick={() => navigate(-1)} className="px-4 py-2 rounded text-sm font-bold" style={{ background: "hsl(200, 70%, 50%)", color: "white" }}>CLOSE</button>
+          <button onClick={handleClose} className="px-4 py-2 rounded text-sm font-bold" style={{ background: "hsl(200, 70%, 50%)", color: "white" }}>CLOSE</button>
         </div>
       </div>
     </div>
