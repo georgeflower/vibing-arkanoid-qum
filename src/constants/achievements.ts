@@ -22,6 +22,7 @@ export interface ProfileStats {
   session_score?: number;
   session_level?: number;
   session_difficulty?: string;
+  session_collected_all_letters?: boolean;
 }
 
 export const ACHIEVEMENTS: Achievement[] = [
