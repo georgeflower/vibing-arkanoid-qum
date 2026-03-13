@@ -282,11 +282,11 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
             </div>
 
             {/* Boss Hit Streak System */}
-            <div className="bg-gradient-to-r from-[hsl(270,80%,60%)]/20 to-[hsl(290,80%,60%)]/20 p-2 sm:p-3 rounded-lg border-2 border-[hsl(280,80%,60%)]/50">
-              <h3 className="font-bold text-xs sm:text-sm mb-1 text-[hsl(280,80%,60%)]">
+            <div className="bg-gradient-to-r from-[hsl(270,80%,60%)]/20 to-[hsl(290,80%,60%)]/20 p-1.5 sm:p-3 rounded-lg border-2 border-[hsl(280,80%,60%)]/50">
+              <h3 className="font-bold text-[10px] sm:text-sm mb-0.5 sm:mb-1 text-[hsl(280,80%,60%)]">
                 🔥 New Boss Hit Streak System
               </h3>
-              <ul className="list-disc list-inside space-y-0.5 text-[10px] sm:text-xs">
+              <ul className="list-disc list-inside space-y-0.5 text-[9px] sm:text-xs">
                 <li>A brand‑new streak mechanic lets you push for even higher scores.</li>
                 <li>Consecutive hits on bosses and minions award 100 pts + streak bonus (e.g., x5 = +5% bonus).</li>
                 <li>Reach x10+ to activate music‑reactive background hue blinking on all boss levels.</li>
