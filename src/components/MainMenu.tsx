@@ -541,63 +541,63 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
         className="fixed inset-0 w-full h-screen bg-gradient-to-b from-[hsl(220,25%,12%)] to-[hsl(220,30%,8%)] flex items-center justify-center p-2 sm:p-4 overflow-y-auto swipe-container animate-fade-in"
       >
         {qualitySettings.backgroundEffects && <CRTOverlay quality={quality} />}
-        <Card className="relative w-full max-w-5xl max-h-[90vh] overflow-y-auto p-4 sm:p-6 md:p-8 bg-[hsl(220,20%,15%)] border-[hsl(200,70%,50%)] animate-scale-in">
+        <Card className="relative w-full max-w-5xl max-h-[90vh] overflow-y-auto p-3 sm:p-6 md:p-8 bg-[hsl(220,20%,15%)] border-[hsl(200,70%,50%)] animate-scale-in">
           <button
             onClick={() => {
               soundManager.playMenuClick();
               setShowInstructions(false);
             }}
-            className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors z-10"
+            className="absolute top-3 right-3 sm:top-4 sm:right-4 text-slate-400 hover:text-white transition-colors z-10"
             title="Close"
           >
-            <X size={24} />
+            <X size={20} className="sm:w-6 sm:h-6" />
           </button>
 
-          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-3 sm:mb-4 text-center text-[hsl(200,70%,50%)]">
+          <h2 className="text-lg sm:text-2xl md:text-3xl font-bold mb-2 sm:mb-4 text-center text-[hsl(200,70%,50%)]">
             Instructions
           </h2>
 
-          <div className="space-y-2 sm:space-y-3 md:space-y-4 text-white">
+          <div className="space-y-1.5 sm:space-y-3 md:space-y-4 text-white">
             <div>
-              <h3 className="font-bold text-sm sm:text-base md:text-lg mb-2 text-[hsl(200,70%,50%)]">Controls</h3>
-              <ul className="list-disc list-inside space-y-1 text-xs sm:text-sm">
+              <h3 className="font-bold text-[10px] sm:text-base md:text-lg mb-0.5 sm:mb-2 text-[hsl(200,70%,50%)]">Controls</h3>
+              <ul className="list-disc list-inside space-y-0.5 sm:space-y-1 text-[9px] sm:text-sm">
                 <li>
-                  <span className="font-mono bg-black/30 px-1 py-0.5 rounded text-xs">Mouse</span> - Move paddle (click
+                  <span className="font-mono bg-black/30 px-1 py-0.5 rounded text-[8px] sm:text-xs">Mouse</span> - Move paddle (click
                   to capture mouse)
                 </li>
                 <li>
-                  <span className="font-mono bg-black/30 px-1 py-0.5 rounded text-xs">←→ / A/D / Scroll</span> - Adjust
+                  <span className="font-mono bg-black/30 px-1 py-0.5 rounded text-[8px] sm:text-xs">←→ / A/D / Scroll</span> - Adjust
                   launch angle
                 </li>
                 <li>
-                  <span className="font-mono bg-black/30 px-1 py-0.5 rounded text-xs">Click / Space</span> - Launch ball
+                  <span className="font-mono bg-black/30 px-1 py-0.5 rounded text-[8px] sm:text-xs">Click / Space</span> - Launch ball
                   / Fire bullets
                 </li>
                 <li>
-                  <span className="font-mono bg-black/30 px-1 py-0.5 rounded text-xs">ESC</span> - Release mouse capture
+                  <span className="font-mono bg-black/30 px-1 py-0.5 rounded text-[8px] sm:text-xs">ESC</span> - Release mouse capture
                 </li>
                 <li>
-                  <span className="font-mono bg-black/30 px-1 py-0.5 rounded text-xs">F</span> - Toggle fullscreen
+                  <span className="font-mono bg-black/30 px-1 py-0.5 rounded text-[8px] sm:text-xs">F</span> - Toggle fullscreen
                 </li>
                 <li>
-                  <span className="font-mono bg-black/30 px-1 py-0.5 rounded text-xs">P</span> - Pause game
+                  <span className="font-mono bg-black/30 px-1 py-0.5 rounded text-[8px] sm:text-xs">P</span> - Pause game
                 </li>
                 <li>
-                  <span className="font-mono bg-black/30 px-1 py-0.5 rounded text-xs">N / B</span> - Next/Previous music
+                  <span className="font-mono bg-black/30 px-1 py-0.5 rounded text-[8px] sm:text-xs">N / B</span> - Next/Previous music
                   track
                 </li>
                 <li>
-                  <span className="font-mono bg-black/30 px-1 py-0.5 rounded text-xs">M</span> - Toggle music
+                  <span className="font-mono bg-black/30 px-1 py-0.5 rounded text-[8px] sm:text-xs">M</span> - Toggle music
                 </li>
               </ul>
             </div>
 
             {isIOSDevice && (
-              <div className="bg-gradient-to-r from-[hsl(200,70%,50%)]/20 to-[hsl(330,100%,65%)]/20 p-3 sm:p-4 rounded-lg border-2 border-[hsl(200,70%,50%)]/50">
-                <h3 className="font-bold text-sm sm:text-base md:text-lg mb-2 text-[hsl(200,70%,50%)]">
+              <div className="bg-gradient-to-r from-[hsl(200,70%,50%)]/20 to-[hsl(330,100%,65%)]/20 p-1.5 sm:p-4 rounded-lg border-2 border-[hsl(200,70%,50%)]/50">
+                <h3 className="font-bold text-[10px] sm:text-base md:text-lg mb-0.5 sm:mb-2 text-[hsl(200,70%,50%)]">
                   📱 iOS Tip: True Fullscreen Experience
                 </h3>
-                <p className="text-xs sm:text-sm leading-relaxed">
+                <p className="text-[9px] sm:text-sm leading-relaxed">
                   For the best fullscreen gaming experience on iPhone/iPad, add this game to your Home Screen: Tap the{" "}
                   <span className="font-bold">Share</span> button in Safari →
                   <span className="font-bold"> Add to Home Screen</span>. Then launch from your home screen to play
@@ -607,8 +607,8 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
             )}
 
             <div>
-              <h3 className="font-bold text-sm sm:text-base md:text-lg mb-2 text-[hsl(200,70%,50%)]">Gameplay</h3>
-              <ul className="list-disc list-inside space-y-1 text-xs sm:text-sm">
+              <h3 className="font-bold text-[10px] sm:text-base md:text-lg mb-0.5 sm:mb-2 text-[hsl(200,70%,50%)]">Gameplay</h3>
+              <ul className="list-disc list-inside space-y-0.5 sm:space-y-1 text-[9px] sm:text-sm">
                 <li>Break all bricks to advance to the next level</li>
                 <li>Collect power-ups for special abilities</li>
                 <li>Collect bonus letters Q-U-M-R-A-N for massive rewards (5 extra lives)</li>
@@ -626,10 +626,10 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
             </div>
 
             <div>
-              <h3 className="font-bold text-sm sm:text-base md:text-lg mb-2 text-[hsl(200,70%,50%)]">
+              <h3 className="font-bold text-[10px] sm:text-base md:text-lg mb-0.5 sm:mb-2 text-[hsl(200,70%,50%)]">
                 Special Brick Types
               </h3>
-              <ul className="list-disc list-inside space-y-1 text-xs sm:text-sm">
+              <ul className="list-disc list-inside space-y-0.5 sm:space-y-1 text-[9px] sm:text-sm">
                 <li>
                   <span className="text-gray-400">Metal Bricks</span> - Indestructible! Can only be destroyed by
                   explosive blasts. Block turret shots.
@@ -646,10 +646,10 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
             </div>
 
             <div>
-              <h3 className="font-bold text-sm sm:text-base md:text-lg mb-2 text-[hsl(200,70%,50%)]">
+              <h3 className="font-bold text-[10px] sm:text-base md:text-lg mb-0.5 sm:mb-2 text-[hsl(200,70%,50%)]">
                 Enemies & Bosses
               </h3>
-              <ul className="list-disc list-inside space-y-1 text-xs sm:text-sm">
+              <ul className="list-disc list-inside space-y-0.5 sm:space-y-1 text-[9px] sm:text-sm">
                 <li>
                   <span className="text-cyan-400">Cube Enemies</span> - Basic enemies, 1 hit to destroy
                 </li>
@@ -684,8 +684,8 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
             </div>
 
             <div>
-              <h3 className="font-bold text-sm sm:text-base md:text-lg mb-2 text-[hsl(200,70%,50%)]">Power-ups</h3>
-              <ul className="list-disc list-inside space-y-1 text-xs sm:text-sm">
+              <h3 className="font-bold text-[10px] sm:text-base md:text-lg mb-0.5 sm:mb-2 text-[hsl(200,70%,50%)]">Power-ups</h3>
+              <ul className="list-disc list-inside space-y-0.5 sm:space-y-1 text-[9px] sm:text-sm">
                 <li>
                   <span className="text-[hsl(330,100%,65%)]">Multiball</span> - Split ball into three
                 </li>
@@ -731,10 +731,10 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
             </div>
 
             <div>
-              <h3 className="font-bold text-sm sm:text-base md:text-lg mb-2 text-[hsl(200,70%,50%)]">
+              <h3 className="font-bold text-[10px] sm:text-base md:text-lg mb-0.5 sm:mb-2 text-[hsl(200,70%,50%)]">
                 Difficulty Modes
               </h3>
-              <ul className="list-disc list-inside space-y-1 text-xs sm:text-sm">
+              <ul className="list-disc list-inside space-y-0.5 sm:space-y-1 text-[9px] sm:text-sm">
                 <li>
                   <span className="text-[hsl(120,60%,45%)]">Normal</span> - Standard gameplay, speed cap 150%
                 </li>
@@ -745,10 +745,10 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
               </ul>
             </div>
             <div>
-              <h3 className="font-bold text-sm sm:text-base md:text-lg mb-2 text-[hsl(330,100%,65%)]">
+              <h3 className="font-bold text-[10px] sm:text-base md:text-lg mb-0.5 sm:mb-2 text-[hsl(330,100%,65%)]">
                 Player Profile
               </h3>
-              <ul className="list-disc list-inside space-y-1 text-xs sm:text-sm">
+              <ul className="list-disc list-inside space-y-0.5 sm:space-y-1 text-[9px] sm:text-sm">
                 <li>Create an account from the login screen with a unique username and 3-letter initials</li>
                 <li>Upload a custom avatar image (max 256×256 pixels) from your profile page</li>
                 <li>Toggle your profile between public and private visibility</li>
@@ -759,10 +759,10 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
             </div>
 
             <div>
-              <h3 className="font-bold text-sm sm:text-base md:text-lg mb-2 text-[hsl(45,100%,50%)]">
+              <h3 className="font-bold text-[10px] sm:text-base md:text-lg mb-0.5 sm:mb-2 text-[hsl(45,100%,50%)]">
                 Daily Challenge
               </h3>
-              <ul className="list-disc list-inside space-y-1 text-xs sm:text-sm">
+              <ul className="list-disc list-inside space-y-0.5 sm:space-y-1 text-[9px] sm:text-sm">
                 <li>Access from the main menu — a new challenge is generated every day</li>
                 <li>Each challenge has a unique procedural brick layout with special modifiers</li>
                 <li>Modifiers include: 125% ball speed, enemy spawns every 10s, music-reactive backgrounds, no extra lives</li>
@@ -780,7 +780,7 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
               setShowInstructions(false);
             }}
             onMouseEnter={() => soundManager.playMenuHover()}
-            className="w-full mt-3 sm:mt-4 bg-[hsl(200,70%,50%)] hover:bg-[hsl(200,70%,60%)] text-white text-sm sm:text-base py-3 sm:py-4"
+            className="w-full mt-2 sm:mt-4 bg-[hsl(200,70%,50%)] hover:bg-[hsl(200,70%,60%)] text-white text-[10px] sm:text-base py-2 sm:py-4"
           >
             Back to Menu
           </Button>
