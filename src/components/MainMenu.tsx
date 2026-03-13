@@ -305,14 +305,14 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
             </div>
 
             {/* Player Profile System */}
-            <div className="bg-gradient-to-r from-[hsl(330,100%,65%)]/20 to-[hsl(200,70%,50%)]/20 p-2 sm:p-3 rounded-lg border-2 border-[hsl(330,100%,65%)]/50">
-              <div className="flex items-center gap-2 mb-1">
-                <h3 className="font-bold text-xs sm:text-sm text-[hsl(330,100%,65%)]">👤 Player Profile System</h3>
-                <span className="text-[8px] sm:text-[9px] font-bold px-1.5 py-0.5 rounded" style={{ background: "hsl(45,100%,50%)", color: "hsl(220,30%,10%)" }}>
+            <div className="bg-gradient-to-r from-[hsl(330,100%,65%)]/20 to-[hsl(200,70%,50%)]/20 p-1.5 sm:p-3 rounded-lg border-2 border-[hsl(330,100%,65%)]/50">
+              <div className="flex items-center gap-1.5 sm:gap-2 mb-0.5 sm:mb-1">
+                <h3 className="font-bold text-[10px] sm:text-sm text-[hsl(330,100%,65%)]">👤 Player Profile System</h3>
+                <span className="text-[7px] sm:text-[9px] font-bold px-1 sm:px-1.5 py-0.5 rounded" style={{ background: "hsl(45,100%,50%)", color: "hsl(220,30%,10%)" }}>
                   BETA
                 </span>
               </div>
-              <ul className="list-disc list-inside space-y-0.5 text-[10px] sm:text-xs">
+              <ul className="list-disc list-inside space-y-0.5 text-[9px] sm:text-xs">
                 <li>Create an account with a unique <span className="text-[hsl(200,70%,50%)] font-bold">username</span> and leaderboard initials.</li>
                 <li>Upload a custom <span className="text-[hsl(30,100%,60%)] font-bold">avatar</span> (256×256) to personalize your profile.</li>
                 <li>Track lifetime stats, achievements, and power-up usage across all sessions.</li>
