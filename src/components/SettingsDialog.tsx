@@ -87,8 +87,8 @@ export const SettingsDialog = ({
 
   const handleOpenChange = (isOpen: boolean) => {
     if (isOpen) {
-      // Snapshot current settings as draft
-      setDraft({ ...settings });
+      // Read directly from localStorage to avoid stale state from other hook instances
+      setDraft({ ...loadSettings() });
       onPauseMenuHide?.();
     } else {
       // Closing without save — discard draft, revert settings to last saved
