@@ -187,46 +187,6 @@ export const SettingsDialog = ({
         <Switch checked={draft.showFpsOverlay} onCheckedChange={(v) => updateDraft({ showFpsOverlay: v })} />
       </div>
 
-      {/* Quality indicator */}
-      <div className="flex items-center justify-between">
-        <Label className="retro-pixel-text text-xs" style={{ color: "hsl(0, 0%, 85%)" }}>
-          Show Quality Indicator
-        </Label>
-        <Switch
-          checked={draft.showQualityIndicator}
-          onCheckedChange={(v) => updateDraft({ showQualityIndicator: v })}
-        />
-      </div>
-
-      {/* Resolution */}
-      <div className="space-y-2">
-        <Label className="retro-pixel-text text-xs" style={{ color: "hsl(0, 0%, 85%)" }}>
-          Canvas Resolution
-        </Label>
-        <select
-          value={draft.canvasResolution}
-          onChange={(e) => {
-            soundManager.playMenuClick();
-            updateDraft({ canvasResolution: e.target.value });
-          }}
-          className="w-full rounded-md border px-3 py-2 text-xs retro-pixel-text"
-          style={{
-            backgroundColor: "hsl(220, 25%, 14%)",
-            borderColor: "hsl(200, 70%, 40%)",
-            color: "hsl(0, 0%, 85%)",
-          }}
-        >
-          {RESOLUTION_PRESETS.map((r) => (
-            <option key={`${r.width}x${r.height}`} value={`${r.width}x${r.height}`}>
-              {r.label}
-            </option>
-          ))}
-        </select>
-        <p className="retro-pixel-text text-[9px]" style={{ color: "hsl(0, 0%, 50%)" }}>
-          Lower resolutions improve performance on slower hardware
-        </p>
-      </div>
-
       {/* Reset */}
       <Button
         variant="outline"
