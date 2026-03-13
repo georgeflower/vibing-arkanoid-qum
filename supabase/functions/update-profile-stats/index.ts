@@ -142,6 +142,7 @@ Deno.serve(async (req) => {
       best_combo_streak: newBestCombo,
       power_up_usage: newUsage,
       _session_difficulty: difficulty,
+      _session_collected_all_letters: collectedAllLetters,
     };
 
     const newAchievements = [...existingAchievements];
