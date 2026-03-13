@@ -55,7 +55,7 @@ import { particlePool } from "@/utils/particlePool";
 
 // ═══════════════════════════════════════════════════════════════
 import { Maximize2, Minimize2, Home, X, Settings } from "lucide-react";
-import { QualityIndicator } from "./QualityIndicator";
+
 import type {
   Brick,
   Ball,
@@ -9077,10 +9077,6 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                 )}
                 {/* ═══════════════════════════════════════════════════════════════ */}
 
-                {/* Quality Indicator - always available, controlled by settings */}
-                {gameSettingsData.showQualityIndicator && (
-                  <QualityIndicator quality={quality} autoAdjustEnabled={autoAdjustEnabled} fps={currentFps} />
-                )}
 
                 {/* Right Panel - Stats and Controls */}
                 <div
