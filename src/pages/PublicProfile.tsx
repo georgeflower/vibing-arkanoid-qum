@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import CRTOverlay from "@/components/CRTOverlay";
 import { ACHIEVEMENTS } from "@/constants/achievements";
+import { X } from "lucide-react";
 
 const POWER_UP_LABELS: Record<string, string> = {
   multiball: "Multi-Ball", turrets: "Turrets", fireball: "Fireball", life: "Extra Life",
