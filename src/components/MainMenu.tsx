@@ -176,6 +176,15 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
   useSwipeGesture(aboutRef, () => setShowAbout(false), { enabled: showAbout && isMobileDevice });
   useSwipeGesture(instructionsRef, () => setShowInstructions(false), { enabled: showInstructions && isMobileDevice });
 
+  useEffect(() => {
+    if (window.location.hash === "#highscores") {
+      setShowPressToStart(false);
+      setShowHighScores(true);
+      const cleanUrl = `${window.location.pathname}${window.location.search}`;
+      window.history.replaceState(window.history.state, "", cleanUrl);
+    }
+  }, []);
+
   // ESC key to close overlay screens
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation, Link } from "react-router-dom";
 import CRTOverlay from "@/components/CRTOverlay";
 import { ACHIEVEMENTS } from "@/constants/achievements";
 import { X } from "lucide-react";
@@ -20,6 +20,15 @@ const formatPlayTime = (seconds: number): string => {
 const PublicProfile = () => {
   const { username } = useParams<{ username: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const fromHighScores = Boolean((location.state as { returnToHighScores?: boolean } | null)?.returnToHighScores);
+  const handleClose = () => {
+    if (fromHighScores) {
+      navigate("/play#highscores");
+      return;
+    }
+    navigate(-1);
+  };
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -80,7 +89,7 @@ const PublicProfile = () => {
       <div className="relative z-10 max-w-2xl mx-auto px-4 py-8 pb-16">
         {/* Close button */}
         <button
-          onClick={() => navigate(-1)}
+          onClick={handleClose}
           className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors z-20"
           title="Close"
         >
@@ -149,7 +158,7 @@ const PublicProfile = () => {
         </div>
 
         <div className="flex justify-center">
-          <button onClick={() => navigate(-1)} className="px-4 py-2 rounded text-sm font-bold" style={{ background: "hsl(200, 70%, 50%)", color: "white" }}>CLOSE</button>
+          <button onClick={handleClose} className="px-4 py-2 rounded text-sm font-bold" style={{ background: "hsl(200, 70%, 50%)", color: "white" }}>CLOSE</button>
         </div>
       </div>
     </div>
