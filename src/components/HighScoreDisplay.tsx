@@ -43,33 +43,33 @@ export const HighScoreDisplay = ({ onClose, leaderboardType = 'all-time', initia
             <X size={24} />
           </button>
           
-          <h2 className="text-5xl font-bold text-center mb-4 text-cyan-400">HIGH SCORES</h2>
+          <h2 className="text-3xl sm:text-5xl font-bold text-center mb-3 sm:mb-4 text-cyan-400">HIGH SCORES</h2>
           
           {/* Tab switcher */}
-          <div className="flex justify-center gap-2 mb-4">
+          <div className="flex justify-center gap-1 sm:gap-2 mb-3 sm:mb-4">
             <Button onClick={() => setActiveTab('normal')} variant={activeTab === 'normal' ? 'default' : 'outline'}
-              className={`px-6 py-2 text-sm font-bold ${activeTab === 'normal' ? 'bg-cyan-600 hover:bg-cyan-500' : ''}`}>
+              className={`px-3 sm:px-6 py-1.5 sm:py-2 text-xs sm:text-sm font-bold ${activeTab === 'normal' ? 'bg-cyan-600 hover:bg-cyan-500' : ''}`}>
               CAMPAIGN
             </Button>
             <Button onClick={() => setActiveTab('bossRush')} variant={activeTab === 'bossRush' ? 'default' : 'outline'}
-              className={`px-6 py-2 text-sm font-bold ${activeTab === 'bossRush' ? 'bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 border-0' : 'border-red-500/50 text-red-400 hover:bg-red-500/20'}`}>
+              className={`px-3 sm:px-6 py-1.5 sm:py-2 text-xs sm:text-sm font-bold ${activeTab === 'bossRush' ? 'bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 border-0' : 'border-red-500/50 text-red-400 hover:bg-red-500/20'}`}>
               ⚔️ BOSS RUSH
             </Button>
           </div>
 
           {activeTab === 'normal' && (
             <>
-              <div className="flex justify-center gap-2 mb-6">
-                <Button onClick={() => setSelectedType('all-time')} variant={selectedType === 'all-time' ? 'default' : 'outline'} className="px-4 py-2 text-sm font-bold">ALL TIME</Button>
-                <Button onClick={() => setSelectedType('weekly')} variant={selectedType === 'weekly' ? 'default' : 'outline'} className="px-4 py-2 text-sm font-bold">WEEKLY</Button>
-                <Button onClick={() => setSelectedType('daily')} variant={selectedType === 'daily' ? 'default' : 'outline'} className="px-4 py-2 text-sm font-bold">DAILY</Button>
+              <div className="flex justify-center gap-1 sm:gap-2 mb-4 sm:mb-6">
+                <Button onClick={() => setSelectedType('all-time')} variant={selectedType === 'all-time' ? 'default' : 'outline'} className="px-2 sm:px-4 py-1 sm:py-2 text-[10px] sm:text-sm font-bold">ALL TIME</Button>
+                <Button onClick={() => setSelectedType('weekly')} variant={selectedType === 'weekly' ? 'default' : 'outline'} className="px-2 sm:px-4 py-1 sm:py-2 text-[10px] sm:text-sm font-bold">WEEKLY</Button>
+                <Button onClick={() => setSelectedType('daily')} variant={selectedType === 'daily' ? 'default' : 'outline'} className="px-2 sm:px-4 py-1 sm:py-2 text-[10px] sm:text-sm font-bold">DAILY</Button>
               </div>
 
-              <div className="flex justify-center gap-2 mb-6">
-                <Button onClick={() => setDifficultyFilter('all')} variant={difficultyFilter === 'all' ? 'default' : 'outline'} className="px-3 py-1 text-xs font-bold">ALL</Button>
-                <Button onClick={() => setDifficultyFilter('normal')} variant={difficultyFilter === 'normal' ? 'default' : 'outline'} className="px-3 py-1 text-xs font-bold">NORMAL</Button>
+              <div className="flex justify-center gap-1 sm:gap-2 mb-4 sm:mb-6">
+                <Button onClick={() => setDifficultyFilter('all')} variant={difficultyFilter === 'all' ? 'default' : 'outline'} className="px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-bold">ALL</Button>
+                <Button onClick={() => setDifficultyFilter('normal')} variant={difficultyFilter === 'normal' ? 'default' : 'outline'} className="px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-bold">NORMAL</Button>
                 <Button onClick={() => setDifficultyFilter('godlike')} variant={difficultyFilter === 'godlike' ? 'default' : 'outline'}
-                  className={`px-3 py-1 text-xs font-bold ${difficultyFilter === 'godlike' ? 'bg-red-600 hover:bg-red-500 border-0' : 'border-red-500/50 text-red-400 hover:bg-red-500/20'}`}>
+                  className={`px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-bold ${difficultyFilter === 'godlike' ? 'bg-red-600 hover:bg-red-500 border-0' : 'border-red-500/50 text-red-400 hover:bg-red-500/20'}`}>
                   🔥 GOD-MODE
                 </Button>
               </div>
