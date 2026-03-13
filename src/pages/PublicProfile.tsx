@@ -149,7 +149,7 @@ const PublicProfile = () => {
         </div>
 
         <div className="flex justify-center">
-          <Link to="/" className="px-4 py-2 rounded text-sm font-bold" style={{ background: "hsl(200, 70%, 50%)", color: "white" }}>HOME</Link>
+          <button onClick={() => navigate(-1)} className="px-4 py-2 rounded text-sm font-bold" style={{ background: "hsl(200, 70%, 50%)", color: "white" }}>CLOSE</button>
         </div>
       </div>
     </div>
