@@ -93,7 +93,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     id: "qumran_collector",
     name: "QUMRAN Collector",
     description: "Collect all Q-U-M-R-A-N letters in a single game",
-    icon: "✡️",
+    icon: "🔠",
     check: (p) => p.session_collected_all_letters === true,
   },
   {
