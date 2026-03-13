@@ -77,6 +77,10 @@ export const SettingsDialog = ({
       if (partial.qualityLevel && CRT_DISABLED_QUALITIES.includes(partial.qualityLevel)) {
         next.crtEnabled = false;
       }
+      // Auto-derive resolution from quality
+      if (partial.qualityLevel) {
+        next.canvasResolution = getResolutionForQuality(partial.qualityLevel);
+      }
       return next;
     });
   };
