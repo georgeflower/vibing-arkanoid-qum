@@ -258,15 +258,15 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
             <X size={24} />
           </button>
 
-          <h2 className="text-base sm:text-lg md:text-xl font-bold mb-2 sm:mb-3 text-center text-[hsl(200,70%,50%)]">
+          <h2 className="text-sm sm:text-lg md:text-xl font-bold mb-1.5 sm:mb-3 text-center text-[hsl(200,70%,50%)]">
             What's New in v{GAME_VERSION}
           </h2>
 
-          <div className="space-y-2 sm:space-y-3 text-white">
+          <div className="space-y-1.5 sm:space-y-3 text-white">
             {/* Faster, Smoother Engine */}
-            <div className="bg-gradient-to-r from-[hsl(45,100%,50%)]/20 to-[hsl(30,100%,60%)]/20 p-2 sm:p-3 rounded-lg border-2 border-[hsl(45,100%,50%)]/50">
-              <h3 className="font-bold text-xs sm:text-sm mb-1 text-[hsl(45,100%,50%)]">⚡ Faster, Smoother Engine</h3>
-              <ul className="list-disc list-inside space-y-0.5 text-[10px] sm:text-xs">
+            <div className="bg-gradient-to-r from-[hsl(45,100%,50%)]/20 to-[hsl(30,100%,60%)]/20 p-1.5 sm:p-3 rounded-lg border-2 border-[hsl(45,100%,50%)]/50">
+              <h3 className="font-bold text-[10px] sm:text-sm mb-0.5 sm:mb-1 text-[hsl(45,100%,50%)]">⚡ Faster, Smoother Engine</h3>
+              <ul className="list-disc list-inside space-y-0.5 text-[9px] sm:text-xs">
                 <li>
                   The game now runs on a{" "}
                   <span className="text-[hsl(45,100%,50%)] font-bold">fixed‑timestep simulation</span>, keeping gameplay
@@ -282,11 +282,11 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
             </div>
 
             {/* Boss Hit Streak System */}
-            <div className="bg-gradient-to-r from-[hsl(270,80%,60%)]/20 to-[hsl(290,80%,60%)]/20 p-2 sm:p-3 rounded-lg border-2 border-[hsl(280,80%,60%)]/50">
-              <h3 className="font-bold text-xs sm:text-sm mb-1 text-[hsl(280,80%,60%)]">
+            <div className="bg-gradient-to-r from-[hsl(270,80%,60%)]/20 to-[hsl(290,80%,60%)]/20 p-1.5 sm:p-3 rounded-lg border-2 border-[hsl(280,80%,60%)]/50">
+              <h3 className="font-bold text-[10px] sm:text-sm mb-0.5 sm:mb-1 text-[hsl(280,80%,60%)]">
                 🔥 New Boss Hit Streak System
               </h3>
-              <ul className="list-disc list-inside space-y-0.5 text-[10px] sm:text-xs">
+              <ul className="list-disc list-inside space-y-0.5 text-[9px] sm:text-xs">
                 <li>A brand‑new streak mechanic lets you push for even higher scores.</li>
                 <li>Consecutive hits on bosses and minions award 100 pts + streak bonus (e.g., x5 = +5% bonus).</li>
                 <li>Reach x10+ to activate music‑reactive background hue blinking on all boss levels.</li>
@@ -294,9 +294,9 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
             </div>
 
             {/* Performance Boost */}
-            <div className="bg-gradient-to-r from-[hsl(200,70%,50%)]/20 to-[hsl(120,60%,50%)]/20 p-2 sm:p-3 rounded-lg border-2 border-[hsl(120,60%,50%)]/50">
-              <h3 className="font-bold text-xs sm:text-sm mb-1 text-[hsl(120,60%,50%)]">🚀 Performance Boost</h3>
-              <ul className="list-disc list-inside space-y-0.5 text-[10px] sm:text-xs">
+            <div className="bg-gradient-to-r from-[hsl(200,70%,50%)]/20 to-[hsl(120,60%,50%)]/20 p-1.5 sm:p-3 rounded-lg border-2 border-[hsl(120,60%,50%)]/50">
+              <h3 className="font-bold text-[10px] sm:text-sm mb-0.5 sm:mb-1 text-[hsl(120,60%,50%)]">🚀 Performance Boost</h3>
+              <ul className="list-disc list-inside space-y-0.5 text-[9px] sm:text-xs">
                 <li>Batched particle rendering and fewer heavy arc draws = smoother FPS.</li>
                 <li>Gradients and shaders now pre‑warm to eliminate first‑use GPU stalls.</li>
                 <li>Improved GPU detection for mobile + integrated GPUs.</li>
@@ -305,14 +305,14 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
             </div>
 
             {/* Player Profile System */}
-            <div className="bg-gradient-to-r from-[hsl(330,100%,65%)]/20 to-[hsl(200,70%,50%)]/20 p-2 sm:p-3 rounded-lg border-2 border-[hsl(330,100%,65%)]/50">
-              <div className="flex items-center gap-2 mb-1">
-                <h3 className="font-bold text-xs sm:text-sm text-[hsl(330,100%,65%)]">👤 Player Profile System</h3>
-                <span className="text-[8px] sm:text-[9px] font-bold px-1.5 py-0.5 rounded" style={{ background: "hsl(45,100%,50%)", color: "hsl(220,30%,10%)" }}>
+            <div className="bg-gradient-to-r from-[hsl(330,100%,65%)]/20 to-[hsl(200,70%,50%)]/20 p-1.5 sm:p-3 rounded-lg border-2 border-[hsl(330,100%,65%)]/50">
+              <div className="flex items-center gap-1.5 sm:gap-2 mb-0.5 sm:mb-1">
+                <h3 className="font-bold text-[10px] sm:text-sm text-[hsl(330,100%,65%)]">👤 Player Profile System</h3>
+                <span className="text-[7px] sm:text-[9px] font-bold px-1 sm:px-1.5 py-0.5 rounded" style={{ background: "hsl(45,100%,50%)", color: "hsl(220,30%,10%)" }}>
                   BETA
                 </span>
               </div>
-              <ul className="list-disc list-inside space-y-0.5 text-[10px] sm:text-xs">
+              <ul className="list-disc list-inside space-y-0.5 text-[9px] sm:text-xs">
                 <li>Create an account with a unique <span className="text-[hsl(200,70%,50%)] font-bold">username</span> and leaderboard initials.</li>
                 <li>Upload a custom <span className="text-[hsl(30,100%,60%)] font-bold">avatar</span> (256×256) to personalize your profile.</li>
                 <li>Track lifetime stats, achievements, and power-up usage across all sessions.</li>
@@ -322,9 +322,9 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
             </div>
 
             {/* Daily Challenge Mode */}
-            <div className="bg-gradient-to-r from-[hsl(45,100%,50%)]/20 to-[hsl(0,85%,55%)]/20 p-2 sm:p-3 rounded-lg border-2 border-[hsl(45,100%,50%)]/50">
-              <h3 className="font-bold text-xs sm:text-sm mb-1 text-[hsl(45,100%,50%)]">📅 Daily Challenge Mode</h3>
-              <ul className="list-disc list-inside space-y-0.5 text-[10px] sm:text-xs">
+            <div className="bg-gradient-to-r from-[hsl(45,100%,50%)]/20 to-[hsl(0,85%,55%)]/20 p-1.5 sm:p-3 rounded-lg border-2 border-[hsl(45,100%,50%)]/50">
+              <h3 className="font-bold text-[10px] sm:text-sm mb-0.5 sm:mb-1 text-[hsl(45,100%,50%)]">📅 Daily Challenge Mode</h3>
+              <ul className="list-disc list-inside space-y-0.5 text-[9px] sm:text-xs">
                 <li>A <span className="text-[hsl(45,100%,50%)] font-bold">new challenge every day</span> with a unique procedural brick layout.</li>
                 <li>Special modifiers: 125% speed, enemy spawns every 10s, music-reactive backgrounds, no extra lives.</li>
                 <li>Complete objectives like No Deaths, Speed Run, Score Hunter, or Combo Master.</li>
