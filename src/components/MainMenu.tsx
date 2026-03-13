@@ -294,9 +294,9 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
             </div>
 
             {/* Performance Boost */}
-            <div className="bg-gradient-to-r from-[hsl(200,70%,50%)]/20 to-[hsl(120,60%,50%)]/20 p-2 sm:p-3 rounded-lg border-2 border-[hsl(120,60%,50%)]/50">
-              <h3 className="font-bold text-xs sm:text-sm mb-1 text-[hsl(120,60%,50%)]">🚀 Performance Boost</h3>
-              <ul className="list-disc list-inside space-y-0.5 text-[10px] sm:text-xs">
+            <div className="bg-gradient-to-r from-[hsl(200,70%,50%)]/20 to-[hsl(120,60%,50%)]/20 p-1.5 sm:p-3 rounded-lg border-2 border-[hsl(120,60%,50%)]/50">
+              <h3 className="font-bold text-[10px] sm:text-sm mb-0.5 sm:mb-1 text-[hsl(120,60%,50%)]">🚀 Performance Boost</h3>
+              <ul className="list-disc list-inside space-y-0.5 text-[9px] sm:text-xs">
                 <li>Batched particle rendering and fewer heavy arc draws = smoother FPS.</li>
                 <li>Gradients and shaders now pre‑warm to eliminate first‑use GPU stalls.</li>
                 <li>Improved GPU detection for mobile + integrated GPUs.</li>
