@@ -12,6 +12,7 @@ export interface GameSessionStats {
   comboStreak: number;
   difficulty: string;
   isVictory: boolean;
+  collectedAllLetters?: boolean;
 }
 
 export async function submitGameStats(stats: GameSessionStats): Promise<void> {

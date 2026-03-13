@@ -22,6 +22,7 @@ export interface ProfileStats {
   session_score?: number;
   session_level?: number;
   session_difficulty?: string;
+  session_collected_all_letters?: boolean;
 }
 
 export const ACHIEVEMENTS: Achievement[] = [
@@ -87,6 +88,13 @@ export const ACHIEVEMENTS: Achievement[] = [
     description: "Beat level 20",
     icon: "🏆",
     check: (p) => p.best_level >= 20,
+  },
+  {
+    id: "qumran_collector",
+    name: "QUMRAN Collector",
+    description: "Collect all Q-U-M-R-A-N letters in a single game",
+    icon: "✡️",
+    check: (p) => p.session_collected_all_letters === true,
   },
   {
     id: "godlike",

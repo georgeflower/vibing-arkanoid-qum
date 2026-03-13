@@ -1839,6 +1839,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         comboStreak: hitStreakRef.current,
         difficulty: settings.difficulty,
         isVictory: false,
+        collectedAllLetters: collectedLetters.size === 6,
       });
     }
 
@@ -4076,6 +4077,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
             comboStreak: hitStreakRef.current,
             difficulty: settings.difficulty,
             isVictory: true,
+            collectedAllLetters: collectedLetters.size === 6,
           });
         }
       } else {

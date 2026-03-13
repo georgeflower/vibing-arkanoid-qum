@@ -19,6 +19,7 @@ const ACHIEVEMENT_CHECKS: Array<{
   { id: "power_collector", check: (p) => Object.keys((p.power_up_usage as Record<string, number>) || {}).length >= 12 },
   { id: "perfect_combo", check: (p) => (p.best_combo_streak as number) >= 10 },
   { id: "victory_lap", check: (p) => (p.best_level as number) >= 20 },
+  { id: "qumran_collector", check: (p) => (p._session_collected_all_letters as boolean) === true },
   { id: "godlike", check: (p) => (p.best_level as number) >= 20 && (p._session_difficulty as string) === "godlike" },
 ];
 
@@ -70,6 +71,7 @@ Deno.serve(async (req) => {
       level = 0,
       comboStreak = 0,
       difficulty = "normal",
+      collectedAllLetters = false,
     } = body;
 
     // Validate inputs
@@ -140,6 +142,7 @@ Deno.serve(async (req) => {
       best_combo_streak: newBestCombo,
       power_up_usage: newUsage,
       _session_difficulty: difficulty,
+      _session_collected_all_letters: collectedAllLetters,
     };
 
     const newAchievements = [...existingAchievements];
