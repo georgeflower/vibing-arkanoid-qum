@@ -89,7 +89,7 @@ const PublicProfile = () => {
       <div className="relative z-10 max-w-2xl mx-auto px-4 py-8 pb-16">
         {/* Close button */}
         <button
-          onClick={() => navigate(-1)}
+          onClick={handleClose}
           className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors z-20"
           title="Close"
         >
