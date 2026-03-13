@@ -368,35 +368,35 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
         className="fixed inset-0 w-full h-screen bg-gradient-to-b from-[hsl(220,25%,12%)] to-[hsl(220,30%,8%)] flex items-center justify-center p-2 sm:p-4 overflow-y-auto swipe-container animate-fade-in"
       >
         {qualitySettings.backgroundEffects && <CRTOverlay quality={quality} />}
-        <Card className="relative w-full max-w-5xl max-h-[90vh] overflow-y-auto p-4 sm:p-6 md:p-8 bg-[hsl(220,20%,15%)] border-[hsl(200,70%,50%)] animate-scale-in">
+        <Card className="relative w-full max-w-5xl max-h-[90vh] overflow-y-auto p-3 sm:p-6 md:p-8 bg-[hsl(220,20%,15%)] border-[hsl(200,70%,50%)] animate-scale-in">
           <button
             onClick={() => {
               soundManager.playMenuClick();
               setShowAbout(false);
             }}
-            className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors z-10"
+            className="absolute top-3 right-3 sm:top-4 sm:right-4 text-slate-400 hover:text-white transition-colors z-10"
             title="Close"
           >
-            <X size={24} />
+            <X size={20} className="sm:w-6 sm:h-6" />
           </button>
 
-          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-3 sm:mb-4 text-center text-[hsl(200,70%,50%)]">
+          <h2 className="text-lg sm:text-2xl md:text-3xl font-bold mb-2 sm:mb-4 text-center text-[hsl(200,70%,50%)]">
             About Vibing Arkanoid
           </h2>
 
-          <div className="space-y-2 sm:space-y-3 md:space-y-4 text-white">
-            <p className="text-xs sm:text-sm md:text-base leading-relaxed">
+          <div className="space-y-1.5 sm:space-y-3 md:space-y-4 text-white">
+            <p className="text-[9px] sm:text-sm md:text-base leading-relaxed">
               Welcome to <span className="text-[hsl(200,70%,50%)] font-bold">Vibing Arkanoid</span> - the most
               electrifying brick-breaking experience ever created! This isn't just another Breakout clone - it's a
               pulsating, retro-drenched journey through{" "}
               <span className="text-[hsl(200,70%,50%)] font-bold">20 action-packed levels</span> of pure arcade bliss.
             </p>
 
-            <div className="bg-gradient-to-r from-[hsl(30,100%,60%)]/20 to-[hsl(0,85%,55%)]/20 p-3 sm:p-4 rounded-lg border-2 border-[hsl(30,100%,60%)]/50">
-              <h3 className="font-bold text-sm sm:text-base md:text-lg mb-2 text-[hsl(30,100%,60%)]">
+            <div className="bg-gradient-to-r from-[hsl(30,100%,60%)]/20 to-[hsl(0,85%,55%)]/20 p-1.5 sm:p-4 rounded-lg border-2 border-[hsl(30,100%,60%)]/50">
+              <h3 className="font-bold text-[10px] sm:text-base md:text-lg mb-0.5 sm:mb-2 text-[hsl(30,100%,60%)]">
                 ⚔️ Epic Boss Battles
               </h3>
-              <p className="text-xs sm:text-sm leading-relaxed">
+              <p className="text-[9px] sm:text-sm leading-relaxed">
                 Face off against massive bosses on{" "}
                 <span className="text-[hsl(200,70%,50%)] font-bold">
                   levels 5, 10, 15, and the ultimate Mega Boss on level 20
@@ -409,18 +409,18 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
               </p>
             </div>
 
-            <div className="bg-gradient-to-r from-[hsl(200,70%,50%)]/20 to-[hsl(330,100%,65%)]/20 p-3 sm:p-4 rounded-lg border-2 border-[hsl(200,70%,50%)]/50">
-              <h3 className="font-bold text-sm sm:text-base md:text-lg mb-2 text-[hsl(200,70%,50%)]">
+            <div className="bg-gradient-to-r from-[hsl(200,70%,50%)]/20 to-[hsl(330,100%,65%)]/20 p-1.5 sm:p-4 rounded-lg border-2 border-[hsl(200,70%,50%)]/50">
+              <h3 className="font-bold text-[10px] sm:text-base md:text-lg mb-0.5 sm:mb-2 text-[hsl(200,70%,50%)]">
                 🌐 Global High Scores
               </h3>
-              <p className="text-xs sm:text-sm leading-relaxed">
+              <p className="text-[9px] sm:text-sm leading-relaxed">
                 Compete with players worldwide! Cloud-based leaderboards track{" "}
                 <span className="text-[hsl(330,100%,65%)] font-bold">all-time, weekly, and daily rankings</span>. Can
                 you reach the top 20 and prove you're the ultimate brick-breaking champion?
               </p>
             </div>
 
-            <p className="text-xs sm:text-sm md:text-base leading-relaxed">
+            <p className="text-[9px] sm:text-sm md:text-base leading-relaxed">
               Featuring an authentic retro aesthetic with{" "}
               <span className="text-[hsl(200,70%,50%)] font-bold">CRT scanline effects</span>, advanced{" "}
               <span className="text-[hsl(330,100%,65%)] font-bold">CCD physics engine</span> for precise collisions,
@@ -429,14 +429,14 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
               <span className="text-[hsl(330,100%,65%)] font-bold">Q-U-M-R-A-N</span> bonus letters for 5 extra lives!
             </p>
 
-            <div className="bg-black/30 p-3 sm:p-4 md:p-5 rounded-lg border border-[hsl(330,100%,65%)]/30">
-              <div className="flex items-center gap-2 mb-2">
-                <h3 className="font-bold text-sm sm:text-base md:text-lg text-[hsl(330,100%,65%)]">👤 Player Profiles</h3>
-                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded" style={{ background: "hsl(45,100%,50%)", color: "hsl(220,30%,10%)" }}>
+            <div className="bg-black/30 p-1.5 sm:p-4 md:p-5 rounded-lg border border-[hsl(330,100%,65%)]/30">
+              <div className="flex items-center gap-1 sm:gap-2 mb-0.5 sm:mb-2">
+                <h3 className="font-bold text-[10px] sm:text-base md:text-lg text-[hsl(330,100%,65%)]">👤 Player Profiles</h3>
+                <span className="text-[7px] sm:text-[9px] font-bold px-1 sm:px-1.5 py-0.5 rounded" style={{ background: "hsl(45,100%,50%)", color: "hsl(220,30%,10%)" }}>
                   BETA
                 </span>
               </div>
-              <p className="text-xs sm:text-sm leading-relaxed">
+              <p className="text-[9px] sm:text-sm leading-relaxed">
                 Create an account with a unique <span className="text-[hsl(200,70%,50%)] font-bold">username</span> and
                 upload a custom avatar. Track your lifetime stats, achievements, and power-up usage. Toggle your profile
                 between public and private — public profiles are linked directly from the leaderboard. Full account
@@ -444,9 +444,9 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
               </p>
             </div>
 
-            <div className="bg-black/30 p-3 sm:p-4 md:p-5 rounded-lg border border-[hsl(45,100%,50%)]/30">
-              <h3 className="font-bold text-sm sm:text-base md:text-lg mb-2 text-[hsl(45,100%,50%)]">📅 Daily Challenge</h3>
-              <p className="text-xs sm:text-sm leading-relaxed">
+            <div className="bg-black/30 p-1.5 sm:p-4 md:p-5 rounded-lg border border-[hsl(45,100%,50%)]/30">
+              <h3 className="font-bold text-[10px] sm:text-base md:text-lg mb-0.5 sm:mb-2 text-[hsl(45,100%,50%)]">📅 Daily Challenge</h3>
+              <p className="text-[9px] sm:text-sm leading-relaxed">
                 A new challenge is generated every day with a unique procedural layout, special modifiers (125% speed,
                 enemy spawns every 10s, music-reactive backgrounds, no extra lives), and objectives to complete.
                 Build a <span className="text-[hsl(330,100%,65%)] font-bold">daily streak</span> by completing
@@ -454,28 +454,28 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
               </p>
             </div>
 
-            <div className="bg-black/30 p-3 sm:p-4 md:p-5 rounded-lg border border-[hsl(200,70%,50%)]/30">
-              <h3 className="font-bold text-sm sm:text-base md:text-lg mb-2 text-[hsl(200,70%,50%)]">
+            <div className="bg-black/30 p-1.5 sm:p-4 md:p-5 rounded-lg border border-[hsl(200,70%,50%)]/30">
+              <h3 className="font-bold text-[10px] sm:text-base md:text-lg mb-0.5 sm:mb-2 text-[hsl(200,70%,50%)]">
                 Vibe Coded to Perfection
               </h3>
-              <p className="text-xs sm:text-sm leading-relaxed">
+              <p className="text-[9px] sm:text-sm leading-relaxed">
                 This game is the result of pure <span className="text-[hsl(330,100%,65%)] font-bold">vibe coding</span>{" "}
                 - that magical state where code flows like music and creativity knows no bounds. Every pixel, every
                 sound effect, every level was crafted with passion and energy.
               </p>
             </div>
 
-            <div className="bg-black/30 p-3 sm:p-4 md:p-5 rounded-lg border border-[hsl(330,100%,65%)]/30">
-              <h3 className="font-bold text-sm sm:text-base md:text-lg mb-2 text-[hsl(330,100%,65%)]">Created By</h3>
-              <p className="text-sm sm:text-base md:text-lg leading-relaxed">
-                <span className="text-[hsl(200,70%,50%)] font-bold text-lg sm:text-xl md:text-2xl">Qumran</span>
+            <div className="bg-black/30 p-1.5 sm:p-4 md:p-5 rounded-lg border border-[hsl(330,100%,65%)]/30">
+              <h3 className="font-bold text-[10px] sm:text-base md:text-lg mb-0.5 sm:mb-2 text-[hsl(330,100%,65%)]">Created By</h3>
+              <p className="text-[9px] sm:text-base md:text-lg leading-relaxed">
+                <span className="text-[hsl(200,70%,50%)] font-bold text-sm sm:text-xl md:text-2xl">Qumran</span>
               </p>
-              <p className="text-xs sm:text-sm text-gray-400 mt-1">
+              <p className="text-[8px] sm:text-sm text-gray-400 mt-0.5 sm:mt-1">
                 Game Design • Programming • Music Viber • Vibe Engineering
               </p>
             </div>
 
-            <p className="text-center text-xs sm:text-sm text-gray-500 italic mt-3 sm:mt-4">
+            <p className="text-center text-[8px] sm:text-sm text-gray-500 italic mt-2 sm:mt-4">
               "In the zone, riding the wave of pure creativity." - The Vibe Coding Manifesto
             </p>
           </div>
@@ -485,7 +485,7 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
               setShowChangelog(true);
             }}
             onMouseEnter={() => soundManager.playMenuHover()}
-            className="w-full mt-3 sm:mt-4 bg-[hsl(200,70%,50%)] hover:bg-[hsl(200,70%,60%)] text-white text-sm sm:text-base py-3 sm:py-4"
+            className="w-full mt-2 sm:mt-4 bg-[hsl(200,70%,50%)] hover:bg-[hsl(200,70%,60%)] text-white text-[10px] sm:text-base py-2 sm:py-4"
           >
             v{GAME_VERSION} - Changelog
           </Button>
@@ -495,7 +495,7 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
               setShowAbout(false);
             }}
             onMouseEnter={() => soundManager.playMenuHover()}
-            className="w-full mt-3 sm:mt-4 bg-[hsl(200,70%,50%)] hover:bg-[hsl(200,70%,60%)] text-white text-sm sm:text-base py-3 sm:py-4"
+            className="w-full mt-2 sm:mt-4 bg-[hsl(200,70%,50%)] hover:bg-[hsl(200,70%,60%)] text-white text-[10px] sm:text-base py-2 sm:py-4"
           >
             Back to Menu
           </Button>
