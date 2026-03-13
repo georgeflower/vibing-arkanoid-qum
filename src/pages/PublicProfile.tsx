@@ -20,6 +20,15 @@ const formatPlayTime = (seconds: number): string => {
 const PublicProfile = () => {
   const { username } = useParams<{ username: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const fromHighScores = Boolean((location.state as { returnToHighScores?: boolean } | null)?.returnToHighScores);
+  const handleClose = () => {
+    if (fromHighScores) {
+      navigate("/play#highscores");
+      return;
+    }
+    navigate(-1);
+  };
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
