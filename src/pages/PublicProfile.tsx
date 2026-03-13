@@ -19,6 +19,7 @@ const formatPlayTime = (seconds: number): string => {
 
 const PublicProfile = () => {
   const { username } = useParams<{ username: string }>();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
