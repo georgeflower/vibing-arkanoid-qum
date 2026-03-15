@@ -425,6 +425,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   const [showHighScoreEntry, setShowHighScoreEntry] = useState(false);
   const [showHighScoreDisplay, setShowHighScoreDisplay] = useState(false);
   const [showEndScreen, setShowEndScreen] = useState(false);
+  const [unlockedAchievements, setUnlockedAchievements] = useState<string[]>([]);
   const [qualifiedLeaderboards, setQualifiedLeaderboards] = useState<{
     daily: boolean;
     weekly: boolean;
