@@ -15,20 +15,24 @@ export interface GameSessionStats {
   collectedAllLetters?: boolean;
 }
 
-export async function submitGameStats(stats: GameSessionStats): Promise<void> {
+export async function submitGameStats(stats: GameSessionStats): Promise<string[]> {
   try {
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return; // Not logged in, skip silently
+    if (!session) return []; // Not logged in, skip silently
 
-    const { error } = await supabase.functions.invoke("update-profile-stats", {
+    const { data, error } = await supabase.functions.invoke("update-profile-stats", {
       body: stats,
     });
 
     if (error) {
       console.error("Failed to submit game stats:", error);
+      return [];
     }
+
+    return Array.isArray(data?.newAchievements) ? data.newAchievements : [];
   } catch (err) {
     console.error("Error submitting game stats:", err);
+    return [];
   }
 }
 

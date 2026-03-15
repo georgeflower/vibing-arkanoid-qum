@@ -62,13 +62,10 @@ Deno.serve(async (req) => {
     } = body;
 
     // Derive allObjectivesMet server-side from objectivesMet array
-    // Valid objective IDs that the game can produce
     const VALID_OBJECTIVE_IDS = new Set(["no_deaths", "time_limit", "destroy_all", "score_target", "no_powerups", "combo_5"]);
     const validatedObjectives = Array.isArray(objectivesMet)
       ? objectivesMet.filter((id: unknown) => typeof id === "string" && VALID_OBJECTIVE_IDS.has(id))
       : [];
-    // A daily challenge typically has 2-4 objectives; allObjectivesMet is true only if at least 2 were met
-    // This is derived server-side, never trusted from the client
     const allObjectivesMet = validatedObjectives.length >= 2 && validatedObjectives.length === objectivesMet.length;
 
     // Validate
@@ -124,7 +121,7 @@ Deno.serve(async (req) => {
       .single();
 
     if (profileError || !profile) {
-      return new Response(JSON.stringify({ success: true, streak: 0, newAchievements: 0 }), {
+      return new Response(JSON.stringify({ success: true, streak: 0, newAchievements: [] }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -150,14 +147,14 @@ Deno.serve(async (req) => {
     const existingAchievements = (profile.achievements as Array<{ id: string; unlockedAt: string }>) || [];
     const existingIds = new Set(existingAchievements.map((a) => a.id));
     const newAchievements = [...existingAchievements];
+    const newlyUnlockedIds: string[] = [];
 
     for (const ach of DAILY_ACHIEVEMENT_CHECKS) {
       if (!existingIds.has(ach.id) && ach.check({ streak: newStreak, total: newTotal, allMet: allObjectivesMet })) {
         newAchievements.push({ id: ach.id, unlockedAt: new Date().toISOString() });
+        newlyUnlockedIds.push(ach.id);
       }
     }
-
-    const newlyUnlocked = newAchievements.length - existingAchievements.length;
 
     // Update profile
     const { error: updateError } = await supabaseAdmin
@@ -177,7 +174,7 @@ Deno.serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ success: true, streak: newStreak, newAchievements: newlyUnlocked }),
+      JSON.stringify({ success: true, streak: newStreak, newAchievements: newlyUnlockedIds }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {

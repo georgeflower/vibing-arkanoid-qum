@@ -1,52 +1,38 @@
 
 
-## Plan: Achievement Unlock Notifications
+# Revert Game Area to Fixed Size (Pre-Expansion)
 
-### Overview
-When a game ends (game over or victory), the server already checks for newly unlocked achievements. Currently, the response data is discarded. This plan adds retro-styled in-game notifications for any achievements unlocked during that session.
+## Problem
+Two previous changes ("Expand game area to frame space" and "Expand game area to fill space") made the game canvas dynamically resize to fill all available space within the metal frame on desktop. The user wants the playable area to return to its original fixed size.
 
-### Changes
+## Current behavior
+- `useViewportFrame` makes the metal frame fill the entire viewport on desktop
+- `useCanvasResize` uses ResizeObserver to dynamically size the game canvas to fill the `metal-game-area` container
+- The canvas display size grows to match available space
 
-**1. Edge function: Return achievement IDs, not just count**
+## Desired behavior
+The game canvas stays at its logical size (850×650 scaled by `scaleFactor`) and is simply centered within the frame — no dynamic expansion.
 
-**`supabase/functions/update-profile-stats/index.ts`** (~line 148-190):
-- Track which specific achievements were newly unlocked (collect their IDs)
-- Return `{ success: true, newAchievements: ["first_blood", "brick_breaker", ...] }` (array of IDs instead of count)
+## Changes
 
-**`supabase/functions/submit-daily-challenge/index.ts`** — same change: return newly unlocked IDs array.
+### 1. `src/components/Game.tsx`
+- **Remove** `useViewportFrame` import and hook call (lines 22, 1651-1654)
+- **Remove** `useCanvasResize` import and hook call (lines 23, 1657-1667), along with destructured `displayWidth`, `displayHeight`, `dynamicScale`
+- Remove `gameAreaRef` if only used for `useCanvasResize` (check first)
+- On desktop, set the `game-glow` div's width/height explicitly to `SCALED_CANVAS_WIDTH` × `SCALED_CANVAS_HEIGHT` (same as mobile path but without the scale transform), so the canvas is fixed-size and centered
 
-**2. `src/utils/profileStats.ts`**
-- Change `submitGameStats` to return `Promise<string[]>` (newly unlocked achievement IDs)
-- Parse the response from the edge function and return the IDs array
+### 2. `src/hooks/useViewportFrame.ts`
+- Delete file (no longer used)
 
-**3. New component: `src/components/AchievementNotification.tsx`**
-- A retro-styled overlay/toast that shows each unlocked achievement with its icon, name, and description
-- Animated entrance: slides in from top with pixel-style border, gold/amber glow, stays for ~4s per achievement
-- Stacks if multiple achievements unlock at once (staggered with ~1s delay)
-- Uses the `ACHIEVEMENTS` constant to look up icon/name/description by ID
+### 3. `src/hooks/useCanvasResize.ts`
+- Delete file (no longer used)
 
-**4. `src/components/Game.tsx`**
-- After `submitGameStats` call (both game over ~line 1830 and victory ~line 4069), capture the returned achievement IDs
-- Store in state: `const [unlockedAchievements, setUnlockedAchievements] = useState<string[]>([])`
-- Render `<AchievementNotification>` when the array is non-empty
-- Clear after all notifications have been shown
+### 4. `src/index.css`
+- Remove the `.metal-frame.desktop-fullscreen` CSS block (lines ~265-290) since the class is no longer applied
+- Remove `max-width` constraint on `.metal-game-area` that references side panel widths — let it auto-size around the fixed canvas
+- Keep `.metal-frame` as `width: fit-content` so it wraps the fixed-size content naturally
 
-- Also for QUMRAN specifically: the in-game moment when all 6 letters are collected (~line 2197) already shows a toast — keep that as the immediate reward. The achievement notification will appear at game end when stats are submitted.
-
-**5. `src/utils/dailyChallengeSubmit.ts`**
-- Update return type to include `newAchievements: string[]` (IDs array)
-- Wire into the daily challenge result flow for notifications there too
-
-### Visual Design
-- Retro pixel-text styling consistent with existing UI
-- Dark background with gold/amber border and glow
-- Achievement icon (emoji) prominently displayed
-- "ACHIEVEMENT UNLOCKED" header text
-- Achievement name and description below
-- Auto-dismisses after 4 seconds with fade-out
-
-### Technical Notes
-- Achievement lookup uses the existing `ACHIEVEMENTS` array from `src/constants/achievements.ts`
-- Notifications are purely client-side presentation; the server is the source of truth for what's unlocked
-- No new database changes needed — the edge functions already handle achievement tracking
+### 5. Verify
+- `gameAreaRef` usage — if it's only for `useCanvasResize`, remove the ref. If used elsewhere (e.g. click handlers), keep it.
+- `gameGlowRef` — same check; if only used by `useCanvasResize` for imperative sizing, it can be simplified but likely still needed for CRT overlay positioning.
 

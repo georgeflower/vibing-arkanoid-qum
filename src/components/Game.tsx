@@ -24,6 +24,7 @@ import { useCanvasResize } from "@/hooks/useCanvasResize";
 import CRTOverlay from "./CRTOverlay";
 import { BOSS_RUSH_CONFIG, BossRushLevel } from "@/constants/bossRushConfig";
 import { submitGameStats } from "@/utils/profileStats";
+import { AchievementNotification } from "./AchievementNotification";
 import { DailyChallengeResultOverlay } from "./DailyChallengeResultOverlay";
 import { getDailyChallenge, evaluateObjectives, type DailyChallenge, type DailyChallengeResult } from "@/utils/dailyChallenge";
 import { submitDailyChallenge } from "@/utils/dailyChallengeSubmit";
@@ -424,6 +425,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   const [showHighScoreEntry, setShowHighScoreEntry] = useState(false);
   const [showHighScoreDisplay, setShowHighScoreDisplay] = useState(false);
   const [showEndScreen, setShowEndScreen] = useState(false);
+  const [unlockedAchievements, setUnlockedAchievements] = useState<string[]>([]);
   const [qualifiedLeaderboards, setQualifiedLeaderboards] = useState<{
     daily: boolean;
     weekly: boolean;
@@ -1840,6 +1842,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         difficulty: settings.difficulty,
         isVictory: false,
         collectedAllLetters: collectedLetters.size === 6,
+      }).then((ids) => {
+        if (ids.length > 0) setUnlockedAchievements(ids);
       });
     }
 
@@ -4079,6 +4083,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
             difficulty: settings.difficulty,
             isVictory: true,
             collectedAllLetters: collectedLetters.size === 6,
+          }).then((ids) => {
+            if (ids.length > 0) setUnlockedAchievements(ids);
           });
         }
       } else {
@@ -7850,6 +7856,9 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
       if (response.success) {
         setDailyChallengeStreak(response.streak);
+        if (response.newAchievements.length > 0) {
+          setUnlockedAchievements(response.newAchievements);
+        }
       }
     } catch (err) {
       console.error("Failed to submit daily challenge:", err);
@@ -9485,6 +9494,12 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
             </div>
           )}
         </>
+      )}
+      {unlockedAchievements.length > 0 && (
+        <AchievementNotification
+          achievementIds={unlockedAchievements}
+          onComplete={() => setUnlockedAchievements([])}
+        />
       )}
     </div>
   );
