@@ -2476,8 +2476,9 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     if (isBossRush) {
       resetBossRushSessionState();
     }
-    // Only clear boss state if starting level is NOT a boss level
-    if (!BOSS_LEVELS.includes(startLevel)) {
+    // Only clear boss state if starting level is NOT a boss level (and not a daily challenge boss)
+    const isDailyBoss = isDailyChallenge && settings.dailyChallengeConfig?.isBossChallenge;
+    if (!BOSS_LEVELS.includes(startLevel) && !isDailyBoss) {
       setBoss(null);
       setResurrectedBosses([]);
       setBossAttacks([]);
