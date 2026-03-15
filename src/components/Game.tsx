@@ -4585,8 +4585,10 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                 // Don't build if an indestructible brick overlaps this grid position
                 const nearbyIndestructible = world.bricks.find(
                   (b) => b.visible && b.isIndestructible &&
-                  Math.abs(b.x - targetX) < SCALED_BRICK_WIDTH &&
-                  Math.abs(b.y - targetY) < SCALED_BRICK_HEIGHT
+                  b.x < targetX + SCALED_BRICK_WIDTH &&
+                  b.x + b.width > targetX &&
+                  b.y < targetY + SCALED_BRICK_HEIGHT &&
+                  b.y + b.height > targetY
                 );
                 if (nearbyIndestructible) {
                   enemy.isBuilding = false;
@@ -4659,6 +4661,16 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                     const by = SCALED_BRICK_OFFSET_TOP + r * (SCALED_BRICK_HEIGHT + SCALED_BRICK_PADDING);
                     const bCX = bx + SCALED_BRICK_WIDTH / 2;
                     const bCY = by + SCALED_BRICK_HEIGHT / 2;
+
+                    // Check if ANY indestructible brick overlaps this grid cell (metal bricks are offset)
+                    const hasIndestructible = world.bricks.some(
+                      (b) => b.visible && b.isIndestructible &&
+                      b.x < bx + SCALED_BRICK_WIDTH &&
+                      b.x + b.width > bx &&
+                      b.y < by + SCALED_BRICK_HEIGHT &&
+                      b.y + b.height > by
+                    );
+                    if (hasIndestructible) continue; // Skip this cell entirely
 
                     const existingBrick = world.bricks.find(
                       (b) => b.visible && Math.abs(b.x - bx) < 2 && Math.abs(b.y - by) < 2
