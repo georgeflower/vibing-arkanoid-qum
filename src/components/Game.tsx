@@ -4660,6 +4660,16 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                     const bCX = bx + SCALED_BRICK_WIDTH / 2;
                     const bCY = by + SCALED_BRICK_HEIGHT / 2;
 
+                    // Check if ANY indestructible brick overlaps this grid cell (metal bricks are offset)
+                    const hasIndestructible = world.bricks.some(
+                      (b) => b.visible && b.isIndestructible &&
+                      b.x < bx + SCALED_BRICK_WIDTH &&
+                      b.x + b.width > bx &&
+                      b.y < by + SCALED_BRICK_HEIGHT &&
+                      b.y + b.height > by
+                    );
+                    if (hasIndestructible) continue; // Skip this cell entirely
+
                     const existingBrick = world.bricks.find(
                       (b) => b.visible && Math.abs(b.x - bx) < 2 && Math.abs(b.y - by) < 2
                     );
