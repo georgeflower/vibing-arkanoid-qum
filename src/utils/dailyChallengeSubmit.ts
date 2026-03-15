@@ -10,7 +10,7 @@ export interface DailyChallengeSubmission {
 export interface DailyChallengeSubmitResult {
   success: boolean;
   streak: number;
-  newAchievements: number;
+  newAchievements: string[];
   alreadyCompleted?: boolean;
 }
 
@@ -20,7 +20,7 @@ export async function submitDailyChallenge(
   try {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
-      return { success: false, streak: 0, newAchievements: 0 };
+      return { success: false, streak: 0, newAchievements: [] };
     }
 
     const { data, error } = await supabase.functions.invoke("submit-daily-challenge", {
@@ -29,17 +29,17 @@ export async function submitDailyChallenge(
 
     if (error) {
       console.error("Failed to submit daily challenge:", error);
-      return { success: false, streak: 0, newAchievements: 0 };
+      return { success: false, streak: 0, newAchievements: [] };
     }
 
     return {
       success: data?.success ?? false,
       streak: data?.streak ?? 0,
-      newAchievements: data?.newAchievements ?? 0,
+      newAchievements: Array.isArray(data?.newAchievements) ? data.newAchievements : [],
       alreadyCompleted: data?.alreadyCompleted,
     };
   } catch (err) {
     console.error("Error submitting daily challenge:", err);
-    return { success: false, streak: 0, newAchievements: 0 };
+    return { success: false, streak: 0, newAchievements: [] };
   }
 }

@@ -146,12 +146,14 @@ Deno.serve(async (req) => {
     };
 
     const newAchievements = [...existingAchievements];
+    const newlyUnlockedIds: string[] = [];
     for (const achievement of ACHIEVEMENT_CHECKS) {
       if (!existingIds.has(achievement.id) && achievement.check(profileForCheck)) {
         newAchievements.push({
           id: achievement.id,
           unlockedAt: new Date().toISOString(),
         });
+        newlyUnlockedIds.push(achievement.id);
       }
     }
 
@@ -183,10 +185,8 @@ Deno.serve(async (req) => {
       });
     }
 
-    const newlyUnlocked = newAchievements.length - existingAchievements.length;
-
     return new Response(
-      JSON.stringify({ success: true, newAchievements: newlyUnlocked }),
+      JSON.stringify({ success: true, newAchievements: newlyUnlockedIds }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
