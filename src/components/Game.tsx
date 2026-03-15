@@ -24,6 +24,7 @@ import { useCanvasResize } from "@/hooks/useCanvasResize";
 import CRTOverlay from "./CRTOverlay";
 import { BOSS_RUSH_CONFIG, BossRushLevel } from "@/constants/bossRushConfig";
 import { submitGameStats } from "@/utils/profileStats";
+import { AchievementNotification } from "./AchievementNotification";
 import { DailyChallengeResultOverlay } from "./DailyChallengeResultOverlay";
 import { getDailyChallenge, evaluateObjectives, type DailyChallenge, type DailyChallengeResult } from "@/utils/dailyChallenge";
 import { submitDailyChallenge } from "@/utils/dailyChallengeSubmit";
