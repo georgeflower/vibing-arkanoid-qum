@@ -9495,6 +9495,12 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
           )}
         </>
       )}
+      {unlockedAchievements.length > 0 && (
+        <AchievementNotification
+          achievementIds={unlockedAchievements}
+          onComplete={() => setUnlockedAchievements([])}
+        />
+      )}
     </div>
   );
 };
