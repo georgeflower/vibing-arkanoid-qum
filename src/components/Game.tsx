@@ -8019,8 +8019,9 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     setBossSpawnAnimation(null);
     setEnemiesKilled(0);
 
-    // Clear boss state if not a boss level, or reset and trigger intro if it is
-    if (!BOSS_LEVELS.includes(currentLevel)) {
+    // Clear boss state if not a boss level (and not a daily challenge boss), or reset and trigger intro if it is
+    const isDailyBossRetry = isDailyChallenge && settings.dailyChallengeConfig?.isBossChallenge;
+    if (!BOSS_LEVELS.includes(currentLevel) && !isDailyBossRetry) {
       setBoss(null);
       setResurrectedBosses([]);
       setBossAttacks([]);
