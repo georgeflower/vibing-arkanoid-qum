@@ -1,6 +1,14 @@
-export const GAME_VERSION = "0.9.979";
+export const GAME_VERSION = "0.9.980";
 
 export const CHANGELOG = [
+  {
+    version: "0.9.980",
+    changes: [
+      "Fixed: Star enemies no longer build bricks on top of indestructible metal bricks",
+      "Fixed: Daily Challenge Saturday boss (Cube) now correctly appears instead of being cleared on startup",
+      "Fixed: Daily Challenge boss retry no longer clears the boss state",
+    ],
+  },
   {
     version: "0.9.979",
     changes: [
