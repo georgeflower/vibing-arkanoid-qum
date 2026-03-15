@@ -7856,6 +7856,9 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
       if (response.success) {
         setDailyChallengeStreak(response.streak);
+        if (response.newAchievements.length > 0) {
+          setUnlockedAchievements(response.newAchievements);
+        }
       }
     } catch (err) {
       console.error("Failed to submit daily challenge:", err);
