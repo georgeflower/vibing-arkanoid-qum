@@ -4083,6 +4083,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
             difficulty: settings.difficulty,
             isVictory: true,
             collectedAllLetters: collectedLetters.size === 6,
+          }).then((ids) => {
+            if (ids.length > 0) setUnlockedAchievements(ids);
           });
         }
       } else {
