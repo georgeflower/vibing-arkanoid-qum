@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { GAME_VERSION } from "@/constants/version";
 
 // All image imports
 import paddleImg from "@/assets/paddle.png";
