@@ -3208,6 +3208,47 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     isMobileDevice,
     launchBallAtCurrentAngle,
   ]);
+  // Capture-phase ESC interceptor: prevent browser from exiting fullscreen,
+  // open pause menu instead
+  useEffect(() => {
+    const handleEscCapture = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      if (!isFullscreen) return;
+      
+      // Block the browser's default fullscreen-exit behavior
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      
+      // Handle pause/resume logic
+      if (ENABLE_DEBUG_FEATURES && showDebugDashboard) {
+        setShowDebugDashboard(false);
+      } else if (gameState === "playing") {
+        setGameState("paused");
+        document.exitPointerLock();
+        if (gameLoopRef.current) {
+          gameLoopRef.current.pause();
+        }
+        toast.info("Game paused. Press ESC to resume.");
+      } else if (gameState === "paused" && !debugDashboardPausedGame) {
+        setGameState("playing");
+        const canvas = canvasRef.current;
+        if (canvas && canvas.requestPointerLock) {
+          canvas.requestPointerLock();
+        }
+        if (gameLoopRef.current) {
+          gameLoopRef.current.resume();
+        }
+        toast.info("Game resumed!");
+      }
+    };
+    
+    document.addEventListener("keydown", handleEscCapture, { capture: true });
+    return () => {
+      document.removeEventListener("keydown", handleEscCapture, { capture: true });
+    };
+  }, [isFullscreen, gameState, showDebugDashboard, debugDashboardPausedGame]);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -8946,6 +8987,26 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                           <span className="text-cyan-300">B</span>
                           <span>Previous Track</span>
                         </div>
+
+                        {/* Exit Fullscreen button - only shown when in fullscreen */}
+                        {isFullscreen && (
+                          <div className="flex justify-between items-center mt-2 pt-2 border-t border-cyan-500/30">
+                            <span className="text-cyan-300">↔</span>
+                            <button
+                              onClick={toggleFullscreen}
+                              onTouchEnd={(e) => {
+                                e.stopPropagation();
+                                e.preventDefault();
+                                toggleFullscreen();
+                              }}
+                              onMouseEnter={() => soundManager.playMenuHover()}
+                              className="text-yellow-400 hover:text-yellow-300 transition-colors cursor-pointer touch-manipulation"
+                              style={{ touchAction: "manipulation" }}
+                            >
+                              EXIT FULLSCREEN
+                            </button>
+                          </div>
+                        )}
                       </div>
 
                       <div

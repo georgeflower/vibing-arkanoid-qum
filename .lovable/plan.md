@@ -1,36 +1,38 @@
 
 
-## Intercept ESC in Fullscreen + Add Exit Fullscreen Button to Pause Menu
+# Revert Game Area to Fixed Size (Pre-Expansion)
 
-### Problem
-When in fullscreen mode, pressing ESC exits fullscreen (browser default behavior) instead of opening the pause menu. The user wants ESC to open the pause menu, and a dedicated button in the pause menu to exit fullscreen.
+## Problem
+Two previous changes ("Expand game area to frame space" and "Expand game area to fill space") made the game canvas dynamically resize to fill all available space within the metal frame on desktop. The user wants the playable area to return to its original fixed size.
 
-### Changes
+## Current behavior
+- `useViewportFrame` makes the metal frame fill the entire viewport on desktop
+- `useCanvasResize` uses ResizeObserver to dynamically size the game canvas to fill the `metal-game-area` container
+- The canvas display size grows to match available space
 
-#### 1. `src/components/Game.tsx` — Intercept ESC before browser exits fullscreen (~line 3214)
+## Desired behavior
+The game canvas stays at its logical size (850×650 scaled by `scaleFactor`) and is simply centered within the frame — no dynamic expansion.
 
-In the existing `handleKeyPress` for Escape (line 3215), add `e.preventDefault()` when `isFullscreen` is true. This prevents the browser's default fullscreen-exit behavior. The existing pause logic already handles opening the pause menu.
+## Changes
 
-**Problem**: The browser's `keydown` Escape event exits fullscreen *before* our handler runs in some browsers. The fix: listen on `keydown` with `capture: true` at the document level, and call `e.preventDefault()` + `e.stopPropagation()` when fullscreen is active, then handle pause ourselves.
+### 1. `src/components/Game.tsx`
+- **Remove** `useViewportFrame` import and hook call (lines 22, 1651-1654)
+- **Remove** `useCanvasResize` import and hook call (lines 23, 1657-1667), along with destructured `displayWidth`, `displayHeight`, `dynamicScale`
+- Remove `gameAreaRef` if only used for `useCanvasResize` (check first)
+- On desktop, set the `game-glow` div's width/height explicitly to `SCALED_CANVAS_WIDTH` × `SCALED_CANVAS_HEIGHT` (same as mobile path but without the scale transform), so the canvas is fixed-size and centered
 
-Actually, the current handler is on the canvas element. We need to intercept at the document level with capture phase to beat the browser's fullscreen exit. Add a new `useEffect` that:
-- Listens on `document` for `keydown` in capture phase
-- When `e.key === "Escape"` and `isFullscreen`: calls `e.preventDefault()` and `e.stopPropagation()` to block browser fullscreen exit
-- Then delegates to the existing pause/resume logic
+### 2. `src/hooks/useViewportFrame.ts`
+- Delete file (no longer used)
 
-The existing canvas-level ESC handler (line 3215) should remain but will be reached less often in fullscreen since the capture handler stops propagation. We need to move the pause logic into the capture handler when fullscreen is active.
+### 3. `src/hooks/useCanvasResize.ts`
+- Delete file (no longer used)
 
-#### 2. `src/components/Game.tsx` — Add "Exit Fullscreen" button to pause menu (~line 8948)
+### 4. `src/index.css`
+- Remove the `.metal-frame.desktop-fullscreen` CSS block (lines ~265-290) since the class is no longer applied
+- Remove `max-width` constraint on `.metal-game-area` that references side panel widths — let it auto-size around the fixed canvas
+- Keep `.metal-frame` as `width: fit-content` so it wraps the fixed-size content naturally
 
-After the existing controls list in the pause overlay, add an "Exit Fullscreen" button (only shown when `isFullscreen` is true):
-- Icon: `Minimize2` from lucide-react (or use `↔` text)
-- Text: "EXIT FULLSCREEN"  
-- Retro styled, matching existing pause menu buttons
-- Calls `toggleFullscreen()` on click
-
-Add it as a new row in the controls section or as an additional button in the button bar at the bottom.
-
-### Summary
-1. **New capture-phase ESC interceptor** — prevents browser from exiting fullscreen, opens pause menu instead
-2. **"Exit Fullscreen" button** in pause menu — lets user explicitly exit fullscreen from the pause menu
+### 5. Verify
+- `gameAreaRef` usage — if it's only for `useCanvasResize`, remove the ref. If used elsewhere (e.g. click handlers), keep it.
+- `gameGlowRef` — same check; if only used by `useCanvasResize` for imperative sizing, it can be simplified but likely still needed for CRT overlay positioning.
 
