@@ -3208,46 +3208,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     isMobileDevice,
     launchBallAtCurrentAngle,
   ]);
-  // Capture-phase ESC interceptor: prevent browser from exiting fullscreen,
-  // open pause menu instead
-  useEffect(() => {
-    const handleEscCapture = (e: KeyboardEvent) => {
-      if (e.key !== "Escape") return;
-      if (!isFullscreen) return;
-      
-      // Block the browser's default fullscreen-exit behavior
-      e.preventDefault();
-      e.stopPropagation();
-      e.stopImmediatePropagation();
-      
-      // Handle pause/resume logic
-      if (ENABLE_DEBUG_FEATURES && showDebugDashboard) {
-        setShowDebugDashboard(false);
-      } else if (gameState === "playing") {
-        setGameState("paused");
-        document.exitPointerLock();
-        if (gameLoopRef.current) {
-          gameLoopRef.current.pause();
-        }
-        toast.info("Game paused. Press ESC to resume.");
-      } else if (gameState === "paused" && !debugDashboardPausedGame) {
-        setGameState("playing");
-        const canvas = canvasRef.current;
-        if (canvas && canvas.requestPointerLock) {
-          canvas.requestPointerLock();
-        }
-        if (gameLoopRef.current) {
-          gameLoopRef.current.resume();
-        }
-        toast.info("Game resumed!");
-      }
-    };
-    
-    document.addEventListener("keydown", handleEscCapture, { capture: true });
-    return () => {
-      document.removeEventListener("keydown", handleEscCapture, { capture: true });
-    };
-  }, [isFullscreen, gameState, showDebugDashboard, debugDashboardPausedGame]);
+  // ESC interceptor removed — browsers block preventDefault() for ESC in fullscreen.
+  // Instead, fullscreenchange handler pauses the game when fullscreen exits.
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -8176,6 +8138,13 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
           await (fullscreenContainerRef.current as any).webkitRequestFullscreen();
         }
         setIsFullscreen(true);
+        // Request pointer lock after entering fullscreen
+        setTimeout(() => {
+          const canvas = canvasRef.current;
+          if (canvas && canvas.requestPointerLock && gameState === "playing") {
+            canvas.requestPointerLock();
+          }
+        }, 300);
       } else {
         if (document.exitFullscreen) {
           await document.exitFullscreen();
@@ -8203,13 +8172,17 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       const isNowFullscreen = !!document.fullscreenElement || !!(document as any).webkitFullscreenElement;
       setIsFullscreen(isNowFullscreen);
 
-      // On mobile: if exiting fullscreen and game is playing, pause and show prompt
-      if (isMobileDevice && !isNowFullscreen && gameState === "playing") {
+      // If exiting fullscreen while playing (ESC pressed), pause the game
+      if (!isNowFullscreen && gameState === "playing") {
         setGameState("paused");
+        document.exitPointerLock();
         if (gameLoopRef.current) {
           gameLoopRef.current.pause();
         }
-        setShowFullscreenPrompt(true);
+        if (isMobileDevice) {
+          setShowFullscreenPrompt(true);
+        }
+        toast.info("Game paused. Press ESC to resume.");
       }
     };
 
