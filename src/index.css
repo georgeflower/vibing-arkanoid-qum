@@ -157,6 +157,12 @@ All colors MUST be HSL.
 
   /* Mobile adjustments */
   @media (max-width: 768px) {
+    .game-glow {
+      max-width: 92vw;
+      max-height: 75vh;
+      width: fit-content;
+    }
+
     .game-glow canvas {
       max-width: 92vw; /* Side panels hidden on mobile */
       max-height: 75vh;
