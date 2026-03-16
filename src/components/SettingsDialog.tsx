@@ -30,6 +30,8 @@ interface SettingsDialogProps {
   onPauseMenuShow?: () => void;
   /** Called after settings are saved with the full settings object */
   onSettingsSaved?: (settings: GameSettingsType) => void;
+  /** Portal container element for rendering dialog inside fullscreen containers */
+  portalContainer?: HTMLElement | null;
 }
 
 type TabId = "video" | "sound";
@@ -57,6 +59,7 @@ export const SettingsDialog = ({
   onPauseMenuHide,
   onPauseMenuShow,
   onSettingsSaved,
+  portalContainer,
 }: SettingsDialogProps) => {
   const { settings, updateSettings, saveSettings, resetSoundDefaults, resetVideoDefaults } = useGameSettings();
   const [internalOpen, setInternalOpen] = useState(false);
@@ -301,7 +304,7 @@ export const SettingsDialog = ({
   );
 
   const content = (
-    <DialogContent className="sm:max-w-md max-h-[85vh] overflow-hidden flex flex-col amiga-box z-[300]">
+    <DialogContent className="sm:max-w-md max-h-[85vh] overflow-hidden flex flex-col amiga-box z-[300]" container={portalContainer}>
       <DialogHeader>
         <DialogTitle className="retro-pixel-text text-sm flex items-center gap-2" style={{ color: "hsl(0, 0%, 85%)" }}>
           <Settings className="h-4 w-4" />
