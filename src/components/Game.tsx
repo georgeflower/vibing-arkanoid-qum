@@ -3208,6 +3208,47 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     isMobileDevice,
     launchBallAtCurrentAngle,
   ]);
+  // Capture-phase ESC interceptor: prevent browser from exiting fullscreen,
+  // open pause menu instead
+  useEffect(() => {
+    const handleEscCapture = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      if (!isFullscreen) return;
+      
+      // Block the browser's default fullscreen-exit behavior
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      
+      // Handle pause/resume logic
+      if (ENABLE_DEBUG_FEATURES && showDebugDashboard) {
+        setShowDebugDashboard(false);
+      } else if (gameState === "playing") {
+        setGameState("paused");
+        document.exitPointerLock();
+        if (gameLoopRef.current) {
+          gameLoopRef.current.pause();
+        }
+        toast.info("Game paused. Press ESC to resume.");
+      } else if (gameState === "paused" && !debugDashboardPausedGame) {
+        setGameState("playing");
+        const canvas = canvasRef.current;
+        if (canvas && canvas.requestPointerLock) {
+          canvas.requestPointerLock();
+        }
+        if (gameLoopRef.current) {
+          gameLoopRef.current.resume();
+        }
+        toast.info("Game resumed!");
+      }
+    };
+    
+    document.addEventListener("keydown", handleEscCapture, { capture: true });
+    return () => {
+      document.removeEventListener("keydown", handleEscCapture, { capture: true });
+    };
+  }, [isFullscreen, gameState, showDebugDashboard, debugDashboardPausedGame]);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
