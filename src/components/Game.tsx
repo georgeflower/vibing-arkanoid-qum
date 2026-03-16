@@ -8138,6 +8138,13 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
           await (fullscreenContainerRef.current as any).webkitRequestFullscreen();
         }
         setIsFullscreen(true);
+        // Request pointer lock after entering fullscreen
+        setTimeout(() => {
+          const canvas = canvasRef.current;
+          if (canvas && canvas.requestPointerLock && gameState === "playing") {
+            canvas.requestPointerLock();
+          }
+        }, 300);
       } else {
         if (document.exitFullscreen) {
           await document.exitFullscreen();
