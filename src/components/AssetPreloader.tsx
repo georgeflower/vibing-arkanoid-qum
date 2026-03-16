@@ -226,6 +226,7 @@ const AssetPreloader = ({ onComplete }: AssetPreloaderProps) => {
           await new Promise((r) => setTimeout(r, 120));
         }
         setPhase("done");
+        localStorage.setItem("preloader_version", GAME_VERSION);
         setTimeout(onComplete, 800);
       }
     };
