@@ -27,6 +27,7 @@ import { FINAL_LEVEL, ENABLE_DEBUG_FEATURES, ENABLE_HIGH_QUALITY } from "@/const
 import { BOSS_RUSH_CONFIG } from "@/constants/bossRushConfig";
 import { SettingsDialog } from "./SettingsDialog";
 import { useGameSettings } from "@/hooks/useGameSettings";
+import { useAssetPreloader } from "@/hooks/useAssetPreloader";
 
 interface MainMenuProps {
   onStartGame: (settings: GameSettings) => void;
@@ -46,6 +47,11 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
   const [showWhatsNew, setShowWhatsNew] = useState(false);
   const [showDailyChallenge, setShowDailyChallenge] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  // Background asset loading
+  const { progress: assetProgress, isLoading: assetLoading, isComplete: assetComplete } = useAssetPreloader();
+  const assetFilledBlocks = Math.round((assetProgress / 100) * 10);
+  const assetBar = "█".repeat(assetFilledBlocks) + "░".repeat(10 - assetFilledBlocks);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => setIsLoggedIn(!!session));
@@ -795,7 +801,7 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
       style={{ backgroundImage: `url(${startScreenImg})` }}
     >
       {qualitySettings.backgroundEffects && <CRTOverlay quality={quality} crtEnabled={gameSettings.crtEnabled} />}
-      <Card className="max-w-sm w-full max-h-[90vh] overflow-y-auto smooth-scroll custom-scrollbar p-6 bg-black/60 backdrop-blur-sm border-[hsl(200,70%,50%)]">
+      <Card className="max-w-sm w-full max-h-[90vh] overflow-y-auto smooth-scroll custom-scrollbar p-6 bg-black/60 backdrop-blur-sm border-[hsl(200,70%,50%)] relative">
         {/* Settings */}
         <div className="space-y-4">
           {/* Top Scores Display */}
@@ -1026,6 +1032,26 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
             {isLoggedIn ? "👤 Profile" : "🔑 Login"}
           </Button>
         </div>
+
+        {/* Asset loading indicator */}
+        {assetLoading && (
+          <div
+            className="sticky bottom-0 left-0 right-0 pt-3 pb-1 px-1 text-right"
+            style={{ fontFamily: "'Press Start 2P', monospace" }}
+          >
+            <div className="flex items-center justify-end gap-2" style={{ fontSize: "7px" }}>
+              <span style={{ color: "hsl(142, 50%, 45%)", letterSpacing: "1px" }}>
+                {assetComplete ? "READY TO PLAY" : "LOADING ASSETS"}
+              </span>
+              <span style={{ color: "hsl(142, 60%, 40%)", letterSpacing: "1px" }}>
+                [{assetBar}]
+              </span>
+              <span style={{ color: "hsl(0, 0%, 55%)" }}>
+                {assetProgress}%
+              </span>
+            </div>
+          </div>
+        )}
       </Card>
     </div>
   );

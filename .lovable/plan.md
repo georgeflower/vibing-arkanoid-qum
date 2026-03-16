@@ -1,47 +1,38 @@
 
 
-## Move Asset Preloader Into MainMenu as Background Loading Indicator
+# Revert Game Area to Fixed Size (Pre-Expansion)
 
-### Overview
-Remove the separate preloader screen. Instead, start loading assets immediately when the MainMenu mounts (only if version changed). Show a small retro progress meter in the lower-right corner of the menu card. The user can start the game at any time -- loading continues in the background.
+## Problem
+Two previous changes ("Expand game area to frame space" and "Expand game area to fill space") made the game canvas dynamically resize to fill all available space within the metal frame on desktop. The user wants the playable area to return to its original fixed size.
 
-### Changes
+## Current behavior
+- `useViewportFrame` makes the metal frame fill the entire viewport on desktop
+- `useCanvasResize` uses ResizeObserver to dynamically size the game canvas to fill the `metal-game-area` container
+- The canvas display size grows to match available space
 
-#### 1. Create `src/hooks/useAssetPreloader.ts` (new file)
-A custom hook that manages background asset loading:
-- Exports `{ progress, isLoading, isComplete }` state
-- Contains the same `ASSET_MANIFEST` from `AssetPreloader.tsx` but reordered: level-1 assets first (paddle, ball, background-tile, cracked bricks, core SFX) then power-ups, then later-level backgrounds, then boss assets
-- Adds a `priority` field: `1` = level-1 essentials, `2` = common power-ups/SFX, `3` = later backgrounds/bosses
-- On mount, checks `localStorage("preloader_version")` vs `GAME_VERSION` -- if match, sets `isComplete = true` immediately
-- Otherwise loads assets sequentially (priority 1 first, then 2, then 3), updating `progress` as each completes
-- On full completion, writes version to localStorage
-- Uses a ref to keep loading even if the component re-renders
-- Exposes a `cancelLoading` cleanup
+## Desired behavior
+The game canvas stays at its logical size (850×650 scaled by `scaleFactor`) and is simply centered within the frame — no dynamic expansion.
 
-#### 2. Edit `src/components/MainMenu.tsx`
-- Import and call `useAssetPreloader()`
-- In the main menu return (line ~792), add a small loading indicator in the lower-right of the Card:
-  - Only visible when `isLoading && !isComplete`
-  - Small retro text: `"LOADING ASSETS..."` with a mini progress bar (e.g. `[████░░] 67%`)
-  - When complete, briefly flash `"READY"` then fade out
-  - Style: `font-family: 'Press Start 2P', monospace`, `font-size: 8px`, muted color like `hsl(142, 50%, 45%)`, positioned `absolute bottom-2 right-3`
+## Changes
 
-#### 3. Edit `src/pages/Index.tsx`
-- Remove the `"preloading"` phase entirely
-- Remove the `AssetPreloader` import and rendering
-- Go directly from `"menu"` to `"game"` when user clicks start
-- Simplify back to two phases: `"menu" | "game"`
+### 1. `src/components/Game.tsx`
+- **Remove** `useViewportFrame` import and hook call (lines 22, 1651-1654)
+- **Remove** `useCanvasResize` import and hook call (lines 23, 1657-1667), along with destructured `displayWidth`, `displayHeight`, `dynamicScale`
+- Remove `gameAreaRef` if only used for `useCanvasResize` (check first)
+- On desktop, set the `game-glow` div's width/height explicitly to `SCALED_CANVAS_WIDTH` × `SCALED_CANVAS_HEIGHT` (same as mobile path but without the scale transform), so the canvas is fixed-size and centered
 
-#### 4. Delete or keep `src/components/AssetPreloader.tsx`
-- Keep the file but it will no longer be imported anywhere. Can be cleaned up later.
+### 2. `src/hooks/useViewportFrame.ts`
+- Delete file (no longer used)
 
-### Asset Priority Order
-- **Priority 1 (level 1)**: paddle, paddleTurrets, metalBallTexture, crackedBrick 1-3, backgroundTile (level 1 bg), ball_missed SFX
-- **Priority 2 (common)**: all power-up images, bonus letters, remaining SFX
-- **Priority 3 (later levels)**: backgroundTile2-4, backgroundTile69, backgroundTile1114, backgroundTile1620, boss backgrounds, megaBoss, missile, endScreen
+### 3. `src/hooks/useCanvasResize.ts`
+- Delete file (no longer used)
 
-### Files
-1. **Create** `src/hooks/useAssetPreloader.ts`
-2. **Edit** `src/components/MainMenu.tsx` -- add loading indicator
-3. **Edit** `src/pages/Index.tsx` -- remove preloading phase
+### 4. `src/index.css`
+- Remove the `.metal-frame.desktop-fullscreen` CSS block (lines ~265-290) since the class is no longer applied
+- Remove `max-width` constraint on `.metal-game-area` that references side panel widths — let it auto-size around the fixed canvas
+- Keep `.metal-frame` as `width: fit-content` so it wraps the fixed-size content naturally
+
+### 5. Verify
+- `gameAreaRef` usage — if it's only for `useCanvasResize`, remove the ref. If used elsewhere (e.g. click handlers), keep it.
+- `gameGlowRef` — same check; if only used by `useCanvasResize` for imperative sizing, it can be simplified but likely still needed for CRT overlay positioning.
 
