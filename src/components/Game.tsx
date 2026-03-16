@@ -8286,28 +8286,30 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
           setHeaderVisible(true);
         }
       } else {
+        // Mobile: scale canvas to fill available viewport
+        const mobileScale = Math.min(containerWidth / SCALED_CANVAS_WIDTH, containerHeight / SCALED_CANVAS_HEIGHT);
         // Mobile: hide all frames when in fullscreen, otherwise check space
         if (isFullscreen) {
           // Force hide all frames in fullscreen on mobile
-          if (framesVisible || headerVisible || titleVisible) {
+          if (framesVisible || headerVisible || titleVisible || gameScale !== mobileScale) {
             setFramesVisible(false);
             setHeaderVisible(false);
             setTitleVisible(false);
-            setGameScale(1);
-            console.log(`[Layout Debug] layoutMode: mobileFullscreenFramesHidden`);
+            setGameScale(mobileScale);
+            console.log(`[Layout Debug] layoutMode: mobileFullscreenFramesHidden, scale: ${mobileScale.toFixed(2)}`);
           }
         } else {
           // Normal mobile behavior - hide all frames if constrained
           const requiredHeight =
             SCALED_CANVAS_HEIGHT + titleBarHeight + statsBarHeight + bottomBarHeight + sideFrameHeight;
           const shouldShowFrames = containerHeight >= requiredHeight;
-          if (shouldShowFrames !== framesVisible) {
+          if (shouldShowFrames !== framesVisible || gameScale !== mobileScale) {
             setFramesVisible(shouldShowFrames);
             setHeaderVisible(shouldShowFrames);
             setTitleVisible(shouldShowFrames);
-            setGameScale(1);
+            setGameScale(mobileScale);
             const layoutMode = shouldShowFrames ? "headerVisible" : "headerHidden";
-            console.log(`[Layout Debug] layoutMode: ${layoutMode}`);
+            console.log(`[Layout Debug] layoutMode: ${layoutMode}, scale: ${mobileScale.toFixed(2)}`);
           }
         }
       }
