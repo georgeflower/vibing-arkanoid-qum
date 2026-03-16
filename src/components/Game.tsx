@@ -9065,9 +9065,6 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                     {/* Frame Profiler Overlay - debug only */}
                     <FrameProfilerOverlay visible={debugSettings.showFrameProfiler} />
 
-                    {/* Lightweight FPS overlay - user setting */}
-                    <FpsOverlay visible={gameSettingsData.showFpsOverlay} />
-
                     {/* Pool Stats Overlay */}
                     <PoolStatsOverlay visible={debugSettings.showPoolStats} />
 
