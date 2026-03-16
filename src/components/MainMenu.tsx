@@ -48,6 +48,11 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
   const [showDailyChallenge, setShowDailyChallenge] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
+  // Background asset loading
+  const { progress: assetProgress, isLoading: assetLoading, isComplete: assetComplete } = useAssetPreloader();
+  const assetFilledBlocks = Math.round((assetProgress / 100) * 10);
+  const assetBar = "█".repeat(assetFilledBlocks) + "░".repeat(10 - assetFilledBlocks);
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => setIsLoggedIn(!!session));
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => setIsLoggedIn(!!session));
