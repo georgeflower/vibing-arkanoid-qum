@@ -1009,6 +1009,9 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
             open={showSettings}
             onOpenChange={setShowSettings}
             hideTrigger
+            onSettingsSaved={(s) => {
+              setQuality(s.qualityLevel);
+            }}
           />
 
           <Button
