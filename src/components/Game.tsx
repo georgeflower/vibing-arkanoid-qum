@@ -8286,30 +8286,29 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
           setHeaderVisible(true);
         }
       } else {
-        // Mobile: scale canvas to fill available viewport
-        const mobileScale = Math.min(containerWidth / SCALED_CANVAS_WIDTH, containerHeight / SCALED_CANVAS_HEIGHT);
-        // Mobile: hide all frames when in fullscreen, otherwise check space
+        // Mobile: let CSS handle viewport-fitting (max-width/max-height constraints)
+        // Do NOT apply transform scaling — it conflicts with CSS-based scaling
         if (isFullscreen) {
           // Force hide all frames in fullscreen on mobile
-          if (framesVisible || headerVisible || titleVisible || gameScale !== mobileScale) {
+          if (framesVisible || headerVisible || titleVisible || gameScale !== 1) {
             setFramesVisible(false);
             setHeaderVisible(false);
             setTitleVisible(false);
-            setGameScale(mobileScale);
-            console.log(`[Layout Debug] layoutMode: mobileFullscreenFramesHidden, scale: ${mobileScale.toFixed(2)}`);
+            setGameScale(1);
+            console.log(`[Layout Debug] layoutMode: mobileFullscreenFramesHidden, scale: 1`);
           }
         } else {
           // Normal mobile behavior - hide all frames if constrained
           const requiredHeight =
             SCALED_CANVAS_HEIGHT + titleBarHeight + statsBarHeight + bottomBarHeight + sideFrameHeight;
           const shouldShowFrames = containerHeight >= requiredHeight;
-          if (shouldShowFrames !== framesVisible || gameScale !== mobileScale) {
+          if (shouldShowFrames !== framesVisible || gameScale !== 1) {
             setFramesVisible(shouldShowFrames);
             setHeaderVisible(shouldShowFrames);
             setTitleVisible(shouldShowFrames);
-            setGameScale(mobileScale);
+            setGameScale(1);
             const layoutMode = shouldShowFrames ? "headerVisible" : "headerHidden";
-            console.log(`[Layout Debug] layoutMode: ${layoutMode}, scale: ${mobileScale.toFixed(2)}`);
+            console.log(`[Layout Debug] layoutMode: ${layoutMode}, scale: 1`);
           }
         }
       }

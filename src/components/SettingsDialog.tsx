@@ -30,6 +30,8 @@ interface SettingsDialogProps {
   onPauseMenuShow?: () => void;
   /** Called after settings are saved with the full settings object */
   onSettingsSaved?: (settings: GameSettingsType) => void;
+  /** Portal container element for rendering dialog inside fullscreen containers */
+  portalContainer?: HTMLElement | null;
 }
 
 type TabId = "video" | "sound";
