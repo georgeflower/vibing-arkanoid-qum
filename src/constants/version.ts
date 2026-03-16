@@ -1,6 +1,14 @@
-export const GAME_VERSION = "0.9.980";
+export const GAME_VERSION = "0.9.981";
 
 export const CHANGELOG = [
+  {
+    version: "0.9.981",
+    changes: [
+      "Fixed: Mobile canvas scaling — removed double-scaling conflict between CSS and JS transforms",
+      "Fixed: Settings dialog now visible when opened from pause menu on mobile/fullscreen",
+      "Improved: Dialog portaling into fullscreen container for correct z-index layering",
+    ],
+  },
   {
     version: "0.9.980",
     changes: [
