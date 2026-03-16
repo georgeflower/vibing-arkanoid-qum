@@ -49,6 +49,7 @@ import { frameProfiler } from "@/utils/frameProfiler";
 
 import { getParticleLimits, shouldCreateParticle, calculateParticleCount } from "@/utils/particleLimits";
 import { FrameProfilerOverlay } from "./FrameProfilerOverlay";
+import { FpsOverlay } from "./FpsOverlay";
 import { PoolStatsOverlay } from "./PoolStatsOverlay";
 import { CCDPerformanceTracker } from "@/utils/rollingStats";
 import { debugLogger } from "@/utils/debugLogger";
