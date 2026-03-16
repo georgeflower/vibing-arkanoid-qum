@@ -9015,6 +9015,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                       setQuality(s.qualityLevel);
                       updateGameSettings(s);
                     }}
+                    portalContainer={fullscreenContainerRef.current}
                   />
                 )}
 
