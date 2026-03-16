@@ -1,19 +1,20 @@
 import { useState, useEffect } from "react";
 import { Game } from "@/components/Game";
 import { MainMenu } from "@/components/MainMenu";
+import AssetPreloader from "@/components/AssetPreloader";
 import { useServiceWorkerUpdate } from "@/hooks/useServiceWorkerUpdate";
 import type { GameSettings } from "@/types/game";
 
 const Index = () => {
-  const [gameStarted, setGameStarted] = useState(false);
+  const [phase, setPhase] = useState<"menu" | "preloading" | "game">("menu");
   const [gameSettings, setGameSettings] = useState<GameSettings | null>(null);
   const [isStartingGame, setIsStartingGame] = useState(false);
 
   // Check for SW updates on main menu or when starting a new game
   useServiceWorkerUpdate({
-    isMainMenu: !gameStarted,
+    isMainMenu: phase === "menu",
     isStartingGame,
-    shouldApplyUpdate: !gameStarted,
+    shouldApplyUpdate: phase === "menu",
   });
 
   // Reset isStartingGame flag after it's been processed
@@ -26,19 +27,31 @@ const Index = () => {
   const handleStartGame = (settings: GameSettings) => {
     setIsStartingGame(true);
     setGameSettings(settings);
-    setGameStarted(true);
+    setPhase("preloading");
+  };
+
+  const handlePreloadComplete = () => {
+    setPhase("game");
   };
 
   const handleReturnToMenu = () => {
-    setGameStarted(false);
+    setPhase("menu");
     setGameSettings(null);
   };
 
-  if (!gameStarted || !gameSettings) {
+  if (phase === "menu") {
     return <MainMenu onStartGame={handleStartGame} />;
   }
 
-  return <Game settings={gameSettings} onReturnToMenu={handleReturnToMenu} />;
+  if (phase === "preloading" && gameSettings) {
+    return <AssetPreloader onComplete={handlePreloadComplete} />;
+  }
+
+  if (phase === "game" && gameSettings) {
+    return <Game settings={gameSettings} onReturnToMenu={handleReturnToMenu} />;
+  }
+
+  return <MainMenu onStartGame={handleStartGame} />;
 };
 
 export default Index;
