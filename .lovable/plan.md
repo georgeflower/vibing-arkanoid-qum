@@ -1,38 +1,51 @@
 
 
-# Revert Game Area to Fixed Size (Pre-Expansion)
+## Fix: Settings Not Applied from Main Menu + FPS Overlay Issues
 
-## Problem
-Two previous changes ("Expand game area to frame space" and "Expand game area to fill space") made the game canvas dynamically resize to fill all available space within the metal frame on desktop. The user wants the playable area to return to its original fixed size.
+### Issues Identified
 
-## Current behavior
-- `useViewportFrame` makes the metal frame fill the entire viewport on desktop
-- `useCanvasResize` uses ResizeObserver to dynamically size the game canvas to fill the `metal-game-area` container
-- The canvas display size grows to match available space
+1. **Settings not applied from Main Menu**: The `SettingsDialog` in MainMenu has no `onSettingsSaved` callback, so quality/CRT changes are saved to localStorage but the MainMenu's own `quality` state (from `useAdaptiveQuality`) is never updated. The MainMenu initializes `useAdaptiveQuality` with a hardcoded `initialQuality: "high"` and never syncs it with saved settings.
 
-## Desired behavior
-The game canvas stays at its logical size (850×650 scaled by `scaleFactor`) and is simply centered within the frame — no dynamic expansion.
+2. **CRT/FPS toggles show wrong state on re-open**: The draft loads from `loadSettings()` which reads localStorage correctly, but `VIDEO_DEFAULTS` has `crtEnabled: true` and `showFpsOverlay: false`. The real issue is that `useGameSettings` defaults have `crtEnabled: true`, and when the settings dialog opens, it reads from localStorage which may have stale or default values merged incorrectly.
 
-## Changes
+3. **FPS overlay shows FrameProfiler (complex debug panel) instead of simple FPS**: The `showFpsOverlay` setting triggers `FrameProfilerOverlay` which is a full debug panel, not a simple FPS counter. User wants a lightweight "FPS: XX | Δt: XXms" display in the lower-left of the game canvas.
 
-### 1. `src/components/Game.tsx`
-- **Remove** `useViewportFrame` import and hook call (lines 22, 1651-1654)
-- **Remove** `useCanvasResize` import and hook call (lines 23, 1657-1667), along with destructured `displayWidth`, `displayHeight`, `dynamicScale`
-- Remove `gameAreaRef` if only used for `useCanvasResize` (check first)
-- On desktop, set the `game-glow` div's width/height explicitly to `SCALED_CANVAS_WIDTH` × `SCALED_CANVAS_HEIGHT` (same as mobile path but without the scale transform), so the canvas is fixed-size and centered
+### Changes
 
-### 2. `src/hooks/useViewportFrame.ts`
-- Delete file (no longer used)
+**1. `src/components/MainMenu.tsx`** — Wire up `onSettingsSaved` + sync quality from saved settings:
 
-### 3. `src/hooks/useCanvasResize.ts`
-- Delete file (no longer used)
+- Add `onSettingsSaved` to the `SettingsDialog` to update the local `quality` state via `useAdaptiveQuality`'s `setQuality`.
+- Initialize `useAdaptiveQuality` with the saved quality from `gameSettings.qualityLevel` instead of hardcoded "high".
 
-### 4. `src/index.css`
-- Remove the `.metal-frame.desktop-fullscreen` CSS block (lines ~265-290) since the class is no longer applied
-- Remove `max-width` constraint on `.metal-game-area` that references side panel widths — let it auto-size around the fixed canvas
-- Keep `.metal-frame` as `width: fit-content` so it wraps the fixed-size content naturally
+```tsx
+const { quality, qualitySettings, setQuality } = useAdaptiveQuality({
+  initialQuality: gameSettings.qualityLevel || "high",
+  autoAdjust: false,
+});
 
-### 5. Verify
-- `gameAreaRef` usage — if it's only for `useCanvasResize`, remove the ref. If used elsewhere (e.g. click handlers), keep it.
-- `gameGlowRef` — same check; if only used by `useCanvasResize` for imperative sizing, it can be simplified but likely still needed for CRT overlay positioning.
+<SettingsDialog
+  open={showSettings}
+  onOpenChange={setShowSettings}
+  hideTrigger
+  onSettingsSaved={(s) => {
+    setQuality(s.qualityLevel);
+  }}
+/>
+```
+
+**2. `src/components/Game.tsx`** — Replace `FrameProfilerOverlay` for FPS setting with a new simple FPS HUD:
+
+- Create a new lightweight component `src/components/FpsOverlay.tsx` that reads from `renderState` or the game loop's FPS and shows "FPS: XX | Δt: XX.Xms" in the lower-left corner, rendered on top of the game canvas.
+- Remove the `gameSettingsData.showFpsOverlay` condition from `FrameProfilerOverlay` (keep only `debugSettings.showFrameProfiler`).
+- Add the new `FpsOverlay` component controlled by `gameSettingsData.showFpsOverlay`.
+
+**3. New file: `src/components/FpsOverlay.tsx`**
+
+A minimal component that polls FPS from the game loop at ~500ms intervals and displays:
+- FPS value (color-coded: green ≥55, yellow ≥30, red <30)  
+- Delta time in ms
+- Positioned fixed bottom-left on mobile, bottom-left on desktop
+- Small monospace font, semi-transparent background, pointer-events-none
+
+**4. Fix CRT/FPS toggle state persistence**: The defaults have `crtEnabled: true` — when `loadSettings()` merges, it correctly uses stored values. The issue is the MainMenu's `useAdaptiveQuality` doesn't reflect saved quality, so `qualitySettings.backgroundEffects` may be wrong. Fix #1 above resolves this.
 
