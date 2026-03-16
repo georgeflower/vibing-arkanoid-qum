@@ -8987,6 +8987,26 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                           <span className="text-cyan-300">B</span>
                           <span>Previous Track</span>
                         </div>
+
+                        {/* Exit Fullscreen button - only shown when in fullscreen */}
+                        {isFullscreen && (
+                          <div className="flex justify-between items-center mt-2 pt-2 border-t border-cyan-500/30">
+                            <span className="text-cyan-300">↔</span>
+                            <button
+                              onClick={toggleFullscreen}
+                              onTouchEnd={(e) => {
+                                e.stopPropagation();
+                                e.preventDefault();
+                                toggleFullscreen();
+                              }}
+                              onMouseEnter={() => soundManager.playMenuHover()}
+                              className="text-yellow-400 hover:text-yellow-300 transition-colors cursor-pointer touch-manipulation"
+                              style={{ touchAction: "manipulation" }}
+                            >
+                              EXIT FULLSCREEN
+                            </button>
+                          </div>
+                        )}
                       </div>
 
                       <div
