@@ -1,38 +1,35 @@
 
 
-# Revert Game Area to Fixed Size (Pre-Expansion)
+## Fix Preloader: Screen Size, Skip Music, Cache-Aware Loading
 
-## Problem
-Two previous changes ("Expand game area to frame space" and "Expand game area to fill space") made the game canvas dynamically resize to fill all available space within the metal frame on desktop. The user wants the playable area to return to its original fixed size.
+### Issue 1: Screen Size After Preloader
 
-## Current behavior
-- `useViewportFrame` makes the metal frame fill the entire viewport on desktop
-- `useCanvasResize` uses ResizeObserver to dynamically size the game canvas to fill the `metal-game-area` container
-- The canvas display size grows to match available space
+The preloader uses `fixed inset-0` which takes over the full viewport. When it unmounts and Game mounts, the Game's layout effect (`checkFrameVisibility`) runs immediately but `fullscreenContainerRef.current` may not have its final dimensions yet. The fix is to add a small delay or force a re-check after mount to ensure the container has settled.
 
-## Desired behavior
-The game canvas stays at its logical size (850×650 scaled by `scaleFactor`) and is simply centered within the frame — no dynamic expansion.
+**Fix in `src/components/Game.tsx`**: Add a second `checkFrameVisibility()` call after a short RAF delay in the layout effect (around line 8322), ensuring the container dimensions are accurate after preloader unmount.
 
-## Changes
+### Issue 2: Remove Background Music from Preloader
 
-### 1. `src/components/Game.tsx`
-- **Remove** `useViewportFrame` import and hook call (lines 22, 1651-1654)
-- **Remove** `useCanvasResize` import and hook call (lines 23, 1657-1667), along with destructured `displayWidth`, `displayHeight`, `dynamicScale`
-- Remove `gameAreaRef` if only used for `useCanvasResize` (check first)
-- On desktop, set the `game-glow` div's width/height explicitly to `SCALED_CANVAS_WIDTH` × `SCALED_CANVAS_HEIGHT` (same as mobile path but without the scale transform), so the canvas is fixed-size and centered
+Remove all music tracks (lines 124-146) from `ASSET_MANIFEST` — these are the large `.mp3` files (level music, boss music). Keep only the small SFX files (lines 106-122) which are short sound effects. Music streams on demand anyway via `SoundManager`.
 
-### 2. `src/hooks/useViewportFrame.ts`
-- Delete file (no longer used)
+**Files affected**: Remove ~24 entries from `ASSET_MANIFEST` (music tracks + boss music). Keep the 16 SFX entries. Update `totalAssets` count accordingly.
 
-### 3. `src/hooks/useCanvasResize.ts`
-- Delete file (no longer used)
+### Issue 3: Skip Preloader If Assets Already Cached
 
-### 4. `src/index.css`
-- Remove the `.metal-frame.desktop-fullscreen` CSS block (lines ~265-290) since the class is no longer applied
-- Remove `max-width` constraint on `.metal-game-area` that references side panel widths — let it auto-size around the fixed canvas
-- Keep `.metal-frame` as `width: fit-content` so it wraps the fixed-size content naturally
+Use `localStorage` with the app version (`GAME_VERSION`) as a cache key. On first load (or version change), run the full preloader. On subsequent loads with same version, skip directly to game.
 
-### 5. Verify
-- `gameAreaRef` usage — if it's only for `useCanvasResize`, remove the ref. If used elsewhere (e.g. click handlers), keep it.
-- `gameGlowRef` — same check; if only used by `useCanvasResize` for imperative sizing, it can be simplified but likely still needed for CRT overlay positioning.
+**Changes in `src/components/AssetPreloader.tsx`**:
+- Import `GAME_VERSION` from `@/constants/version`
+- On mount, check `localStorage.getItem("preloader_version")` against `GAME_VERSION`
+- If match → call `onComplete()` immediately (assets already cached by browser/SW)
+- If no match → run full preload, then `localStorage.setItem("preloader_version", GAME_VERSION)` on completion
+
+### Summary of Changes
+
+1. **`src/components/AssetPreloader.tsx`**:
+   - Remove all music/boss music entries from manifest (~24 entries)
+   - Add version-based skip logic using localStorage + `GAME_VERSION`
+   
+2. **`src/components/Game.tsx`**:
+   - Add RAF-delayed re-check in layout effect to fix post-preloader sizing
 
