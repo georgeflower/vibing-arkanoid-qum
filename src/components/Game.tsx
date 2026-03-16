@@ -8172,13 +8172,17 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       const isNowFullscreen = !!document.fullscreenElement || !!(document as any).webkitFullscreenElement;
       setIsFullscreen(isNowFullscreen);
 
-      // On mobile: if exiting fullscreen and game is playing, pause and show prompt
-      if (isMobileDevice && !isNowFullscreen && gameState === "playing") {
+      // If exiting fullscreen while playing (ESC pressed), pause the game
+      if (!isNowFullscreen && gameState === "playing") {
         setGameState("paused");
+        document.exitPointerLock();
         if (gameLoopRef.current) {
           gameLoopRef.current.pause();
         }
-        setShowFullscreenPrompt(true);
+        if (isMobileDevice) {
+          setShowFullscreenPrompt(true);
+        }
+        toast.info("Game paused. Press ESC to resume.");
       }
     };
 
