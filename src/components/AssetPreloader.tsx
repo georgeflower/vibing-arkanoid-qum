@@ -121,7 +121,7 @@ const ASSET_MANIFEST: AssetEntry[] = [
   { type: "audio", url: "/ball_missed.mp3", message: "Caching ball-lost despair sound..." },
   { type: "audio", url: "/shrink.mp3", message: "Encoding paddle shrink alert..." },
   { type: "audio", url: "/High_score.mp3", message: "Preparing high-score celebration loop..." },
-
+];
 
 const BOOT_MESSAGES = [
   "ARKANOID OS v4.20 — INITIALIZING",
