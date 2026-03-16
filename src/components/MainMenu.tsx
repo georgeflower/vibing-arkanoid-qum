@@ -66,9 +66,9 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
   const aboutRef = useRef<HTMLDivElement>(null);
   const instructionsRef = useRef<HTMLDivElement>(null);
 
-  // Use adaptive quality hook for CRT effects
-  const { quality, qualitySettings } = useAdaptiveQuality({
-    initialQuality: ENABLE_HIGH_QUALITY ? "high" : "medium",
+  // Use adaptive quality hook for CRT effects — initialize from saved settings
+  const { quality, qualitySettings, setQuality } = useAdaptiveQuality({
+    initialQuality: gameSettings.qualityLevel || (ENABLE_HIGH_QUALITY ? "high" : "medium"),
     autoAdjust: false,
   });
 
@@ -1009,6 +1009,9 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
             open={showSettings}
             onOpenChange={setShowSettings}
             hideTrigger
+            onSettingsSaved={(s) => {
+              setQuality(s.qualityLevel);
+            }}
           />
 
           <Button

@@ -49,6 +49,7 @@ import { frameProfiler } from "@/utils/frameProfiler";
 
 import { getParticleLimits, shouldCreateParticle, calculateParticleCount } from "@/utils/particleLimits";
 import { FrameProfilerOverlay } from "./FrameProfilerOverlay";
+import { FpsOverlay } from "./FpsOverlay";
 import { PoolStatsOverlay } from "./PoolStatsOverlay";
 import { CCDPerformanceTracker } from "@/utils/rollingStats";
 import { debugLogger } from "@/utils/debugLogger";
@@ -9059,8 +9060,11 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                     {/* Substep Debug Overlay */}
                     <SubstepDebugOverlay getDebugInfo={getSubstepDebugInfo} visible={debugSettings.showSubstepDebug} />
 
-                    {/* Frame Profiler Overlay - Phase 1 */}
-                    <FrameProfilerOverlay visible={debugSettings.showFrameProfiler || gameSettingsData.showFpsOverlay} />
+                    {/* Frame Profiler Overlay - debug only */}
+                    <FrameProfilerOverlay visible={debugSettings.showFrameProfiler} />
+
+                    {/* Lightweight FPS overlay - user setting */}
+                    <FpsOverlay visible={gameSettingsData.showFpsOverlay} />
 
                     {/* Pool Stats Overlay */}
                     <PoolStatsOverlay visible={debugSettings.showPoolStats} />
