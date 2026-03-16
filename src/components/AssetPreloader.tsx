@@ -150,6 +150,14 @@ const AssetPreloader = ({ onComplete }: AssetPreloaderProps) => {
   const logEndRef = useRef<HTMLDivElement>(null);
   const totalAssets = ASSET_MANIFEST.length;
 
+  // Version-based skip: if assets already cached for this version, skip preloader
+  useEffect(() => {
+    const cachedVersion = localStorage.getItem("preloader_version");
+    if (cachedVersion === GAME_VERSION) {
+      onComplete();
+    }
+  }, [onComplete]);
+
   const addLogLine = useCallback((line: string) => {
     setLogLines((prev) => [...prev, line]);
   }, []);
@@ -159,8 +167,9 @@ const AssetPreloader = ({ onComplete }: AssetPreloaderProps) => {
     logEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [logLines]);
 
-  // Boot sequence
+  // Boot sequence (only if not skipped)
   useEffect(() => {
+    if (localStorage.getItem("preloader_version") === GAME_VERSION) return;
     let i = 0;
     const bootInterval = setInterval(() => {
       if (i < BOOT_MESSAGES.length) {
