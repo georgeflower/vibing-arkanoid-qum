@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { GAME_VERSION } from "@/constants/version";
 
 // All image imports
 import paddleImg from "@/assets/paddle.png";
@@ -120,30 +121,6 @@ const ASSET_MANIFEST: AssetEntry[] = [
   { type: "audio", url: "/ball_missed.mp3", message: "Caching ball-lost despair sound..." },
   { type: "audio", url: "/shrink.mp3", message: "Encoding paddle shrink alert..." },
   { type: "audio", url: "/High_score.mp3", message: "Preparing high-score celebration loop..." },
-
-  // Music tracks
-  { type: "audio", url: "/Pixel_Frenzy-2.mp3", message: "Decoding chiptune: Pixel Frenzy..." },
-  { type: "audio", url: "/sound_2.mp3", message: "Decompressing chiptune: Track 02..." },
-  { type: "audio", url: "/level_3.mp3", message: "Unpacking synthwave: Level 3..." },
-  { type: "audio", url: "/level_4.mp3", message: "Remixing chiptune: Level 4..." },
-  { type: "audio", url: "/level_5.mp3", message: "Decrypting frequency matrix: Level 5..." },
-  { type: "audio", url: "/level_7.mp3", message: "Assembling waveforms: Level 7..." },
-  { type: "audio", url: "/Turrican.mp3", message: "Channeling Turrican energy..." },
-  { type: "audio", url: "/Flubber_Happy_Moderate_Amiga.mp3", message: "Restoring Amiga MOD tracker data..." },
-  { type: "audio", url: "/leve_boss_chip_atari.mp3", message: "Extracting Atari boss chip melody..." },
-  { type: "audio", url: "/level_cave_c64.mp3", message: "Loading C64 SID cave theme..." },
-  { type: "audio", url: "/level_cave_2_c64.mp3", message: "Loading C64 SID cave theme II..." },
-  { type: "audio", url: "/level_cave_chip_atari.mp3", message: "Processing Atari cave chip data..." },
-  { type: "audio", url: "/level_cave_chip_atari_2.mp3", message: "Processing Atari cave chip data II..." },
-  { type: "audio", url: "/level_dessert_chip_atari_2.mp3", message: "Decoding desert wasteland OST..." },
-  { type: "audio", url: "/level_dessert_chip_atari_2_2.mp3", message: "Decoding desert wasteland OST II..." },
-
-  // Boss music
-  { type: "audio", url: "/Boss_level_cube.mp3", message: "Loading Cube boss battle anthem..." },
-  { type: "audio", url: "/Boss_level_sphere.mp3", message: "Loading Sphere boss battle anthem..." },
-  { type: "audio", url: "/Boss_level_pyramid.mp3", message: "Loading Pyramid boss battle anthem..." },
-  { type: "audio", url: "/Boss_level_Hexagon.mp3", message: "Loading Hexagon boss battle anthem..." },
-  { type: "audio", url: "/siren-alarm-boss.ogg", message: "Priming boss alarm siren..." },
 ];
 
 const BOOT_MESSAGES = [
@@ -173,6 +150,14 @@ const AssetPreloader = ({ onComplete }: AssetPreloaderProps) => {
   const logEndRef = useRef<HTMLDivElement>(null);
   const totalAssets = ASSET_MANIFEST.length;
 
+  // Version-based skip: if assets already cached for this version, skip preloader
+  useEffect(() => {
+    const cachedVersion = localStorage.getItem("preloader_version");
+    if (cachedVersion === GAME_VERSION) {
+      onComplete();
+    }
+  }, [onComplete]);
+
   const addLogLine = useCallback((line: string) => {
     setLogLines((prev) => [...prev, line]);
   }, []);
@@ -182,8 +167,9 @@ const AssetPreloader = ({ onComplete }: AssetPreloaderProps) => {
     logEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [logLines]);
 
-  // Boot sequence
+  // Boot sequence (only if not skipped)
   useEffect(() => {
+    if (localStorage.getItem("preloader_version") === GAME_VERSION) return;
     let i = 0;
     const bootInterval = setInterval(() => {
       if (i < BOOT_MESSAGES.length) {
@@ -240,6 +226,7 @@ const AssetPreloader = ({ onComplete }: AssetPreloaderProps) => {
           await new Promise((r) => setTimeout(r, 120));
         }
         setPhase("done");
+        localStorage.setItem("preloader_version", GAME_VERSION);
         setTimeout(onComplete, 800);
       }
     };

@@ -8318,8 +8318,12 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       debounceTimer = setTimeout(checkFrameVisibility, 120);
     };
 
-    // Check on mount and resize
+    // Check on mount and resize (RAF delay ensures container has settled after preloader unmount)
     checkFrameVisibility();
+    requestAnimationFrame(() => {
+      checkFrameVisibility();
+      requestAnimationFrame(checkFrameVisibility);
+    });
     window.addEventListener("resize", debouncedCheck);
     const handleFullscreenChange = () => {
       setTimeout(checkFrameVisibility, 100);
