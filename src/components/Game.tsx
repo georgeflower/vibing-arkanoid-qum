@@ -9427,6 +9427,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                         {score.toString().padStart(6, "0")}
                       </span>
                     </div>
+                    {!isDailyChallenge && (
                     <div
                       className="retro-pixel-text text-xs"
                       style={{
@@ -9442,6 +9443,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                         {level.toString().padStart(2, "0")}
                       </span>
                     </div>
+                    )}
                     <div
                       className="retro-pixel-text text-xs"
                       style={{
