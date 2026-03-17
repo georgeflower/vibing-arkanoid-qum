@@ -231,10 +231,14 @@ export const usePowerUps = (
             case "multiball":
               soundManager.playMultiballSound();
               if (balls.length > 0) {
-                const baseBall = balls[0];
+              const baseBall = balls[0];
+                const newDx1 = baseBall.dx - 2;
+                const newDx2 = baseBall.dx + 2;
+                const speed1 = Math.sqrt(newDx1 * newDx1 + baseBall.dy * baseBall.dy);
+                const speed2 = Math.sqrt(newDx2 * newDx2 + baseBall.dy * baseBall.dy);
                 const newBalls: Ball[] = [
-                  { ...baseBall, id: Date.now() + 1, dx: baseBall.dx - 2, rotation: Math.random() * 360 },
-                  { ...baseBall, id: Date.now() + 2, dx: baseBall.dx + 2, rotation: Math.random() * 360 },
+                  { ...baseBall, id: Date.now() + 1, dx: newDx1, speed: speed1, rotation: Math.random() * 360 },
+                  { ...baseBall, id: Date.now() + 2, dx: newDx2, speed: speed2, rotation: Math.random() * 360 },
                 ];
                 setBalls(prev => [...prev, ...newBalls]);
                 toast.success("Multi-ball activated!");

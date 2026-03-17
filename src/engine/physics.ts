@@ -680,10 +680,10 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
           ccdResult.ball.lastPaddleHitTime = performance.now();
           ccdResult.ball.lastGravityResetTime = performance.now();
 
-          // Normalize speed to remove gravity contribution
+          // Normalize speed bidirectionally to remove gravity contribution and prevent permanent slowdowns
           const currentSpd = Math.hypot(ccdResult.ball.dx, ccdResult.ball.dy);
           const targetSpd = ccdResult.ball.speed;
-          if (currentSpd > 0 && currentSpd > targetSpd) {
+          if (currentSpd > 0 && Math.abs(currentSpd - targetSpd) > 0.01) {
             const scale = targetSpd / currentSpd;
             ccdResult.ball.dx *= scale;
             ccdResult.ball.dy *= scale;
