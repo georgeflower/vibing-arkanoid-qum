@@ -33,11 +33,16 @@ const Index = () => {
     setGameSettings(null);
   };
 
-  if (phase === "game" && gameSettings) {
-    return <Game settings={gameSettings} onReturnToMenu={handleReturnToMenu} />;
-  }
-
-  return <MainMenu onStartGame={handleStartGame} />;
+  return (
+    <>
+      {phase === "game" && gameSettings ? (
+        <Game settings={gameSettings} onReturnToMenu={handleReturnToMenu} />
+      ) : (
+        <MainMenu onStartGame={handleStartGame} />
+      )}
+      <AssetLoadingOverlay />
+    </>
+  );
 };
 
 export default Index;

@@ -1029,25 +1029,6 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
           </Button>
         </div>
 
-        {/* Asset loading indicator */}
-        {assetLoading && (
-          <div
-            className="sticky bottom-0 left-0 right-0 pt-3 pb-1 px-1 text-right"
-            style={{ fontFamily: "'Press Start 2P', monospace" }}
-          >
-            <div className="flex items-center justify-end gap-2" style={{ fontSize: "7px" }}>
-              <span style={{ color: "hsl(142, 50%, 45%)", letterSpacing: "1px" }}>
-                {assetComplete ? "READY TO PLAY" : "LOADING ASSETS"}
-              </span>
-              <span style={{ color: "hsl(142, 60%, 40%)", letterSpacing: "1px" }}>
-                [{assetBar}]
-              </span>
-              <span style={{ color: "hsl(0, 0%, 55%)" }}>
-                {assetProgress}%
-              </span>
-            </div>
-          </div>
-        )}
       </Card>
     </div>
   );
