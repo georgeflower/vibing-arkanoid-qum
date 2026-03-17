@@ -204,9 +204,13 @@ Deno.serve(async (req) => {
       _session_collected_all_letters: collectedAllLetters,
     };
 
+    // Campaign-specific achievement IDs that should not trigger in Boss Rush
+    const CAMPAIGN_ONLY_ACHIEVEMENTS = new Set(["victory_lap", "godlike"]);
+
     const newAchievements = [...existingAchievements];
     const newlyUnlockedIds: string[] = [];
     for (const achievement of ACHIEVEMENT_CHECKS) {
+      if (isBossRush && CAMPAIGN_ONLY_ACHIEVEMENTS.has(achievement.id)) continue;
       if (!existingIds.has(achievement.id) && achievement.check(profileForCheck)) {
         newAchievements.push({
           id: achievement.id,
