@@ -2338,7 +2338,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
           }
 
           const hasPowerUp = isIndestructible ? false : Math.random() < POWERUP_DROP_CHANCE;
-          const maxHits = isIndestructible ? 1 : brickType === "cracked" ? 3 : getBrickHits(currentLevel, row);
+          const brickHitLevel = isDailyChallenge ? Math.min(15, Math.max(5, 10)) : currentLevel;
+          const maxHits = isIndestructible ? 1 : brickType === "cracked" ? 3 : getBrickHits(brickHitLevel, row);
 
           let baseColor: string;
           if (isIndestructible) {
