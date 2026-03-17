@@ -90,7 +90,7 @@ export const DailyChallengeResultOverlay = ({
             textShadow: `0 0 15px ${(timedOut || failed) ? "hsl(0,70%,50%,0.5)" : result.allObjectivesMet ? "hsl(45,100%,50%,0.5)" : "hsl(200,70%,50%,0.5)"}`,
           }}
         >
-          {timedOut ? "⏰ TIME'S UP ⏰" : result.allObjectivesMet ? "⭐ PERFECT CLEAR ⭐" : "CHALLENGE COMPLETE"}
+          {timedOut ? "⏰ TIME'S UP ⏰" : failed ? "💀 CHALLENGE FAILED 💀" : result.allObjectivesMet ? "⭐ PERFECT CLEAR ⭐" : "CHALLENGE COMPLETE"}
         </h2>
 
         {timedOut && (
