@@ -121,6 +121,14 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Validate gameMode
+    if (typeof gameMode !== "string" || !["campaign", "bossRush"].includes(gameMode)) {
+      return new Response(JSON.stringify({ error: "Invalid gameMode" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Validate powerUpTypes allowlist
     if (!Array.isArray(powerUpTypes) || powerUpTypes.length > 500) {
       return new Response(JSON.stringify({ error: "Invalid powerUpTypes" }), {
