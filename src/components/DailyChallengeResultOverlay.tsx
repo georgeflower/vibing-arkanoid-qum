@@ -152,7 +152,7 @@ export const DailyChallengeResultOverlay = ({
         )}
 
         {/* Streak */}
-        {streak > 0 && !timedOut && (
+        {streak > 0 && !timedOut && !failed && (
           <div
             className="text-center mb-4 p-2 rounded"
             style={{

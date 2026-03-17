@@ -8833,10 +8833,12 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                       timeSeconds={totalPlayTime}
                       streak={dailyChallengeStreak}
                       timedOut={dailyChallengeTimedOut}
+                      failed={dailyChallengeFailed}
                       onRetry={() => {
                         setShowDailyChallengeResult(false);
                         setDailyChallengeResult(null);
                         setDailyChallengeTimedOut(false);
+                        setDailyChallengeFailed(false);
                         dailyChallengeLivesLostRef.current = 0;
                         dailyChallengePowerUpsRef.current = 0;
                         handleRetryLevel();
