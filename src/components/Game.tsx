@@ -9191,13 +9191,15 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                       </div>
                     </div>
 
-                    {/* Level */}
+                    {/* Level — hidden during daily challenge */}
+                    {!isDailyChallenge && (
                     <div className="right-stat-box">
                       <div className="right-stat-label" style={{ color: "hsl(30, 75%, 55%)" }}>
                         LEVEL
                       </div>
                       <div className="right-stat-value">{level.toString().padStart(2, "0")}</div>
                     </div>
+                    )}
 
                     {/* Lives */}
                     <div className="right-stat-box">
