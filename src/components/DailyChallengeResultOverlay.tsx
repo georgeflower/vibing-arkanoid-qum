@@ -73,7 +73,7 @@ export const DailyChallengeResultOverlay = ({
             : result.allObjectivesMet
               ? "3px solid hsl(45,100%,50%)"
               : "3px solid hsl(200,70%,50%)",
-          boxShadow: timedOut
+          boxShadow: (timedOut || failed)
             ? "0 0 30px hsl(0,70%,50%,0.3)"
             : result.allObjectivesMet
               ? "0 0 30px hsl(45,100%,50%,0.3)"
