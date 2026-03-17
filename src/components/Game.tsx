@@ -7892,7 +7892,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
   // Auto-submit daily challenge when result is shown (not timed out)
   useEffect(() => {
-    if (showDailyChallengeResult && dailyChallengeResult && !dailyChallengeTimedOut) {
+    if (showDailyChallengeResult && dailyChallengeResult && !dailyChallengeTimedOut && !dailyChallengeFailed) {
       handleDailyChallengeSubmit();
     }
   }, [showDailyChallengeResult, dailyChallengeTimedOut]);
