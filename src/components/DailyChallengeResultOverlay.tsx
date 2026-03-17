@@ -11,6 +11,7 @@ interface DailyChallengeResultOverlayProps {
   timeSeconds: number;
   streak: number;
   timedOut?: boolean;
+  failed?: boolean;
   onRetry: () => void;
   onBackToDaily: () => void;
   onReturnToMenu: () => void;
