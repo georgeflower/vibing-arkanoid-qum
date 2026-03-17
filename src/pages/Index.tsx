@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Game } from "@/components/Game";
 import { MainMenu } from "@/components/MainMenu";
 import { useServiceWorkerUpdate } from "@/hooks/useServiceWorkerUpdate";
+import AssetLoadingOverlay from "@/components/AssetLoadingOverlay";
 import type { GameSettings } from "@/types/game";
 
 const Index = () => {
@@ -32,11 +33,16 @@ const Index = () => {
     setGameSettings(null);
   };
 
-  if (phase === "game" && gameSettings) {
-    return <Game settings={gameSettings} onReturnToMenu={handleReturnToMenu} />;
-  }
-
-  return <MainMenu onStartGame={handleStartGame} />;
+  return (
+    <>
+      {phase === "game" && gameSettings ? (
+        <Game settings={gameSettings} onReturnToMenu={handleReturnToMenu} />
+      ) : (
+        <MainMenu onStartGame={handleStartGame} />
+      )}
+      <AssetLoadingOverlay />
+    </>
+  );
 };
 
 export default Index;
