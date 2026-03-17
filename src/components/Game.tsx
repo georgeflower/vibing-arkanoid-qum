@@ -2398,6 +2398,13 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     [extraLifeUsedLevels, settings.difficulty],
   );
   const initGame = useCallback(() => {
+    // Track game start
+    posthog.capture('game_started', {
+      difficulty: settings.difficulty,
+      game_mode: settings.gameMode,
+      starting_level: settings.startingLevel,
+    });
+
     // Reset quality lockout for new game session
     resetQualityLockout();
 
