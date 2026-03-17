@@ -154,7 +154,8 @@ Deno.serve(async (req) => {
     const newGamesPlayed = profile.total_games_played + 1;
     const newTimePlayed = profile.total_time_played_seconds + timePlayed;
     const newBestScore = Math.max(profile.best_score, score);
-    const newBestLevel = Math.max(profile.best_level, level);
+    const isBossRush = gameMode === "bossRush";
+    const newBestLevel = isBossRush ? profile.best_level : Math.max(profile.best_level, level);
     const newBestCombo = Math.max(profile.best_combo_streak, comboStreak);
 
     // Update power-up usage

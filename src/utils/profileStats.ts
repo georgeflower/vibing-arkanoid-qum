@@ -13,6 +13,7 @@ export interface GameSessionStats {
   difficulty: string;
   isVictory: boolean;
   collectedAllLetters?: boolean;
+  gameMode?: string;
 }
 
 export async function submitGameStats(stats: GameSessionStats): Promise<string[]> {
