@@ -68,7 +68,7 @@ export const DailyChallengeResultOverlay = ({
         className="max-w-md w-full p-6 rounded-lg my-6"
         style={{
           background: "linear-gradient(180deg, hsl(220,25%,15%) 0%, hsl(220,30%,10%) 100%)",
-          border: timedOut
+          border: (timedOut || failed)
             ? "3px solid hsl(0,70%,50%)"
             : result.allObjectivesMet
               ? "3px solid hsl(45,100%,50%)"
