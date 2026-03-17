@@ -11,6 +11,7 @@ interface DailyChallengeResultOverlayProps {
   timeSeconds: number;
   streak: number;
   timedOut?: boolean;
+  failed?: boolean;
   onRetry: () => void;
   onBackToDaily: () => void;
   onReturnToMenu: () => void;
@@ -24,6 +25,7 @@ export const DailyChallengeResultOverlay = ({
   timeSeconds,
   streak,
   timedOut,
+  failed,
   onRetry,
   onBackToDaily,
   onReturnToMenu,
@@ -66,12 +68,12 @@ export const DailyChallengeResultOverlay = ({
         className="max-w-md w-full p-6 rounded-lg my-6"
         style={{
           background: "linear-gradient(180deg, hsl(220,25%,15%) 0%, hsl(220,30%,10%) 100%)",
-          border: timedOut
+          border: (timedOut || failed)
             ? "3px solid hsl(0,70%,50%)"
             : result.allObjectivesMet
               ? "3px solid hsl(45,100%,50%)"
               : "3px solid hsl(200,70%,50%)",
-          boxShadow: timedOut
+          boxShadow: (timedOut || failed)
             ? "0 0 30px hsl(0,70%,50%,0.3)"
             : result.allObjectivesMet
               ? "0 0 30px hsl(45,100%,50%,0.3)"
@@ -82,19 +84,19 @@ export const DailyChallengeResultOverlay = ({
         <h2
           className="retro-pixel-text text-center text-xl mb-4"
           style={{
-            color: timedOut
+            color: (timedOut || failed)
               ? "hsl(0, 70%, 55%)"
               : result.allObjectivesMet ? "hsl(45, 100%, 50%)" : "hsl(200, 70%, 50%)",
-            textShadow: `0 0 15px ${timedOut ? "hsl(0,70%,50%,0.5)" : result.allObjectivesMet ? "hsl(45,100%,50%,0.5)" : "hsl(200,70%,50%,0.5)"}`,
+            textShadow: `0 0 15px ${(timedOut || failed) ? "hsl(0,70%,50%,0.5)" : result.allObjectivesMet ? "hsl(45,100%,50%,0.5)" : "hsl(200,70%,50%,0.5)"}`,
           }}
         >
-          {timedOut ? "⏰ TIME'S UP ⏰" : result.allObjectivesMet ? "⭐ PERFECT CLEAR ⭐" : "CHALLENGE COMPLETE"}
+          {timedOut ? "⏰ TIME'S UP ⏰" : failed ? "💀 CHALLENGE FAILED 💀" : result.allObjectivesMet ? "⭐ PERFECT CLEAR ⭐" : "CHALLENGE COMPLETE"}
         </h2>
 
-        {timedOut && (
+        {(timedOut || failed) && (
           <div className="text-center mb-4 p-2 rounded" style={{ background: "hsl(0,30%,15%)", border: "1px solid hsl(0,50%,30%)" }}>
             <p className="text-sm" style={{ color: "hsl(0,60%,60%)" }}>
-              Challenge failed — time limit exceeded!
+              {timedOut ? "Challenge failed — time limit exceeded!" : "Challenge failed — you lost all lives!"}
             </p>
           </div>
         )}
@@ -116,7 +118,7 @@ export const DailyChallengeResultOverlay = ({
         </div>
 
         {/* Objectives */}
-        {!timedOut && (
+        {!timedOut && !failed && (
           <div className="mb-4">
             <p className="text-xs font-bold mb-2" style={{ color: "hsl(45,100%,50%)", letterSpacing: "1px" }}>
               OBJECTIVES
@@ -150,7 +152,7 @@ export const DailyChallengeResultOverlay = ({
         )}
 
         {/* Streak */}
-        {streak > 0 && !timedOut && (
+        {streak > 0 && !timedOut && !failed && (
           <div
             className="text-center mb-4 p-2 rounded"
             style={{

@@ -452,7 +452,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   const [showDailyChallengeResult, setShowDailyChallengeResult] = useState(false);
   const [dailyChallengeResult, setDailyChallengeResult] = useState<DailyChallengeResult | null>(null);
   const [dailyChallengeStreak, setDailyChallengeStreak] = useState(0);
-  const [dailyChallengeTimedOut, setDailyChallengeTimedOut] = useState(false);
+   const [dailyChallengeTimedOut, setDailyChallengeTimedOut] = useState(false);
+   const [dailyChallengeFailed, setDailyChallengeFailed] = useState(false);
   const dailyChallengeLivesLostRef = useRef(0);
   const dailyChallengePowerUpsRef = useRef(0);
   // ═══ PHASE 1: enemies lives in world.enemies (engine/state.ts) ═══
@@ -1870,7 +1871,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         bestCombo: hitStreakRef.current,
       });
       setDailyChallengeResult(challengeResult);
-      setDailyChallengeTimedOut(true); // Reuse flag to block auto-submission (player failed)
+      setDailyChallengeFailed(true); // Block auto-submission (player died)
       setShowDailyChallengeResult(true);
       soundManager.playHighScoreMusic();
       toast.error("Daily Challenge Over!");
@@ -7869,7 +7870,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   const handleDailyChallengeSubmit = async () => {
     try {
       if (!dailyChallengeData || !dailyChallengeResult) return;
-      if (dailyChallengeTimedOut) return; // Don't submit timed-out challenges
+      if (dailyChallengeTimedOut || dailyChallengeFailed) return; // Don't submit failed challenges
 
       const response = await submitDailyChallenge({
         challengeDate: dailyChallengeData.dateString,
@@ -7891,7 +7892,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
   // Auto-submit daily challenge when result is shown (not timed out)
   useEffect(() => {
-    if (showDailyChallengeResult && dailyChallengeResult && !dailyChallengeTimedOut) {
+    if (showDailyChallengeResult && dailyChallengeResult && !dailyChallengeTimedOut && !dailyChallengeFailed) {
       handleDailyChallengeSubmit();
     }
   }, [showDailyChallengeResult, dailyChallengeTimedOut]);
@@ -8832,10 +8833,12 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                       timeSeconds={totalPlayTime}
                       streak={dailyChallengeStreak}
                       timedOut={dailyChallengeTimedOut}
+                      failed={dailyChallengeFailed}
                       onRetry={() => {
                         setShowDailyChallengeResult(false);
                         setDailyChallengeResult(null);
                         setDailyChallengeTimedOut(false);
+                        setDailyChallengeFailed(false);
                         dailyChallengeLivesLostRef.current = 0;
                         dailyChallengePowerUpsRef.current = 0;
                         handleRetryLevel();
