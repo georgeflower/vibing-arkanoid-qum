@@ -7870,7 +7870,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   const handleDailyChallengeSubmit = async () => {
     try {
       if (!dailyChallengeData || !dailyChallengeResult) return;
-      if (dailyChallengeTimedOut) return; // Don't submit timed-out challenges
+      if (dailyChallengeTimedOut || dailyChallengeFailed) return; // Don't submit failed challenges
 
       const response = await submitDailyChallenge({
         challengeDate: dailyChallengeData.dateString,
