@@ -27,7 +27,7 @@ import { FINAL_LEVEL, ENABLE_DEBUG_FEATURES, ENABLE_HIGH_QUALITY } from "@/const
 import { BOSS_RUSH_CONFIG } from "@/constants/bossRushConfig";
 import { SettingsDialog } from "./SettingsDialog";
 import { useGameSettings } from "@/hooks/useGameSettings";
-import { useAssetPreloader } from "@/hooks/useAssetPreloader";
+
 
 interface MainMenuProps {
   onStartGame: (settings: GameSettings) => void;
