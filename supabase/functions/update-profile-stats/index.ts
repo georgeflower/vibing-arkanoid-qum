@@ -159,7 +159,7 @@ Deno.serve(async (req) => {
     // Update power-up usage
     const currentUsage = (profile.power_up_usage as Record<string, number>) || {};
     const newUsage = { ...currentUsage };
-    for (const type of powerUpTypes) {
+    for (const type of validatedPowerUpTypes) {
       if (typeof type === "string") {
         newUsage[type] = (newUsage[type] || 0) + 1;
       }
