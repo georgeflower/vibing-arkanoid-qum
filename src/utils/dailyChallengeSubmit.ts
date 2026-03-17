@@ -28,6 +28,24 @@ export async function submitDailyChallenge(
     });
 
     if (error) {
+      // Check if it's a 409 "already completed" response
+      if (error.name === "FunctionsHttpError") {
+        try {
+          const errorBody = error.context && typeof (error as any).context === "object"
+            ? (error as any).context
+            : null;
+          // Try to parse the response body from the error
+          const resp = (error as any).response;
+          if (resp && typeof resp.json === "function") {
+            const parsed = await resp.json();
+            if (parsed?.alreadyCompleted) {
+              return { success: true, streak: 0, newAchievements: [], alreadyCompleted: true };
+            }
+          }
+        } catch {
+          // ignore parse errors
+        }
+      }
       console.error("Failed to submit daily challenge:", error);
       return { success: false, streak: 0, newAchievements: [] };
     }
