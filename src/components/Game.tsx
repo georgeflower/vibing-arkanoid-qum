@@ -1871,7 +1871,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         bestCombo: hitStreakRef.current,
       });
       setDailyChallengeResult(challengeResult);
-      setDailyChallengeTimedOut(true); // Reuse flag to block auto-submission (player failed)
+      setDailyChallengeFailed(true); // Block auto-submission (player died)
       setShowDailyChallengeResult(true);
       soundManager.playHighScoreMusic();
       toast.error("Daily Challenge Over!");
