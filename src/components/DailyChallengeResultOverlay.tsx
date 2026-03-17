@@ -93,10 +93,10 @@ export const DailyChallengeResultOverlay = ({
           {timedOut ? "⏰ TIME'S UP ⏰" : failed ? "💀 CHALLENGE FAILED 💀" : result.allObjectivesMet ? "⭐ PERFECT CLEAR ⭐" : "CHALLENGE COMPLETE"}
         </h2>
 
-        {timedOut && (
+        {(timedOut || failed) && (
           <div className="text-center mb-4 p-2 rounded" style={{ background: "hsl(0,30%,15%)", border: "1px solid hsl(0,50%,30%)" }}>
             <p className="text-sm" style={{ color: "hsl(0,60%,60%)" }}>
-              Challenge failed — time limit exceeded!
+              {timedOut ? "Challenge failed — time limit exceeded!" : "Challenge failed — you lost all lives!"}
             </p>
           </div>
         )}
