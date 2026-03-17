@@ -1860,7 +1860,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     }
 
     if (isDailyChallenge && dailyChallengeData) {
-      // Daily challenge game over — evaluate objectives and show result directly
+      // Daily challenge game over (player died) — evaluate objectives but block submission
       const challengeResult = evaluateObjectives(dailyChallengeData, {
         livesLost: dailyChallengeLivesLostRef.current,
         timeSeconds: totalPlayTime,
@@ -1870,6 +1870,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         bestCombo: hitStreakRef.current,
       });
       setDailyChallengeResult(challengeResult);
+      setDailyChallengeTimedOut(true); // Reuse flag to block auto-submission (player failed)
       setShowDailyChallengeResult(true);
       soundManager.playHighScoreMusic();
       toast.error("Daily Challenge Over!");
