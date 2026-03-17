@@ -1,38 +1,28 @@
 
 
-# Revert Game Area to Fixed Size (Pre-Expansion)
+## Fix: Distinguish "Died" vs "Timed Out" in Daily Challenge Result
 
-## Problem
-Two previous changes ("Expand game area to frame space" and "Expand game area to fill space") made the game canvas dynamically resize to fill all available space within the metal frame on desktop. The user wants the playable area to return to its original fixed size.
+### Problem
+When a player dies (loses all lives) during a timed daily challenge, the result overlay shows "⏰ TIME'S UP ⏰" because `dailyChallengeTimedOut` is reused for both timeout and death scenarios.
 
-## Current behavior
-- `useViewportFrame` makes the metal frame fill the entire viewport on desktop
-- `useCanvasResize` uses ResizeObserver to dynamically size the game canvas to fill the `metal-game-area` container
-- The canvas display size grows to match available space
+### Solution
+Add a separate `dailyChallengeFailed` state to track death, keep `dailyChallengeTimedOut` only for actual timeouts. Pass both to the overlay.
 
-## Desired behavior
-The game canvas stays at its logical size (850×650 scaled by `scaleFactor`) and is simply centered within the frame — no dynamic expansion.
+### Changes
 
-## Changes
+**`src/components/Game.tsx`:**
+- Add new state: `const [dailyChallengeFailed, setDailyChallengeFailed] = useState(false)`
+- Line 1873: Change `setDailyChallengeTimedOut(true)` → `setDailyChallengeFailed(true)` (death case)
+- Line 7872: Update submission guard to `if (dailyChallengeTimedOut || dailyChallengeFailed) return;`
+- Line 7894: Update auto-submit check to include `!dailyChallengeFailed`
+- Pass `failed={dailyChallengeFailed}` to `DailyChallengeResultOverlay`
+- Reset `dailyChallengeFailed` in retry handler alongside other resets
 
-### 1. `src/components/Game.tsx`
-- **Remove** `useViewportFrame` import and hook call (lines 22, 1651-1654)
-- **Remove** `useCanvasResize` import and hook call (lines 23, 1657-1667), along with destructured `displayWidth`, `displayHeight`, `dynamicScale`
-- Remove `gameAreaRef` if only used for `useCanvasResize` (check first)
-- On desktop, set the `game-glow` div's width/height explicitly to `SCALED_CANVAS_WIDTH` × `SCALED_CANVAS_HEIGHT` (same as mobile path but without the scale transform), so the canvas is fixed-size and centered
-
-### 2. `src/hooks/useViewportFrame.ts`
-- Delete file (no longer used)
-
-### 3. `src/hooks/useCanvasResize.ts`
-- Delete file (no longer used)
-
-### 4. `src/index.css`
-- Remove the `.metal-frame.desktop-fullscreen` CSS block (lines ~265-290) since the class is no longer applied
-- Remove `max-width` constraint on `.metal-game-area` that references side panel widths — let it auto-size around the fixed canvas
-- Keep `.metal-frame` as `width: fit-content` so it wraps the fixed-size content naturally
-
-### 5. Verify
-- `gameAreaRef` usage — if it's only for `useCanvasResize`, remove the ref. If used elsewhere (e.g. click handlers), keep it.
-- `gameGlowRef` — same check; if only used by `useCanvasResize` for imperative sizing, it can be simplified but likely still needed for CRT overlay positioning.
+**`src/components/DailyChallengeResultOverlay.tsx`:**
+- Add `failed?: boolean` prop
+- Line 91: Change header logic: `timedOut ? "⏰ TIME'S UP ⏰" : failed ? "💀 CHALLENGE FAILED 💀" : ...`
+- Line 94-99: Show failure message when `failed`: "Challenge failed — you lost all lives!"
+- Update red styling conditions: `(timedOut || failed)` for border/shadow/color
+- Show retry button when `failed` (already covered by `!result.allObjectivesMet`)
+- Hide objectives when `failed` (same as `timedOut`)
 
