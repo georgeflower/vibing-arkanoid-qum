@@ -208,12 +208,23 @@ export function processBallWithCCD(
     };
   }
 
+  const conversionFactor = 60 * gameState.speedMultiplier;
+  const newDx = result.ball.dx / conversionFactor;
+  const newDy = result.ball.dy / conversionFactor;
+
+  // Speed anomaly detection: log when CCD round-trip changes ball speed unexpectedly
+  const inputSpeed = Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy);
+  const outputSpeed = Math.sqrt(newDx * newDx + newDy * newDy);
+  if (inputSpeed > 0.1 && Math.abs(outputSpeed - inputSpeed) / inputSpeed > 0.05) {
+    console.warn(`[SPEED] CCD round-trip anomaly: ball ${ball.id} speed ${inputSpeed.toFixed(3)} → ${outputSpeed.toFixed(3)} (${((outputSpeed/inputSpeed - 1) * 100).toFixed(1)}%) events=${result.events.length}`);
+  }
+
   const updatedBall: Ball = {
     ...ball,
     x: result.ball.x,
     y: result.ball.y,
-    dx: result.ball.dx / (60 * gameState.speedMultiplier), // Convert px/sec back to px/frame
-    dy: result.ball.dy / (60 * gameState.speedMultiplier),
+    dx: newDx,
+    dy: newDy,
     lastHitTime: result.ball.lastHitTick
   };
   
