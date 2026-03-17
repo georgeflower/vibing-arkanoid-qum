@@ -54,6 +54,7 @@ import { PoolStatsOverlay } from "./PoolStatsOverlay";
 import { CCDPerformanceTracker } from "@/utils/rollingStats";
 import { debugLogger } from "@/utils/debugLogger";
 import { particlePool } from "@/utils/particlePool";
+import { posthog } from "@/lib/posthog";
 
 // ═══════════════════════════════════════════════════════════════
 import { Maximize2, Minimize2, Home, X, Settings } from "lucide-react";
