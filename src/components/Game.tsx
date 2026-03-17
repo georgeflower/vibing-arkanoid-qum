@@ -1822,6 +1822,16 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
   /** Game-over branch: stops music, checks high scores, shows appropriate screen. */
   const handleGameOver = useCallback(() => {
+    // Track game end
+    posthog.capture('game_ended', {
+      score: scoreRef.current,
+      level_reached: levelRef.current,
+      duration_seconds: totalPlayTimeRef.current,
+      difficulty: settings.difficulty,
+      game_mode: settings.gameMode,
+      is_victory: false,
+    });
+
     setGameState("gameOver");
     soundManager.stopBossMusic();
     soundManager.stopBackgroundMusic();
