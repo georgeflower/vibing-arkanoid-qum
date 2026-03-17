@@ -74,13 +74,62 @@ Deno.serve(async (req) => {
       collectedAllLetters = false,
     } = body;
 
-    // Validate inputs
-    if (typeof bricksDestroyed !== "number" || typeof score !== "number") {
-      return new Response(JSON.stringify({ error: "Invalid stats" }), {
+    // Validate types
+    if (typeof bricksDestroyed !== "number" || typeof score !== "number" ||
+        typeof enemiesKilled !== "number" || typeof bossesKilled !== "number" ||
+        typeof powerUpsCollected !== "number" || typeof timePlayed !== "number" ||
+        typeof level !== "number" || typeof comboStreak !== "number") {
+      return new Response(JSON.stringify({ error: "Invalid stats: expected numbers" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    // Range validation to prevent stat inflation
+    const VALID_POWER_UP_NAMES = new Set([
+      "wider", "shrink", "multiball", "fireball", "shield", "barrier",
+      "slowdown", "life", "turrets", "reflect", "stunner", "homing",
+      "secondchance", "extend",
+    ]);
+
+    const rangeChecks: Array<[string, number, number, number]> = [
+      ["bricksDestroyed", bricksDestroyed, 0, 5000],
+      ["enemiesKilled", enemiesKilled, 0, 500],
+      ["bossesKilled", bossesKilled, 0, 50],
+      ["powerUpsCollected", powerUpsCollected, 0, 500],
+      ["timePlayed", timePlayed, 0, 7200],        // max 2 hours per session
+      ["score", score, 0, 10_000_000],
+      ["level", level, 0, 100],
+      ["comboStreak", comboStreak, 0, 500],
+    ];
+
+    for (const [name, value, min, max] of rangeChecks) {
+      if (value < min || value > max || !Number.isFinite(value)) {
+        return new Response(JSON.stringify({ error: `Invalid ${name}: out of range` }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
+    // Validate difficulty
+    if (typeof difficulty !== "string" || !["normal", "godlike"].includes(difficulty)) {
+      return new Response(JSON.stringify({ error: "Invalid difficulty" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Validate powerUpTypes allowlist
+    if (!Array.isArray(powerUpTypes) || powerUpTypes.length > 500) {
+      return new Response(JSON.stringify({ error: "Invalid powerUpTypes" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const validatedPowerUpTypes = powerUpTypes.filter(
+      (t: unknown) => typeof t === "string" && VALID_POWER_UP_NAMES.has(t)
+    );
 
     // Fetch current profile
     const { data: profile, error: fetchError } = await supabaseAdmin
@@ -110,7 +159,7 @@ Deno.serve(async (req) => {
     // Update power-up usage
     const currentUsage = (profile.power_up_usage as Record<string, number>) || {};
     const newUsage = { ...currentUsage };
-    for (const type of powerUpTypes) {
+    for (const type of validatedPowerUpTypes) {
       if (typeof type === "string") {
         newUsage[type] = (newUsage[type] || 0) + 1;
       }
