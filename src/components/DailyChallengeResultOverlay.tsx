@@ -84,10 +84,10 @@ export const DailyChallengeResultOverlay = ({
         <h2
           className="retro-pixel-text text-center text-xl mb-4"
           style={{
-            color: timedOut
+            color: (timedOut || failed)
               ? "hsl(0, 70%, 55%)"
               : result.allObjectivesMet ? "hsl(45, 100%, 50%)" : "hsl(200, 70%, 50%)",
-            textShadow: `0 0 15px ${timedOut ? "hsl(0,70%,50%,0.5)" : result.allObjectivesMet ? "hsl(45,100%,50%,0.5)" : "hsl(200,70%,50%,0.5)"}`,
+            textShadow: `0 0 15px ${(timedOut || failed) ? "hsl(0,70%,50%,0.5)" : result.allObjectivesMet ? "hsl(45,100%,50%,0.5)" : "hsl(200,70%,50%,0.5)"}`,
           }}
         >
           {timedOut ? "⏰ TIME'S UP ⏰" : result.allObjectivesMet ? "⭐ PERFECT CLEAR ⭐" : "CHALLENGE COMPLETE"}
