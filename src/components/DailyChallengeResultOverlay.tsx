@@ -25,6 +25,7 @@ export const DailyChallengeResultOverlay = ({
   timeSeconds,
   streak,
   timedOut,
+  failed,
   onRetry,
   onBackToDaily,
   onReturnToMenu,
