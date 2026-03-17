@@ -24,7 +24,7 @@ export const DailyChallengeArchive = ({ onPlay, onClose }: DailyChallengeArchive
 
   useEffect(() => {
     const loadArchive = async () => {
-      const LAUNCH_DATE = new Date(2026, 2, 13); // 2026-03-13 (month is 0-indexed)
+      const LAUNCH_DATE = new Date(2026, 2, 18); // 2026-03-18 (month is 0-indexed)
       const today = new Date();
       const pastChallenges: ArchiveEntry[] = [];
 
