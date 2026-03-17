@@ -118,7 +118,7 @@ export const DailyChallengeResultOverlay = ({
         </div>
 
         {/* Objectives */}
-        {!timedOut && (
+        {!timedOut && !failed && (
           <div className="mb-4">
             <p className="text-xs font-bold mb-2" style={{ color: "hsl(45,100%,50%)", letterSpacing: "1px" }}>
               OBJECTIVES
