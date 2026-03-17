@@ -54,6 +54,7 @@ import { PoolStatsOverlay } from "./PoolStatsOverlay";
 import { CCDPerformanceTracker } from "@/utils/rollingStats";
 import { debugLogger } from "@/utils/debugLogger";
 import { particlePool } from "@/utils/particlePool";
+import { posthog } from "@/lib/posthog";
 
 // ═══════════════════════════════════════════════════════════════
 import { Maximize2, Minimize2, Home, X, Settings } from "lucide-react";
@@ -1821,6 +1822,16 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
   /** Game-over branch: stops music, checks high scores, shows appropriate screen. */
   const handleGameOver = useCallback(() => {
+    // Track game end
+    posthog.capture('game_ended', {
+      score: scoreRef.current,
+      level_reached: levelRef.current,
+      duration_seconds: totalPlayTimeRef.current,
+      difficulty: settings.difficulty,
+      game_mode: settings.gameMode,
+      is_victory: false,
+    });
+
     setGameState("gameOver");
     soundManager.stopBossMusic();
     soundManager.stopBackgroundMusic();
@@ -2397,6 +2408,13 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     [extraLifeUsedLevels, settings.difficulty],
   );
   const initGame = useCallback(() => {
+    // Track game start
+    posthog.capture('game_started', {
+      difficulty: settings.difficulty,
+      game_mode: settings.gameMode,
+      starting_level: settings.startingLevel,
+    });
+
     // Reset quality lockout for new game session
     resetQualityLockout();
 
