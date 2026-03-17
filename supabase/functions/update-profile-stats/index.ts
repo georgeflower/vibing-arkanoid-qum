@@ -72,6 +72,7 @@ Deno.serve(async (req) => {
       comboStreak = 0,
       difficulty = "normal",
       collectedAllLetters = false,
+      gameMode = "campaign",
     } = body;
 
     // Validate types
@@ -120,6 +121,14 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Validate gameMode
+    if (typeof gameMode !== "string" || !["campaign", "bossRush"].includes(gameMode)) {
+      return new Response(JSON.stringify({ error: "Invalid gameMode" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Validate powerUpTypes allowlist
     if (!Array.isArray(powerUpTypes) || powerUpTypes.length > 500) {
       return new Response(JSON.stringify({ error: "Invalid powerUpTypes" }), {
@@ -153,7 +162,8 @@ Deno.serve(async (req) => {
     const newGamesPlayed = profile.total_games_played + 1;
     const newTimePlayed = profile.total_time_played_seconds + timePlayed;
     const newBestScore = Math.max(profile.best_score, score);
-    const newBestLevel = Math.max(profile.best_level, level);
+    const isBossRush = gameMode === "bossRush";
+    const newBestLevel = isBossRush ? profile.best_level : Math.max(profile.best_level, level);
     const newBestCombo = Math.max(profile.best_combo_streak, comboStreak);
 
     // Update power-up usage
@@ -194,9 +204,13 @@ Deno.serve(async (req) => {
       _session_collected_all_letters: collectedAllLetters,
     };
 
+    // Campaign-specific achievement IDs that should not trigger in Boss Rush
+    const CAMPAIGN_ONLY_ACHIEVEMENTS = new Set(["victory_lap", "godlike"]);
+
     const newAchievements = [...existingAchievements];
     const newlyUnlockedIds: string[] = [];
     for (const achievement of ACHIEVEMENT_CHECKS) {
+      if (isBossRush && CAMPAIGN_ONLY_ACHIEVEMENTS.has(achievement.id)) continue;
       if (!existingIds.has(achievement.id) && achievement.check(profileForCheck)) {
         newAchievements.push({
           id: achievement.id,
