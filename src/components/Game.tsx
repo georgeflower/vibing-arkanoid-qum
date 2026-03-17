@@ -1860,7 +1860,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     }
 
     if (isDailyChallenge && dailyChallengeData) {
-      // Daily challenge game over — evaluate objectives and show result directly
+      // Daily challenge game over (player died) — evaluate objectives but block submission
       const challengeResult = evaluateObjectives(dailyChallengeData, {
         livesLost: dailyChallengeLivesLostRef.current,
         timeSeconds: totalPlayTime,
@@ -1870,6 +1870,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         bestCombo: hitStreakRef.current,
       });
       setDailyChallengeResult(challengeResult);
+      setDailyChallengeTimedOut(true); // Reuse flag to block auto-submission (player failed)
       setShowDailyChallengeResult(true);
       soundManager.playHighScoreMusic();
       toast.error("Daily Challenge Over!");
@@ -2337,7 +2338,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
           }
 
           const hasPowerUp = isIndestructible ? false : Math.random() < POWERUP_DROP_CHANCE;
-          const maxHits = isIndestructible ? 1 : brickType === "cracked" ? 3 : getBrickHits(currentLevel, row);
+          const brickHitLevel = isDailyChallenge ? Math.min(15, Math.max(5, 10)) : currentLevel;
+          const maxHits = isIndestructible ? 1 : brickType === "cracked" ? 3 : getBrickHits(brickHitLevel, row);
 
           let baseColor: string;
           if (isIndestructible) {
@@ -9190,13 +9192,15 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                       </div>
                     </div>
 
-                    {/* Level */}
+                    {/* Level — hidden during daily challenge */}
+                    {!isDailyChallenge && (
                     <div className="right-stat-box">
                       <div className="right-stat-label" style={{ color: "hsl(30, 75%, 55%)" }}>
                         LEVEL
                       </div>
                       <div className="right-stat-value">{level.toString().padStart(2, "0")}</div>
                     </div>
+                    )}
 
                     {/* Lives */}
                     <div className="right-stat-box">
@@ -9424,6 +9428,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                         {score.toString().padStart(6, "0")}
                       </span>
                     </div>
+                    {!isDailyChallenge && (
                     <div
                       className="retro-pixel-text text-xs"
                       style={{
@@ -9439,6 +9444,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                         {level.toString().padStart(2, "0")}
                       </span>
                     </div>
+                    )}
                     <div
                       className="retro-pixel-text text-xs"
                       style={{

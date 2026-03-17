@@ -1,38 +1,38 @@
 
 
-## Daily Challenge Fixes: Completion Logic, Hidden Level, and Brick Hits
+# Revert Game Area to Fixed Size (Pre-Expansion)
 
-Three issues found in the daily challenge mode.
+## Problem
+Two previous changes ("Expand game area to frame space" and "Expand game area to fill space") made the game canvas dynamically resize to fill all available space within the metal frame on desktop. The user wants the playable area to return to its original fixed size.
 
-### Problem 1: Dying still counts as "completed"
-When the player loses all lives, `handleGameOver` (line 1862) evaluates objectives with `allBricksDestroyed: false` and the auto-submit at line 7892 submits the result to the database. This marks the challenge as "completed" even though the player failed. Only timed-out challenges are blocked from submission.
+## Current behavior
+- `useViewportFrame` makes the metal frame fill the entire viewport on desktop
+- `useCanvasResize` uses ResizeObserver to dynamically size the game canvas to fill the `metal-game-area` container
+- The canvas display size grows to match available space
 
-**Fix in `src/components/Game.tsx`:**
-- In `handleGameOver` (line 1862-1875), when `isDailyChallenge` and player died (not won), set `dailyChallengeTimedOut` to `true` (or add a new `dailyChallengeFailed` flag) to prevent auto-submission. The result overlay still shows (so the player sees their stats) but it won't submit as a completion.
-- Alternative simpler approach: just add a check in the auto-submit useEffect (line 7892) — only submit when `gameState === "won"`.
+## Desired behavior
+The game canvas stays at its logical size (850×650 scaled by `scaleFactor`) and is simply centered within the frame — no dynamic expansion.
 
-### Problem 2: Level "21" displayed in HUD
-Daily challenges start at `startingLevel: 21` which shows in three HUD locations.
+## Changes
 
-**Fix in `src/components/Game.tsx`:**
-- Desktop right-panel level display (~line 9193-9199): wrap in `{!isDailyChallenge && (...)}` or show "DAILY" instead
-- Mobile compact HUD (~line 9427-9441): same conditional hide
-- Mobile timer row already handles daily challenges separately
+### 1. `src/components/Game.tsx`
+- **Remove** `useViewportFrame` import and hook call (lines 22, 1651-1654)
+- **Remove** `useCanvasResize` import and hook call (lines 23, 1657-1667), along with destructured `displayWidth`, `displayHeight`, `dynamicScale`
+- Remove `gameAreaRef` if only used for `useCanvasResize` (check first)
+- On desktop, set the `game-glow` div's width/height explicitly to `SCALED_CANVAS_WIDTH` × `SCALED_CANVAS_HEIGHT` (same as mobile path but without the scale transform), so the canvas is fixed-size and centered
 
-### Problem 3: Bricks require too many hits
-`getBrickHits(21, row)` returns up to 4 hits (level 21 falls in the `< 25` bracket). Daily challenges should use a virtual level between 5-15 for hit calculation.
+### 2. `src/hooks/useViewportFrame.ts`
+- Delete file (no longer used)
 
-**Fix in `src/components/Game.tsx` (~line 2340):**
-- When `isDailyChallenge`, use a clamped level for `getBrickHits`: something like `getBrickHits(Math.min(15, Math.max(5, dailyChallengeData?.brickHitLevel ?? 10)), row)` — a fixed moderate level (e.g., 10) gives max 3 hits on top rows, 2 on mid rows, 1 on bottom rows.
-- A sensible default of level 10 means: rows 0-1 get 3 hits, rows 2-3 get 2 hits, rest get 1 hit (the `< 12` bracket).
+### 3. `src/hooks/useCanvasResize.ts`
+- Delete file (no longer used)
 
-**Fix in `src/utils/dailyChallenge.ts`:**
-- Optionally add a `brickHitLevel` field to the challenge generator (seeded from RNG, range 5-15) so each daily challenge has varied difficulty. If not desired, a hardcoded level 10 in Game.tsx is simpler.
+### 4. `src/index.css`
+- Remove the `.metal-frame.desktop-fullscreen` CSS block (lines ~265-290) since the class is no longer applied
+- Remove `max-width` constraint on `.metal-game-area` that references side panel widths — let it auto-size around the fixed canvas
+- Keep `.metal-frame` as `width: fit-content` so it wraps the fixed-size content naturally
 
-### Summary of file changes:
-- **`src/components/Game.tsx`**: 
-  - Block daily challenge submission on death (add failed state or check gameState)
-  - Hide level display in desktop + mobile HUD when `isDailyChallenge`
-  - Use virtual level (10) for `getBrickHits` call when `isDailyChallenge`
-- **`src/types/game.ts`** (optional): Add `brickHitLevel` to `DailyChallengeConfig` if we want per-challenge variety
+### 5. Verify
+- `gameAreaRef` usage — if it's only for `useCanvasResize`, remove the ref. If used elsewhere (e.g. click handlers), keep it.
+- `gameGlowRef` — same check; if only used by `useCanvasResize` for imperative sizing, it can be simplified but likely still needed for CRT overlay positioning.
 
