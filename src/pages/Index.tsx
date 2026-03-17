@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Game } from "@/components/Game";
 import { MainMenu } from "@/components/MainMenu";
 import { useServiceWorkerUpdate } from "@/hooks/useServiceWorkerUpdate";
+import AssetLoadingOverlay from "@/components/AssetLoadingOverlay";
 import type { GameSettings } from "@/types/game";
 
 const Index = () => {
