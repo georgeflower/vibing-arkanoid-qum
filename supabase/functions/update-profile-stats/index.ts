@@ -72,6 +72,7 @@ Deno.serve(async (req) => {
       comboStreak = 0,
       difficulty = "normal",
       collectedAllLetters = false,
+      gameMode = "campaign",
     } = body;
 
     // Validate types
