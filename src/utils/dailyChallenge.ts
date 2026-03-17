@@ -802,8 +802,8 @@ export function getDailyChallenge(date: Date = new Date()): DailyChallenge {
     };
   }
 
-  // Normal day — pick a shape (force Flower on launch day 2026-03-13)
-  const isLaunchDay = dateString === "2026-03-13";
+  // Normal day — pick a shape (force Flower on launch day 2026-03-18)
+  const isLaunchDay = dateString === "2026-03-18";
   const shapeIndex = isLaunchDay ? SHAPE_TEMPLATES.findIndex(s => s.name === "Flower") : Math.floor(rng() * SHAPE_TEMPLATES.length);
   const shape = SHAPE_TEMPLATES[shapeIndex >= 0 ? shapeIndex : 0];
 
