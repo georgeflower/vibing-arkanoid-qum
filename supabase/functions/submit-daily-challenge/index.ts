@@ -85,11 +85,13 @@ Deno.serve(async (req) => {
       .single();
 
     if (existing) {
-      return new Response(JSON.stringify({ 
-        error: "Already completed today", 
+      return new Response(JSON.stringify({
+        success: true,
         alreadyCompleted: true,
+        streak: 0,
+        newAchievements: [],
       }), {
-        status: 409,
+        status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
