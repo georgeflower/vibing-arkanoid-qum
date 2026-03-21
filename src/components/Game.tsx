@@ -8849,9 +8849,17 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                       }}
                       onBackToDaily={() => {
                         setShowDailyChallengeResult(false);
+                        soundManager.stopHighScoreMusic();
+                        soundManager.stopBossMusic();
+                        soundManager.stopBackgroundMusic();
                         onReturnToMenu();
                       }}
-                      onReturnToMenu={onReturnToMenu}
+                      onReturnToMenu={() => {
+                        soundManager.stopHighScoreMusic();
+                        soundManager.stopBossMusic();
+                        soundManager.stopBackgroundMusic();
+                        onReturnToMenu();
+                      }}
                     />
                   )}
 
