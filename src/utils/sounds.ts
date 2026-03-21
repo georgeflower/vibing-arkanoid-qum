@@ -210,7 +210,9 @@ class SoundManager {
   }
 
   stopHighScoreMusic() {
-    if (this.highScoreMusic) {
+    if (this.highScoreMusic && !this.highScoreMusic.paused) {
+      this.fadeOutAudio(this.highScoreMusic);
+    } else if (this.highScoreMusic) {
       this.highScoreMusic.pause();
       this.highScoreMusic.currentTime = 0;
     }
