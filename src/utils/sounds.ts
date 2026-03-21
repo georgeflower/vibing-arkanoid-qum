@@ -1309,7 +1309,15 @@ class SoundManager {
   }
 
   stopBossMusic() {
-    if (this.bossMusic) {
+    if (this.bossMusic && !this.bossMusic.paused) {
+      const bossRef = this.bossMusic;
+      this.fadeOutAudio(bossRef).then(() => {
+        bossRef.pause();
+        if (this.bossMusic === bossRef) {
+          this.bossMusic = null;
+        }
+      });
+    } else if (this.bossMusic) {
       this.bossMusic.pause();
       this.bossMusic.currentTime = 0;
       this.bossMusic = null;
