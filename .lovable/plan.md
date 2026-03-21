@@ -1,38 +1,29 @@
 
 
-# Revert Game Area to Fixed Size (Pre-Expansion)
+## Fix: iPhone Game Canvas Not Centered (Shifted Right)
 
-## Problem
-Two previous changes ("Expand game area to frame space" and "Expand game area to fill space") made the game canvas dynamically resize to fill all available space within the metal frame on desktop. The user wants the playable area to return to its original fixed size.
+### Problem
+On iPhone, the game canvas is shifted slightly to the right, cutting off the rightmost edge. This happens because the CSS uses `100vw` for widths in fullscreen mode, which on iOS Safari can exceed the actual visible area (it includes the scrollbar gutter width and doesn't account for safe area insets consistently).
 
-## Current behavior
-- `useViewportFrame` makes the metal frame fill the entire viewport on desktop
-- `useCanvasResize` uses ResizeObserver to dynamically size the game canvas to fill the `metal-game-area` container
-- The canvas display size grows to match available space
+### Root Cause
+The `mobile-fullscreen-mode` CSS and `ios-fullscreen-container` CSS use `width: 100vw` extensively. On iOS Safari, `100vw` = full viewport width including any invisible scrollbar gutter, which can be slightly wider than the visible area. This creates a subtle horizontal overflow that shifts content rightward.
 
-## Desired behavior
-The game canvas stays at its logical size (850×650 scaled by `scaleFactor`) and is simply centered within the frame — no dynamic expansion.
+### Fix
 
-## Changes
+**`src/index.css`** — Replace `100vw` with `100%` in mobile/iOS fullscreen rules:
 
-### 1. `src/components/Game.tsx`
-- **Remove** `useViewportFrame` import and hook call (lines 22, 1651-1654)
-- **Remove** `useCanvasResize` import and hook call (lines 23, 1657-1667), along with destructured `displayWidth`, `displayHeight`, `dynamicScale`
-- Remove `gameAreaRef` if only used for `useCanvasResize` (check first)
-- On desktop, set the `game-glow` div's width/height explicitly to `SCALED_CANVAS_WIDTH` × `SCALED_CANVAS_HEIGHT` (same as mobile path but without the scale transform), so the canvas is fixed-size and centered
+1. `.ios-fullscreen-container` (line ~616): Change `width: 100vw` to `width: 100%`
+2. `.metal-frame.mobile-fullscreen-mode` (line ~556-558): Change `width: 100vw; max-width: 100vw` to `width: 100%; max-width: 100%`
+3. `.metal-frame.mobile-fullscreen-mode .metal-main-content` (line ~578): Change `width: 100vw` to `width: 100%`
+4. `.metal-frame.mobile-fullscreen-mode .metal-game-area` (line ~590-591): Change `max-width: 100vw; width: 100vw` to `max-width: 100%; width: 100%`
+5. `.metal-frame.mobile-fullscreen-mode .game-glow` (line ~597): Change `width: 100vw` to `width: 100%`
+6. `.metal-frame.mobile-fullscreen-mode .game-glow canvas` (lines ~603-606): Change `max-width: 100vw; width: 100vw` to `max-width: 100%; width: 100%`
+7. Keep `100dvh` for height values since vertical viewport height is reliable
 
-### 2. `src/hooks/useViewportFrame.ts`
-- Delete file (no longer used)
+Also add `overflow: hidden` to `.metal-frame.mobile-fullscreen-mode` as a safety net against any residual horizontal overflow.
 
-### 3. `src/hooks/useCanvasResize.ts`
-- Delete file (no longer used)
-
-### 4. `src/index.css`
-- Remove the `.metal-frame.desktop-fullscreen` CSS block (lines ~265-290) since the class is no longer applied
-- Remove `max-width` constraint on `.metal-game-area` that references side panel widths — let it auto-size around the fixed canvas
-- Keep `.metal-frame` as `width: fit-content` so it wraps the fixed-size content naturally
-
-### 5. Verify
-- `gameAreaRef` usage — if it's only for `useCanvasResize`, remove the ref. If used elsewhere (e.g. click handlers), keep it.
-- `gameGlowRef` — same check; if only used by `useCanvasResize` for imperative sizing, it can be simplified but likely still needed for CRT overlay positioning.
+### Why `100%` instead of `100vw`
+- `100%` = width of the parent container (which is already correctly sized to the visible area)
+- `100vw` = full viewport width including invisible scrollbar gutter — problematic on iOS Safari
+- Since the parent chain (`ios-fullscreen-container` → `metal-frame`) is already `position: fixed` with `left: 0; right: 0`, `100%` gives the correct visible width
 
