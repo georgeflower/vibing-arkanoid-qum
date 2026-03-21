@@ -2521,8 +2521,9 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       firstBossMinionKilledRef.current = false;
 
       // Show boss name and start boss music after 1 second
+      const bossLevelForMusic = isDailyBoss ? (settings.dailyChallengeConfig?.bossLevel || 5) : startLevel;
       setTimeout(() => {
-        soundManager.playBossMusic(startLevel);
+        soundManager.playBossMusic(bossLevelForMusic);
         const bossName =
           startLevel === 5
             ? "CUBE GUARDIAN"
@@ -8083,8 +8084,9 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         soundManager.playBossIntroSound();
 
         // Show boss name and start boss music after 1 second
+        const bossLevelForMusic = isDailyBossRetry ? (settings.dailyChallengeConfig?.bossLevel || 5) : currentLevel;
         setTimeout(() => {
-          soundManager.playBossMusic(currentLevel);
+          soundManager.playBossMusic(bossLevelForMusic);
           const bossName =
             currentLevel === 5 ? "CUBE GUARDIAN" : currentLevel === 10 ? "SPHERE DESTROYER" : "PYRAMID LORD";
           toast.error(`⚠️ BOSS APPROACHING: ${bossName} ⚠️`, { duration: 3000 });
