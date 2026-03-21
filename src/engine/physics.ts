@@ -10,12 +10,7 @@ import { world } from "@/engine/state";
 import { processBallWithCCD } from "@/utils/gameCCD";
 import { PHYSICS_CONFIG, ENABLE_DEBUG_FEATURES } from "@/constants/game";
 
-import {
-  isMegaBoss,
-  type MegaBoss,
-  isBallInsideMegaBoss,
-  applyGravityWellToBall,
-} from "@/utils/megaBossUtils";
+import { isMegaBoss, type MegaBoss, isBallInsideMegaBoss, applyGravityWellToBall } from "@/utils/megaBossUtils";
 import { MEGA_BOSS_LEVEL } from "@/constants/megaBossConfig";
 import { BOSS_LEVELS } from "@/constants/bossConfig";
 import { collisionHistory } from "@/utils/collisionHistory";
@@ -213,8 +208,7 @@ function performBossFirstSweep(
       const dy = sampleBall.y - centerY;
 
       const megaBossData = bossTarget as any;
-      const useInnerShield =
-        isMegaBossLevel && megaBossData.outerShieldRemoved && megaBossData.innerShieldHP > 0;
+      const useInnerShield = isMegaBossLevel && megaBossData.outerShieldRemoved && megaBossData.innerShieldHP > 0;
 
       if (useInnerShield) {
         const innerShieldRadius = 45 + HITBOX_EXPAND;
@@ -369,8 +363,7 @@ function performBossFirstSweep(
           const toCenterX = sampleBall.x - centerX;
           const toCenterY = sampleBall.y - centerY;
           const dotProduct = normalX * toCenterX + normalY * toCenterY;
-          closestNormal =
-            dotProduct > 0 ? { x: normalX, y: normalY } : { x: -normalX, y: -normalY };
+          closestNormal = dotProduct > 0 ? { x: normalX, y: normalY } : { x: -normalX, y: -normalY };
         }
       }
       if (closestDist < sampleBall.radius) {
@@ -584,9 +577,7 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
 
   // Process pending chain explosions from previous frames
   const now = world.simTimeMs; // sim-time, not wall-clock
-  result.updatedPendingChainExplosions = config.pendingChainExplosions.filter(
-    (p) => now < p.triggerTime,
-  );
+  result.updatedPendingChainExplosions = config.pendingChainExplosions.filter((p) => now < p.triggerTime);
   const readyExplosions = config.pendingChainExplosions.filter((p) => now >= p.triggerTime);
   for (const pending of readyExplosions) {
     const brick = bricks.find((b) => b.id === pending.brick.id);
@@ -658,8 +649,7 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
           const checkDy = event.originalDy ?? ccdResult.ball.dy;
           const dot = checkDx * event.normal.x + checkDy * event.normal.y;
           const isRecentlyReleasedFromBoss =
-            ccdResult.ball.releasedFromBossTime &&
-            Date.now() - ccdResult.ball.releasedFromBossTime < 2000;
+            ccdResult.ball.releasedFromBossTime && Date.now() - ccdResult.ball.releasedFromBossTime < 2000;
           if (dot >= 0 && !isRecentlyReleasedFromBoss) break;
 
           const nowPerf = performance.now();
@@ -672,9 +662,7 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
           // Apply paddle angle remapping physics
           const hitPos = (event.point.x - paddle.x) / paddle.width;
           const angle = (hitPos - 0.5) * Math.PI * 0.6;
-          const speedBefore = Math.sqrt(
-            ccdResult.ball.dx * ccdResult.ball.dx + ccdResult.ball.dy * ccdResult.ball.dy,
-          );
+          const speedBefore = Math.sqrt(ccdResult.ball.dx * ccdResult.ball.dx + ccdResult.ball.dy * ccdResult.ball.dy);
           ccdResult.ball.dx = speedBefore * Math.sin(angle);
           ccdResult.ball.dy = -Math.abs(speedBefore * Math.cos(angle));
           ccdResult.ball.lastPaddleHitTime = performance.now();
@@ -820,10 +808,7 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
                   });
                   result.toastEvents.push({
                     level: "warning",
-                    message:
-                      currentHits === 0
-                        ? "Pyramid hit! 2 more hits needed"
-                        : "Pyramid is angry! 1 more hit!",
+                    message: currentHits === 0 ? "Pyramid hit! 2 more hits needed" : "Pyramid is angry! 1 more hit!",
                     key: "pyramid_hit",
                   });
                   result.screenShakes.push({ intensity: 5, duration: 500 });
@@ -1139,9 +1124,7 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
       if (Math.sqrt(dx * dx + dy * dy) <= explosionRadius) {
         if (!brickUpdates.has(otherBrick.id)) {
           if (otherBrick.type === "explosive") {
-            const alreadyPending = result.updatedPendingChainExplosions.some(
-              (p) => p.brick.id === otherBrick.id,
-            );
+            const alreadyPending = result.updatedPendingChainExplosions.some((p) => p.brick.id === otherBrick.id);
             if (!alreadyPending) {
               result.updatedPendingChainExplosions.push({
                 brick: otherBrick,
@@ -1199,7 +1182,7 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
   }
 
   // Check all bricks cleared (win condition flag)
-  const allGone = bricks.every((b) => !b.visible || b.isIndestructible || b.starBuilt);
+  const allGone = bricks.every((b) => !b.visible || b.isIndestructible);
   if (allGone && brickUpdates.size > 0) {
     const hasDestructible = bricks.some((b) => !b.isIndestructible);
     if (hasDestructible || !BOSS_LEVELS.includes(level)) {
@@ -1350,14 +1333,9 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
 
   // Check all balls lost (with mega boss trap guard)
   const megaBossHasTrappedBall =
-    level === MEGA_BOSS_LEVEL &&
-    boss &&
-    isMegaBoss(boss) &&
-    (boss as MegaBoss).trappedBall !== null;
-  const justTrappedRecently =
-    level === MEGA_BOSS_LEVEL && Date.now() - config.megaBossTrapJustHappenedTime < 1500;
-  result.allBallsLost =
-    updatedBalls.length === 0 && !megaBossHasTrappedBall && !justTrappedRecently;
+    level === MEGA_BOSS_LEVEL && boss && isMegaBoss(boss) && (boss as MegaBoss).trappedBall !== null;
+  const justTrappedRecently = level === MEGA_BOSS_LEVEL && Date.now() - config.megaBossTrapJustHappenedTime < 1500;
+  result.allBallsLost = updatedBalls.length === 0 && !megaBossHasTrappedBall && !justTrappedRecently;
 
   return result;
 }
