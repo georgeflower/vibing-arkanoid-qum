@@ -82,9 +82,39 @@ class SoundManager {
     this.musicTracks.forEach(track => track?.pause());
   }
 
+  private fadeOutAudio(audio: HTMLAudioElement, duration: number = 500): Promise<void> {
+    return new Promise((resolve) => {
+      const startVolume = audio.volume;
+      if (startVolume <= 0 || audio.paused) {
+        audio.pause();
+        audio.currentTime = 0;
+        audio.volume = startVolume || this.musicVolume;
+        resolve();
+        return;
+      }
+      const steps = 20;
+      const stepTime = duration / steps;
+      const volumeStep = startVolume / steps;
+      let currentStep = 0;
+      const fade = setInterval(() => {
+        currentStep++;
+        audio.volume = Math.max(0, startVolume - volumeStep * currentStep);
+        if (currentStep >= steps) {
+          clearInterval(fade);
+          audio.pause();
+          audio.currentTime = 0;
+          audio.volume = startVolume;
+          resolve();
+        }
+      }, stepTime);
+    });
+  }
+
   stopBackgroundMusic() {
     this.musicTracks.forEach(track => {
-      if (track) {
+      if (track && !track.paused) {
+        this.fadeOutAudio(track);
+      } else if (track) {
         track.pause();
         track.currentTime = 0;
       }
@@ -180,7 +210,9 @@ class SoundManager {
   }
 
   stopHighScoreMusic() {
-    if (this.highScoreMusic) {
+    if (this.highScoreMusic && !this.highScoreMusic.paused) {
+      this.fadeOutAudio(this.highScoreMusic);
+    } else if (this.highScoreMusic) {
       this.highScoreMusic.pause();
       this.highScoreMusic.currentTime = 0;
     }
@@ -1277,7 +1309,15 @@ class SoundManager {
   }
 
   stopBossMusic() {
-    if (this.bossMusic) {
+    if (this.bossMusic && !this.bossMusic.paused) {
+      const bossRef = this.bossMusic;
+      this.fadeOutAudio(bossRef).then(() => {
+        bossRef.pause();
+        if (this.bossMusic === bossRef) {
+          this.bossMusic = null;
+        }
+      });
+    } else if (this.bossMusic) {
       this.bossMusic.pause();
       this.bossMusic.currentTime = 0;
       this.bossMusic = null;
