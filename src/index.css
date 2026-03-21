@@ -589,7 +589,7 @@ All colors MUST be HSL.
   padding: 0 !important;
   box-shadow: none !important;
   max-width: 100%;
-  width: 100vw;
+  width: 100%;
   height: 100dvh;
   border-radius: 0;
 }
