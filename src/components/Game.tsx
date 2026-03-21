@@ -2521,8 +2521,9 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       firstBossMinionKilledRef.current = false;
 
       // Show boss name and start boss music after 1 second
+      const bossLevelForMusic = isDailyBoss ? (settings.dailyChallengeConfig?.bossLevel || 5) : startLevel;
       setTimeout(() => {
-        soundManager.playBossMusic(startLevel);
+        soundManager.playBossMusic(bossLevelForMusic);
         const bossName =
           startLevel === 5
             ? "CUBE GUARDIAN"
