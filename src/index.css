@@ -614,6 +614,7 @@ All colors MUST be HSL.
   left: 0;
   right: 0;
   bottom: 0;
+  width: 100%;
   width: 100vw;
   height: 100vh;
   /* Use dvh (dynamic viewport height) for iOS to account for Safari UI */
