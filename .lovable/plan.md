@@ -1,19 +1,21 @@
 
 
-## Fix: Stop High Score Music When Leaving Daily Challenge
+## Fix: Star-Built Bricks Should Block Level Completion
 
 ### Problem
-When completing or failing a daily challenge, high score music starts playing. When navigating back to menu via "DAILY CHALLENGES" or "MAIN MENU" buttons, `onReturnToMenu()` is called directly without stopping the high score music first. The main menu then starts its own background music, causing two tracks to overlap.
+In `src/engine/physics.ts` line 1202, the level-completion check treats `starBuilt` bricks the same as indestructible bricks — it ignores them. This means if the yellow Star enemy builds bricks, the level can be completed without destroying them.
 
 ### Fix
 
-**`src/components/Game.tsx`** — Add `soundManager.stopHighScoreMusic()` (and `stopBossMusic`/`stopBackgroundMusic` for safety) before the `onReturnToMenu()` calls in the daily challenge result overlay callbacks:
+**`src/engine/physics.ts` (line 1202)** — Remove `b.starBuilt` from the win-condition check:
 
-1. **`onBackToDaily`** (line ~8850-8853): Add music stop calls before `onReturnToMenu()`
-2. **`onReturnToMenu`** (line ~8854): Wrap in a handler that stops all music before calling `onReturnToMenu()`
+```typescript
+// Before:
+const allGone = bricks.every((b) => !b.visible || b.isIndestructible || b.starBuilt);
 
-Both paths need: `soundManager.stopHighScoreMusic()`, `soundManager.stopBossMusic()`, `soundManager.stopBackgroundMusic()` — matching the pattern already used in `handleEndScreenReturnToMenu`.
+// After:
+const allGone = bricks.every((b) => !b.visible || b.isIndestructible);
+```
 
-### Files
-- `src/components/Game.tsx`
+This single-line change ensures star-built bricks must be destroyed to complete the level.
 
