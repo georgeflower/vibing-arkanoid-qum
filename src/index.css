@@ -553,8 +553,9 @@ All colors MUST be HSL.
   border: none !important;
   padding: 0 !important;
   box-shadow: none !important;
-  width: 100vw;
+  width: 100%;
   height: 100dvh;
+  overflow: hidden;
   max-width: 100vw;
   max-height: 100dvh;
   margin: 0;
