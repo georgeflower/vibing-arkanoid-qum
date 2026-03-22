@@ -4272,6 +4272,9 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       ballHitSinceLastPaddleRef.current.clear();
       world.backgroundHue = 0;
 
+      // Lower accumulated speed by 2% on death (but never below 0)
+      setBrickHitSpeedAccumulated((prev) => Math.max(0, prev - 0.02));
+
       setLives((prev) => {
         const newLives = prev - 1;
         if (isDailyChallenge) dailyChallengeLivesLostRef.current++;

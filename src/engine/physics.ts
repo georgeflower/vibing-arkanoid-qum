@@ -1078,7 +1078,11 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
               const brickHitSpeedAccumulated = world.brickHitSpeedAccumulated;
               const currentTotalSpeed = speedMultiplier + brickHitSpeedAccumulated;
               if (currentTotalSpeed < maxTotalSpeed) {
-                const speedIncrease = Math.min(0.005, maxTotalSpeed - currentTotalSpeed);
+                const remainingBrickCount = bricks.filter(
+                  (b) => b.visible && !b.isIndestructible && (!brickUpdates.has(b.id) || brickUpdates.get(b.id)!.visible),
+                ).length;
+                const baseSpeedIncrease = remainingBrickCount <= 10 ? 0.01 : 0.005;
+                const speedIncrease = Math.min(baseSpeedIncrease, maxTotalSpeed - currentTotalSpeed);
                 world.brickHitSpeedAccumulated = Math.min(
                   maxTotalSpeed - speedMultiplier,
                   world.brickHitSpeedAccumulated + speedIncrease,
