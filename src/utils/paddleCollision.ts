@@ -113,6 +113,20 @@ export function checkCircleVsRoundedPaddle(
         result.newVelocityX = Math.cos(finalAngle) * incomingSpeed;
         result.newVelocityY = Math.sin(finalAngle) * incomingSpeed;
         
+        // Debug logging for angle calculation
+        console.log("[Paddle Launcher Debug]", {
+          originalBallX: ball.x.toFixed(2),
+          correctedBallX: result.newX.toFixed(2),
+          paddleCenterX: paddleCenterX.toFixed(2),
+          impactOffsetX: impactOffsetX.toFixed(2),
+          normalizedOffset: normalizedOffset.toFixed(3),
+          angleFactor: angleFactor.toFixed(3),
+          launchAngleDeg: (launchAngle * 180 / Math.PI).toFixed(1),
+          finalAngleDeg: (finalAngle * 180 / Math.PI).toFixed(1),
+          incomingSpeed: incomingSpeed.toFixed(2),
+          newVelocityX: result.newVelocityX.toFixed(2),
+          newVelocityY: result.newVelocityY.toFixed(2)
+        });
         
       } else {
         // For side/corner hits, use standard reflection

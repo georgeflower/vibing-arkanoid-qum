@@ -704,7 +704,10 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     // Inline screen shake start tracking (was useEffect([screenShake]))
     if (world.screenShake > 0 && screenShakeStartRef.current === null) {
       screenShakeStartRef.current = Date.now();
+      console.log(`[ScreenShake] ON - intensity: ${world.screenShake}`);
     } else if (world.screenShake === 0 && screenShakeStartRef.current !== null) {
+      const duration = Date.now() - screenShakeStartRef.current;
+      console.log(`[ScreenShake] OFF - duration: ${duration}ms`);
       screenShakeStartRef.current = null;
     }
   }, []);
@@ -1602,6 +1605,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   // Handle second chance power-up activation
   const handleSecondChance = useCallback(() => {
     // Just for tracking - the paddle state is set in usePowerUps
+    console.log("[PowerUp] Second Chance activated!");
   }, []);
 
   // Trigger highlight flash for background effects (levels 1-4)
@@ -5394,10 +5398,36 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       const megaBoss = boss as MegaBoss;
       const now = Date.now();
 
+      // DEBUG: Log Mega Boss state every 60 frames (~1 second)
+      if (frameCountRef.current % 60 === 0) {
+        console.log(`[MEGA BOSS DEBUG] State:`, {
+          corePhase: megaBoss.corePhase,
+          outerShieldHP: megaBoss.outerShieldHP,
+          coreExposed: megaBoss.coreExposed,
+          trappedBall: megaBoss.trappedBall ? 'YES' : 'NO',
+          dangerBallsCaught: megaBoss.dangerBallsCaught,
+          dangerBallsFired: megaBoss.dangerBallsFired,
+          scheduledDangerBalls: megaBoss.scheduledDangerBalls.length,
+          isInvulnerable: megaBoss.isInvulnerable,
+          position: { x: megaBoss.x.toFixed(1), y: megaBoss.y.toFixed(1) }
+        });
+      }
+
       // Check if player ball enters exposed core
       if (megaBoss.coreExposed && !megaBoss.trappedBall) {
         balls.forEach((ball) => {
+          // DEBUG: Log ball position relative to core when core is exposed
+          const coreX = megaBoss.x + megaBoss.width / 2;
+          const coreY = megaBoss.y + megaBoss.height / 2;
+          const distToCore = Math.sqrt(Math.pow(ball.x - coreX, 2) + Math.pow(ball.y - coreY, 2));
+
+          if (frameCountRef.current % 10 === 0) {
+            console.log(`[MEGA BOSS DEBUG] Ball ${ball.id} distance to core: ${distToCore.toFixed(1)}px, inside boss: ${isBallInsideMegaBoss(ball, megaBoss)}, in hatch area: ${isBallInHatchArea(ball, megaBoss)}`);
+          }
+
           if (!ball.waitingToLaunch && isBallInHatchArea(ball, megaBoss)) {
+            console.log(`[MEGA BOSS DEBUG] ★★★ BALL ${ball.id} HIT THE CORE! ★★★`);
+            console.log(`[MEGA BOSS DEBUG] Ball position: (${ball.x.toFixed(1)}, ${ball.y.toFixed(1)}), Core position: (${coreX.toFixed(1)}, ${coreY.toFixed(1)})`);
             // Mark trap time immediately so the life-loss pass can't incorrectly deduct a life
             // if state updates land on the next tick.
             megaBossTrapJustHappenedRef.current = Date.now();
@@ -5408,6 +5438,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
             // Hide the trapped ball
             setBalls((prev) => prev.filter((b) => b.id !== ball.id));
+
+            console.log(`[MEGA BOSS DEBUG] Ball trapped, danger balls scheduled: ${(trappedBoss as MegaBoss).scheduledDangerBalls.length}`);
 
             toast.error("🔴 BALL TRAPPED IN CORE! Catch 5 danger balls!", { duration: 3000 });
             soundManager.playCannonModeSound();
@@ -7056,9 +7088,14 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
             if (isMegaBoss(boss)) {
               const megaBoss = boss as MegaBoss;
               // Skip if core already exposed or ball is trapped
-              if (megaBoss.coreExposed || megaBoss.trappedBall) continue;
+              if (megaBoss.coreExposed || megaBoss.trappedBall) {
+                console.log(`[MEGA BOSS DEBUG] Core exposed - bullets blocked, hit core with ball!`);
+                continue;
+              }
 
+              console.log(`[MEGA BOSS DEBUG] Turret bullet hit! Damage: ${hit.damage}`);
               const { newOuterHP, newInnerHP, shouldExposeCore } = handleMegaBossOuterDamage(megaBoss, hit.damage);
+              console.log(`[MEGA BOSS DEBUG] Shield damage: ${megaBoss.outerShieldRemoved ? megaBoss.innerShieldHP : megaBoss.outerShieldHP} -> ${megaBoss.outerShieldRemoved ? newInnerHP : newOuterHP}`);
               megaBoss.outerShieldHP = newOuterHP;
               megaBoss.innerShieldHP = newInnerHP;
 
@@ -7067,6 +7104,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
               megaBoss.lastHitAt = world.simTimeMs;
 
               if (shouldExposeCore) {
+                console.log(`[MEGA BOSS DEBUG] ★★★ CORE EXPOSED VIA TURRET! ★★★`);
                 Object.assign(megaBoss, exposeMegaBossCore(megaBoss));
                 megaBoss.currentHealth = 0;
                 triggerScreenShake(12, 600);

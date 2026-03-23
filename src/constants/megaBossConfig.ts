@@ -12,6 +12,11 @@ export const MEGA_BOSS_CONFIG = {
   coreHP: 1, // Ball must hit core once to trap it
   dangerBallsToComplete: 5, // Must get 5 core hits from reflected danger balls
   
+  // Legacy values for compatibility
+  healthPhase1: 10, // Outer shield for phase 1
+  healthPhase2: 10, // Outer shield for phase 2 (angry)
+  healthPhase3: 10, // Outer shield for phase 3 (very angry)
+  
   positions: 9,
   moveSpeed: 2.0,
   angryMoveSpeed: 3.0,

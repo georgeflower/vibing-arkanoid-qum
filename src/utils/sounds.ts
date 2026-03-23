@@ -60,7 +60,7 @@ class SoundManager {
     }
 
     // Play current track
-    this.musicTracks[this.currentTrackIndex]?.play().catch(() => {});
+    this.musicTracks[this.currentTrackIndex]?.play().catch(err => console.log('Audio play failed:', err));
   }
 
   private handleTrackEnd() {
