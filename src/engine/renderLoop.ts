@@ -23,10 +23,14 @@ const TARGET_FPS_LOW = 60;
 let currentTargetFps = TARGET_FPS_HIGH;
 let minFrameInterval = 1000 / currentTargetFps;
 
-/** Update the render target FPS based on quality level */
-export function setRenderTargetFps(qualityLevel: "potato" | "low" | "medium" | "high"): void {
+/** Update the render target FPS based on quality level and device type */
+export function setRenderTargetFps(qualityLevel: "potato" | "low" | "medium" | "high", isMobile: boolean = false): void {
   const TARGET_FPS_POTATO = 30;
-  const newTarget = qualityLevel === "potato" ? TARGET_FPS_POTATO : qualityLevel === "low" ? TARGET_FPS_LOW : TARGET_FPS_HIGH;
+  let newTarget = qualityLevel === "potato" ? TARGET_FPS_POTATO : qualityLevel === "low" ? TARGET_FPS_LOW : TARGET_FPS_HIGH;
+  // Cap mobile devices to 60 FPS for consistent delta time
+  if (isMobile && newTarget > TARGET_FPS_LOW) {
+    newTarget = TARGET_FPS_LOW;
+  }
   if (newTarget !== currentTargetFps) {
     currentTargetFps = newTarget;
     minFrameInterval = 1000 / currentTargetFps;

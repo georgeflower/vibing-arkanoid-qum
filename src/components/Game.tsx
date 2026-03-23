@@ -1771,7 +1771,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     renderState.ballReleaseHighlight = ballReleaseHighlight;
 
     // Sync render loop FPS target with quality level
-    setRenderTargetFps(qualitySettings.level);
+    setRenderTargetFps(qualitySettings.level, isMobileDevice);
   }, [
     gameState,
     level,
