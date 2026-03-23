@@ -69,6 +69,11 @@ export function processBallWithCCD(
   const desiredSubsteps = Math.ceil(ballSpeed * gameState.speedMultiplier / (gameState.minBrickDimension * 0.15));
   const PHYSICS_SUBSTEPS = Math.max(2, Math.min(desiredSubsteps, MAX_SUBSTEPS));
   
+  // Log high substep counts for debugging
+  if (PHYSICS_SUBSTEPS > 12) {
+    console.warn(`[CCD] High substeps: ${PHYSICS_SUBSTEPS}, ballSpeed: ${ballSpeed.toFixed(2)}, speedMult: ${gameState.speedMultiplier.toFixed(2)}, quality: ${gameState.qualityLevel}`);
+  }
+  
   // Boss-first sweep timing (only when debug enabled)
   const bossFirstSweepStart = shouldMeasurePerf ? performance.now() : 0;
   const bossFirstSweepEnd = shouldMeasurePerf ? performance.now() : 0;

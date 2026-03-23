@@ -1302,7 +1302,21 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
       }
 
       // Lost ball
-      if (ball.y > config.canvasSize.h + ball.radius) return false;
+      if (ball.y > config.canvasSize.h + ball.radius) {
+        // DEBUG: Log when ball is lost on level 20
+        if (level === MEGA_BOSS_LEVEL) {
+          console.log(`[MEGA BOSS DEBUG] ⚠️ BALL ${ball.id} LOST! Position: (${ball.x.toFixed(1)}, ${ball.y.toFixed(1)})`);
+          if (boss && isMegaBoss(boss)) {
+            const megaBoss = boss as MegaBoss;
+            console.log(`[MEGA BOSS DEBUG] Boss state at ball loss:`, {
+              coreExposed: megaBoss.coreExposed,
+              trappedBall: megaBoss.trappedBall ? 'YES' : 'NO',
+              bossPosition: { x: megaBoss.x.toFixed(1), y: megaBoss.y.toFixed(1) }
+            });
+          }
+        }
+        return false;
+      }
 
       return true;
     });
