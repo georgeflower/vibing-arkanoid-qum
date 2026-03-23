@@ -1081,7 +1081,7 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
                 const remainingBrickCount = bricks.filter(
                   (b) => b.visible && !b.isIndestructible && (!brickUpdates.has(b.id) || brickUpdates.get(b.id)!.visible),
                 ).length;
-                let baseSpeedIncrease = 0.00525;
+                let baseSpeedIncrease = 0.01;
                 if (remainingBrickCount <= 10) {
                   // Scale from 0.021 (10 left) up to 0.063 (1 left) — 5% above previous values
                   baseSpeedIncrease = 0.021 + (10 - remainingBrickCount) * 0.00462;
