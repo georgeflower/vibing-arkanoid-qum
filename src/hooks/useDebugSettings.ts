@@ -36,7 +36,7 @@ const DEFAULT_SETTINGS: DebugSettings = {
   showFrameProfiler: false,
   showPowerUpWeights: false,
   showPoolStats: false,
-  enableCollisionLogging: false,
+  enableCollisionLogging: true,
   enablePowerUpLogging: false,
   enablePerformanceLogging: false, // Off by default to reduce hot-path overhead
   enableFPSLogging: false, // Off by default — enable via debug dashboard
@@ -65,31 +65,34 @@ export const useDebugSettings = () => {
     setSettings(DEFAULT_SETTINGS);
   }, []);
 
-  const isDebugModeActive = useCallback((currentSettings: DebugSettings = settings): boolean => {
-    // Check if any actual debug visualization or logging feature is enabled
-    // Excludes gameplay features like particles, screen shake, CRT effects
-    return (
-      currentSettings.showGameLoopDebug ||
-      currentSettings.showSubstepDebug ||
-      currentSettings.showCCDPerformance ||
-      currentSettings.showCollisionHistory ||
-      currentSettings.showFrameProfiler ||
-      currentSettings.showPowerUpWeights ||
-      currentSettings.showPoolStats ||
-      currentSettings.enableCollisionLogging ||
-      currentSettings.enablePowerUpLogging ||
-      currentSettings.enablePerformanceLogging ||
-      currentSettings.enableFPSLogging ||
-      currentSettings.enableDetailedFrameLogging ||
-      currentSettings.enablePaddleLogging ||
-      currentSettings.enableBossLogging ||
-      currentSettings.enableFrameProfilerLogging ||
-      currentSettings.enableScreenShakeLogging ||
-      currentSettings.enablePointerLockLogging ||
-      currentSettings.enableGCLogging ||
-      currentSettings.enableLagLogging
-    );
-  }, [settings]);
+  const isDebugModeActive = useCallback(
+    (currentSettings: DebugSettings = settings): boolean => {
+      // Check if any actual debug visualization or logging feature is enabled
+      // Excludes gameplay features like particles, screen shake, CRT effects
+      return (
+        currentSettings.showGameLoopDebug ||
+        currentSettings.showSubstepDebug ||
+        currentSettings.showCCDPerformance ||
+        currentSettings.showCollisionHistory ||
+        currentSettings.showFrameProfiler ||
+        currentSettings.showPowerUpWeights ||
+        currentSettings.showPoolStats ||
+        currentSettings.enableCollisionLogging ||
+        currentSettings.enablePowerUpLogging ||
+        currentSettings.enablePerformanceLogging ||
+        currentSettings.enableFPSLogging ||
+        currentSettings.enableDetailedFrameLogging ||
+        currentSettings.enablePaddleLogging ||
+        currentSettings.enableBossLogging ||
+        currentSettings.enableFrameProfilerLogging ||
+        currentSettings.enableScreenShakeLogging ||
+        currentSettings.enablePointerLockLogging ||
+        currentSettings.enableGCLogging ||
+        currentSettings.enableLagLogging
+      );
+    },
+    [settings],
+  );
 
   return {
     settings,
