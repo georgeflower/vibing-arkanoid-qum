@@ -1402,10 +1402,11 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   // Initialize game loop utility on mount
   useEffect(() => {
     if (!gameLoopRef.current) {
+      const mobileFpsCap = isMobileDevice ? 60 : FPS_CAP;
       gameLoopRef.current = new FixedStepGameLoop({
         maxDeltaMs: MAX_DELTA_MS,
         timeScale: DEFAULT_TIME_SCALE,
-        fpsCapMs: 1000 / FPS_CAP,
+        fpsCapMs: 1000 / mobileFpsCap,
       });
     }
   }, []);
