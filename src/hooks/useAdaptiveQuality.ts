@@ -216,22 +216,23 @@ export const useAdaptiveQuality = (options: AdaptiveQualityOptions = {}) => {
         if (performanceLogRef.current.length > 12) {
           performanceLogRef.current.shift();
         }
-        lastPerformanceLogMs.current = now;
-      }
 
-      // Console log current performance (disabled on mobile for better performance)
-      if (enableLogging && !(/Mobi|Android/i.test(navigator.userAgent))) {
-        const avgFps = stats.samples > 0 ? (stats.sum / stats.samples).toFixed(1) : '0.0';
-        const baseLog = `[Performance Monitor] FPS: ${fps.toFixed(1)} | Quality: ${quality.toUpperCase()} | ` +
-          `Avg: ${avgFps} | Min: ${stats.min.toFixed(0)} | Max: ${stats.max.toFixed(0)}`;
-        
-        // If detailed metrics are available (from performance profiler), include them
-        if ((window as any).performanceProfiler) {
-          const summary = (window as any).performanceProfiler.getFrameSummary();
-          console.log(baseLog + ` | Objects: ${summary.totalObjects}`);
-        } else {
-          console.log(baseLog);
+        // Console log current performance (disabled on mobile for better performance)
+        if (enableLogging && !(/Mobi|Android/i.test(navigator.userAgent))) {
+          const avgFps = stats.samples > 0 ? (stats.sum / stats.samples).toFixed(1) : '0.0';
+          const baseLog = `[Performance Monitor] FPS: ${fps.toFixed(1)} | Quality: ${quality.toUpperCase()} | ` +
+            `Avg: ${avgFps} | Min: ${stats.min.toFixed(0)} | Max: ${stats.max.toFixed(0)}`;
+          
+          // If detailed metrics are available (from performance profiler), include them
+          if ((window as any).performanceProfiler) {
+            const summary = (window as any).performanceProfiler.getFrameSummary();
+            console.log(baseLog + ` | Objects: ${summary.totalObjects}`);
+          } else {
+            console.log(baseLog);
+          }
         }
+        
+        lastPerformanceLogMs.current = now;
       }
 
       if (!autoAdjustEnabled) return;
