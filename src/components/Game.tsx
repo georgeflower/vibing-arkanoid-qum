@@ -4325,10 +4325,11 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   ]);
 
   // FPS tracking for adaptive quality
-  const fpsTrackerRef = useRef({ lastTime: performance.now(), frameCount: 0, fps: FPS_CAP });
+  const mobileFpsCapValue = isMobileDevice ? 60 : FPS_CAP;
+  const fpsTrackerRef = useRef({ lastTime: performance.now(), frameCount: 0, fps: mobileFpsCapValue });
   const lastFrameTimeRef = useRef(performance.now());
-  const dtSecondsRef = useRef(1 / FPS_CAP); // Actual delta time for current frame (seconds)
-  const targetFrameTime = 1000 / FPS_CAP;
+  const dtSecondsRef = useRef(1 / mobileFpsCapValue); // Actual delta time for current frame (seconds)
+  const targetFrameTime = 1000 / mobileFpsCapValue;
 
   // Lag detection ref for tracking frame timing with GC detection
   const lagDetectionRef = useRef({
