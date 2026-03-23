@@ -9178,7 +9178,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                 {/* ═══════════════════════════════════════════════════════════════ */}
 
                 {/* Lightweight FPS overlay - user setting (outside debug block) */}
-                <FpsOverlay visible={gameSettingsData.showFpsOverlay} />
+                <FpsOverlay visible={gameSettingsData.showFpsOverlay} isMobile={isMobileDevice} />
 
                 {/* Right Panel - Stats and Controls */}
                 <div
