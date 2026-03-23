@@ -11,6 +11,7 @@
       "dependencies": [
         "npm:@eslint/js@^9.32.0",
         "npm:@hookform/resolvers@^3.10.0",
+        "npm:@lovable.dev/cloud-auth-js@^0.0.3",
         "npm:@radix-ui/react-alert-dialog@^1.1.14",
         "npm:@radix-ui/react-dialog@^1.1.14",
         "npm:@radix-ui/react-label@^2.1.7",
@@ -39,6 +40,7 @@
         "npm:lucide-react@0.462",
         "npm:next-themes@0.3",
         "npm:postcss@^8.5.6",
+        "npm:posthog-js@^1.360.2",
         "npm:react-dom@^18.3.1",
         "npm:react-hook-form@^7.61.1",
         "npm:react-router-dom@^7.13.0",
@@ -49,7 +51,7 @@
         "npm:tailwindcss@^3.4.17",
         "npm:typescript-eslint@^8.38.0",
         "npm:typescript@^5.8.3",
-        "npm:vite-plugin-pwa@^1.1.0",
+        "npm:vite-plugin-pwa@0.19.8",
         "npm:vite@^5.4.19",
         "npm:zod@^3.25.76"
       ]
