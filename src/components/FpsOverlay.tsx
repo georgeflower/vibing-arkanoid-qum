@@ -1,39 +1,24 @@
 import { useState, useEffect, useRef } from 'react';
 
-const MOBILE_TARGET_FPS = 60;
-const DESKTOP_TARGET_FPS = 120;
-
 interface FpsOverlayProps {
   visible: boolean;
-  isMobile?: boolean;
 }
 
-export const FpsOverlay = ({ visible, isMobile = false }: FpsOverlayProps) => {
+export const FpsOverlay = ({ visible }: FpsOverlayProps) => {
   const [fps, setFps] = useState(60);
   const [deltaMs, setDeltaMs] = useState(16.7);
   const frameCountRef = useRef(0);
   const lastTimeRef = useRef(performance.now());
   const rafRef = useRef<number | null>(null);
-  const lastAcceptedTimeRef = useRef(performance.now());
+  const lastFrameRef = useRef(performance.now());
 
   useEffect(() => {
     if (!visible) return;
 
-    // Match the same frame-skipping logic used in renderLoop.ts:
-    // cap mobile to 60 FPS (16.67 ms), desktop to 120 FPS (~8.33 ms)
-    const minInterval = isMobile ? 1000 / MOBILE_TARGET_FPS : 1000 / DESKTOP_TARGET_FPS;
-
     const tick = (now: number) => {
-      // Skip callbacks that arrive before the minimum interval has elapsed
-      const sinceLast = now - lastAcceptedTimeRef.current;
-      if (sinceLast < minInterval) {
-        rafRef.current = requestAnimationFrame(tick);
-        return;
-      }
-
-      // Delta from last accepted frame
-      const dt = sinceLast;
-      lastAcceptedTimeRef.current = now;
+      // Delta from last frame
+      const dt = now - lastFrameRef.current;
+      lastFrameRef.current = now;
 
       frameCountRef.current++;
       const elapsed = now - lastTimeRef.current;
@@ -53,7 +38,7 @@ export const FpsOverlay = ({ visible, isMobile = false }: FpsOverlayProps) => {
     return () => {
       if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
     };
-  }, [visible, isMobile]);
+  }, [visible]);
 
   if (!visible) return null;
 
