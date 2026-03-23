@@ -243,6 +243,15 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   if (systemResourceMonitorRef.current === null) {
     systemResourceMonitorRef.current = new SystemResourceMonitor();
   }
+
+  // Ref that always holds the latest debugSettings — used in stable callbacks
+  // (useCallback with [] deps) to avoid stale closure issues
+  const debugSettingsRef = useRef({
+    enableScreenShakeLogging: false,
+    enablePointerLockLogging: false,
+    enablePaddleLogging: false,
+    enablePerformanceLogging: false,
+  });
   const [score, setScoreRaw] = useState(0);
   const scoreRef = useRef(0);
   // Wrap setScore to always keep scoreRef in sync
@@ -704,10 +713,14 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     // Inline screen shake start tracking (was useEffect([screenShake]))
     if (world.screenShake > 0 && screenShakeStartRef.current === null) {
       screenShakeStartRef.current = Date.now();
-      console.log(`[ScreenShake] ON - intensity: ${world.screenShake}`);
+      if (ENABLE_DEBUG_FEATURES && debugSettingsRef.current.enableScreenShakeLogging) {
+        console.log(`[ScreenShake] ON - intensity: ${world.screenShake}`);
+      }
     } else if (world.screenShake === 0 && screenShakeStartRef.current !== null) {
       const duration = Date.now() - screenShakeStartRef.current;
-      console.log(`[ScreenShake] OFF - duration: ${duration}ms`);
+      if (ENABLE_DEBUG_FEATURES && debugSettingsRef.current.enableScreenShakeLogging) {
+        console.log(`[ScreenShake] OFF - duration: ${duration}ms`);
+      }
       screenShakeStartRef.current = null;
     }
   }, []);
@@ -862,6 +875,13 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     resetSettings: resetDebugSettings,
     isDebugModeActive,
   } = useDebugSettings();
+
+  // Keep debugSettingsRef in sync on every render (runs synchronously before effects)
+  // This allows stable callbacks (useCallback with [] deps) to read fresh settings
+  debugSettingsRef.current.enableScreenShakeLogging = debugSettings.enableScreenShakeLogging;
+  debugSettingsRef.current.enablePointerLockLogging = debugSettings.enablePointerLockLogging;
+  debugSettingsRef.current.enablePaddleLogging = debugSettings.enablePaddleLogging;
+  debugSettingsRef.current.enablePerformanceLogging = debugSettings.enablePerformanceLogging;
 
   // Helper function to count active debug features
   const calculateActiveDebugFeatures = (settings: typeof debugSettings): number => {
@@ -1423,7 +1443,11 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     debugSettings.enablePerformanceLogging ||
     debugSettings.enableFPSLogging ||
     debugSettings.enableDetailedFrameLogging ||
-    debugSettings.enableBossLogging;
+    debugSettings.enableBossLogging ||
+    debugSettings.enableScreenShakeLogging ||
+    debugSettings.enablePointerLockLogging ||
+    debugSettings.enablePaddleLogging ||
+    debugSettings.enableFrameProfilerLogging;
 
   useEffect(() => {
     if (ENABLE_DEBUG_FEATURES && anyLoggingActive) {
@@ -3505,7 +3529,9 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       // If pointer lock was released (ESC pressed) while playing, pause the game (desktop only)
       // Mobile devices don't use pointer lock, so skip this check entirely
       if (!isLocked && gameState === "playing" && !isMobileDevice) {
-        console.log("[PointerLock] Released during gameplay - pausing game");
+        if (ENABLE_DEBUG_FEATURES && debugSettingsRef.current.enablePointerLockLogging) {
+          console.log("[PointerLock] Released during gameplay - pausing game");
+        }
         setGameState("paused");
         if (gameLoopRef.current) {
           gameLoopRef.current.pause();
@@ -3701,6 +3727,13 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
           ballsPendingHitRef.current.delete(ballId);
           setBossRushHitsThisBoss((prev) => prev + 1);
         }
+      }
+    }
+
+    // ═══ Paddle logging ═══
+    if (ENABLE_DEBUG_FEATURES && debugSettings.enablePaddleLogging && result.paddleHitBallIds.length > 0) {
+      for (const ballId of result.paddleHitBallIds) {
+        console.log(`[Paddle] Ball ${ballId} hit paddle at x:${paddle?.x.toFixed(1)}, y:${paddle?.y.toFixed(1)}, width:${paddle?.width.toFixed(1)}`);
       }
     }
 
@@ -4527,6 +4560,14 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         if (performanceProfiler.detectPerformanceIssue()) {
           performanceProfiler.logDetailedMetrics();
         }
+      }
+
+      // ========== Performance Logging (Debug) ==========
+      if (ENABLE_DEBUG_FEATURES && debugSettings.enablePerformanceLogging) {
+        const totalParticleCount = particlePool.getStats().active;
+        console.log(
+          `[Perf] FPS:${fps} Balls:${balls.length} Bricks:${bricks.length} Enemies:${enemies.length} Particles:${totalParticleCount} PowerUps:${powerUps.length} Quality:${quality}`,
+        );
       }
     }
 
