@@ -49,6 +49,12 @@ export function startRenderLoop(canvas: HTMLCanvasElement, assets: AssetRefs): (
     return () => {};
   }
 
+  // Apply the FPS cap for the current quality setting right away so that the
+  // first frames honour it.  Game.tsx will also call setRenderTargetFps() when
+  // its quality-settings effect fires, but that happens one React cycle after
+  // the loop is already running.
+  setRenderTargetFps(renderState.qualitySettings.level);
+
   // Disable bilinear filtering — not needed for pixel-art assets and saves
   // GPU fill-rate on every drawImage call.
   ctx.imageSmoothingEnabled = false;
@@ -57,11 +63,25 @@ export function startRenderLoop(canvas: HTMLCanvasElement, assets: AssetRefs): (
   let running = true;
   let lastFrameTime = 0;
 
-  // Offscreen canvas for resolution scaling (lazily created)
+  // Offscreen canvas for resolution scaling.
+  // Eagerly create it for the current quality setting so that the very first
+  // render frame doesn't incur a canvas-creation and context-allocation cost.
+  // When quality changes the loop lazily re-creates it inside the frame loop.
   let offCanvas: HTMLCanvasElement | null = null;
   let offCtx: CanvasRenderingContext2D | null = null;
   let offW = 0;
   let offH = 0;
+
+  const initialScale = renderState.qualitySettings.resolutionScale;
+  if (initialScale < 1.0) {
+    offW = Math.round(renderState.width * initialScale);
+    offH = Math.round(renderState.height * initialScale);
+    offCanvas = document.createElement("canvas");
+    offCanvas.width = offW;
+    offCanvas.height = offH;
+    offCtx = offCanvas.getContext("2d", { alpha: false });
+    if (offCtx) offCtx.imageSmoothingEnabled = false;
+  }
 
   const loop = (timestamp: number) => {
     if (!running) return;
@@ -80,7 +100,7 @@ export function startRenderLoop(canvas: HTMLCanvasElement, assets: AssetRefs): (
       const scaledW = Math.round(renderState.width * scale);
       const scaledH = Math.round(renderState.height * scale);
 
-      // Lazily create / resize offscreen canvas
+      // Re-create offscreen canvas when quality changes the resolution scale
       if (!offCanvas || offW !== scaledW || offH !== scaledH) {
         offCanvas = document.createElement("canvas");
         offCanvas.width = scaledW;
@@ -121,27 +141,35 @@ export function startRenderLoop(canvas: HTMLCanvasElement, assets: AssetRefs): (
     }
   };
 }
-function warmUpCanvasContexts() {
-  const resolutionScales = [0.75, 0.8, 1.0];
-  const canvases = [];
+/**
+ * Pre-create offscreen canvas contexts for every sub-1.0 resolution scale used
+ * by the quality presets (potato: 0.25, low: 0.75, medium: 0.8).  Creating a
+ * canvas and drawing to it forces the browser/GPU driver to compile the 2D
+ * compositing shaders for that exact format and size.  Without this warm-up the
+ * compilation happens on the first gameplay frame, causing a 30 FPS stall for
+ * several seconds on integrated GPUs.
+ *
+ * @param width  - Logical canvas width (renderState.width)
+ * @param height - Logical canvas height (renderState.height)
+ */
+export function warmUpCanvasContexts(width: number, height: number): void {
+  // All resolution scales < 1.0 that appear in QUALITY_PRESETS
+  const subScales = [0.25, 0.75, 0.8];
 
-  resolutionScales.forEach((scale) => {
-    const width = 800 * scale; // assuming base width
-    const height = 600 * scale; // assuming base height
+  subScales.forEach((scale) => {
+    const scaledW = Math.round(width * scale);
+    const scaledH = Math.round(height * scale);
     const canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
-    const context = canvas.getContext("2d", { alpha: false });
+    canvas.width = scaledW;
+    canvas.height = scaledH;
+    const ctx = canvas.getContext("2d", { alpha: false });
+    if (!ctx) return;
 
-    // Draw a simple test pattern to enforce shader compilation
-    context.fillStyle = "orange";
-    context.fillRect(0, 0, width, height);
+    // A minimal draw forces GPU shader/pipeline compilation for this context.
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0, 0, scaledW, scaledH);
 
-    canvases.push(canvas);
-  });
-
-  // Dispose canvases
-  canvases.forEach((canvas) => {
+    // Shrink the canvas immediately to release GPU texture memory.
     canvas.width = 0;
     canvas.height = 0;
   });
