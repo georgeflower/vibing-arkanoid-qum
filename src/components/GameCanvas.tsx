@@ -1,6 +1,6 @@
 import { forwardRef, useEffect, useRef, useState } from "react";
 import { renderState, createAssetRefs, type AssetRefs } from "@/engine/renderState";
-import { startRenderLoop } from "@/engine/renderLoop";
+import { startRenderLoop, warmUpCanvasContexts } from "@/engine/renderLoop";
 import { warmUpGradients } from "@/engine/canvasRenderer";
 import { brickRenderer } from "@/utils/brickLayerCache";
 import { powerUpImages } from "@/utils/powerUpImages";
@@ -145,13 +145,19 @@ export const GameCanvas = forwardRef<HTMLCanvasElement, GameCanvasProps>(
     // on integrated GPUs.  Use the same creation attributes as startRenderLoop
     // so that canvas.getContext() returns the identical context object both
     // here and inside the render loop, keeping the gradient cache intact.
+    //
+    // Also warm up offscreen canvas contexts for every sub-1.0 resolution scale
+    // (potato 0.25, low 0.75, medium 0.8).  The browser compiles different GPU
+    // pipelines per canvas format and size; touching them now prevents the same
+    // 30 FPS first-frame stall when the render loop switches to a scaled path.
     useEffect(() => {
       const canvas = (ref as React.RefObject<HTMLCanvasElement>)?.current;
       if (!canvas) return;
       const ctx = canvas.getContext("2d", { alpha: false });
       if (!ctx) return;
       warmUpGradients(ctx);
-    }, [ref]);
+      warmUpCanvasContexts(width, height);
+    }, [ref, width, height]);
 
     // Start/stop render loop
     useEffect(() => {
