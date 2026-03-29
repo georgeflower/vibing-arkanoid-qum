@@ -173,7 +173,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   // To enable/disable debug features, edit ENABLE_DEBUG_FEATURES in src/constants/game.ts
 
   // Game settings (persisted to localStorage)
-  const { settings: gameSettingsData, updateSettings: updateGameSettings } = useGameSettings();
+  const { settings: gameSettingsData, updateSettings: updateGameSettings, saveSettings: saveGameSettings } = useGameSettings();
 
   // Fetch logged-in user's initials for auto-fill on high score entry
   const userInitialsRef = useRef<string | null>(null);
@@ -3336,10 +3336,13 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         if (e.shiftKey) {
           toggleAutoAdjust();
         } else {
-          const levels: Array<"potato" | "low" | "medium" | "high"> = ["potato", "low", "medium", "high"];
+          const levels: Array<"high" | "medium" | "low" | "potato"> = ["high", "medium", "low", "potato"];
           const currentIndex = levels.indexOf(quality);
           const nextIndex = (currentIndex + 1) % levels.length;
-          setQuality(levels[nextIndex]);
+          const nextQuality = levels[nextIndex];
+          setQuality(nextQuality);
+          updateGameSettings({ qualityLevel: nextQuality });
+          saveGameSettings();
         }
       }
 
@@ -3380,13 +3383,15 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
             toggleAutoAdjust();
           } else {
             // Q: Cycle quality levels
-            const levels: Array<"potato" | "low" | "medium" | "high"> = ["potato", "low", "medium", "high"];
+            const levels: Array<"high" | "medium" | "low" | "potato"> = ["high", "medium", "low", "potato"];
             const currentIndex = levels.indexOf(quality);
             const nextIndex = (currentIndex + 1) % levels.length;
             const nextQuality = levels[nextIndex];
 
             // Use the hook's setQuality which handles everything properly
             setQuality(nextQuality);
+            updateGameSettings({ qualityLevel: nextQuality });
+            saveGameSettings();
           }
         } else if (e.key === "c" || e.key === "C") {
           // Toggle collision debug logs
