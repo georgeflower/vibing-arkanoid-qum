@@ -1,34 +1,19 @@
 
 
-## Plan: Aggressive Ball Speed Increase for Last 10 Bricks
+## Plan: Add Buy Me a Coffee Link
 
-### Problem
-Currently, when ≤10 bricks remain, the speed increase per brick destroyed is only `0.01` (vs `0.005` normally) — barely noticeable. The user wants a much more dramatic ramp-up that escalates as fewer bricks remain.
+### Changes
 
-### Fix
+**1. Copy the uploaded icon to `src/assets/buymeacoffee.png`**
 
-**`src/engine/physics.ts` (lines 1081-1084)** — Replace the flat `0.01` boost with a scaling formula based on how few bricks remain:
+**2. `src/pages/Home.tsx`** — Add a Buy Me a Coffee link in the footer, next to the GitHub link or in the footer section alongside Privacy/Terms links.
 
-```typescript
-// Current:
-const baseSpeedIncrease = remainingBrickCount <= 10 ? 0.01 : 0.005;
+**3. `src/components/MainMenu.tsx`** — Add a small Buy Me a Coffee link/button at the bottom of the menu card, after the Login/Profile button.
 
-// New — escalating speed boost for last 10 bricks:
-let baseSpeedIncrease = 0.005;
-if (remainingBrickCount <= 10) {
-  // Scale from 0.02 (10 left) up to 0.06 (1 left)
-  baseSpeedIncrease = 0.02 + (10 - remainingBrickCount) * 0.0044;
-}
-```
-
-This gives roughly:
-- 10 bricks left: +0.020 per destroy (4× current)
-- 7 bricks left: +0.033
-- 4 bricks left: +0.046
-- 1 brick left: +0.060 (12× current)
-
-The existing `maxTotalSpeed` cap still applies, preventing runaway speeds.
+Both will use the uploaded icon (imported from `src/assets`) and link to `https://buymeacoffee.com/qumran`, opening in a new tab.
 
 ### Files
-- `src/engine/physics.ts` — one line change in the speed increase calculation
+- `src/assets/buymeacoffee.png` (new — copied from upload)
+- `src/pages/Home.tsx` — footer addition
+- `src/components/MainMenu.tsx` — bottom of menu card
 
