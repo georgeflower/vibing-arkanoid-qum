@@ -251,6 +251,16 @@ const Home = () => {
                 </Link>
               )}
             </div>
+            <a
+              href="https://buymeacoffee.com/qumran"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-2 mt-3"
+              style={{ fontSize: "10px", color: "hsl(40,80%,60%)", textDecoration: "none" }}
+            >
+              <img src={bmcIcon} alt="Buy Me a Coffee" className="w-4 h-4" />
+              <span className="retro-pixel-text">Buy Me a Coffee</span>
+            </a>
           </div>
         </section>
 
@@ -719,16 +729,6 @@ const Home = () => {
           >
             ▶ Launch Game
           </Link>
-          <a
-            href="https://buymeacoffee.com/qumran"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center justify-center gap-2 mt-2"
-            style={{ fontSize: "10px", color: "hsl(40,80%,60%)", textDecoration: "none" }}
-          >
-            <img src={bmcIcon} alt="Buy Me a Coffee" className="w-4 h-4" />
-            <span className="retro-pixel-text">Buy Me a Coffee</span>
-          </a>
           <div className="flex justify-center gap-4 mt-2">
             <Link to="/privacy" className="retro-pixel-text" style={{ fontSize: "8px", color: "hsl(0,0%,45%)", textDecoration: "none" }}>Privacy Policy</Link>
             <Link to="/terms" className="retro-pixel-text" style={{ fontSize: "8px", color: "hsl(0,0%,45%)", textDecoration: "none" }}>Terms of Service</Link>
