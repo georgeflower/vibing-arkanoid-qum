@@ -6,6 +6,7 @@ import CRTOverlay from "@/components/CRTOverlay";
 import { GAME_VERSION } from "@/constants/version";
 import { CHANGELOG } from "@/constants/version";
 import startScreen from "@/assets/start-screen-new.webp";
+import bmcIcon from "@/assets/buymeacoffee.png";
 
 // Power-up images
 import powerupFireball from "@/assets/powerup-fireball.png";
