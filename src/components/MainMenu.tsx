@@ -27,6 +27,7 @@ import { FINAL_LEVEL, ENABLE_DEBUG_FEATURES, ENABLE_HIGH_QUALITY } from "@/const
 import { BOSS_RUSH_CONFIG } from "@/constants/bossRushConfig";
 import { SettingsDialog } from "./SettingsDialog";
 import { useGameSettings } from "@/hooks/useGameSettings";
+import bmcIcon from "@/assets/buymeacoffee.png";
 
 
 interface MainMenuProps {
@@ -1027,6 +1028,17 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
           >
             {isLoggedIn ? "👤 Profile" : "🔑 Login"}
           </Button>
+
+          <a
+            href="https://buymeacoffee.com/qumran"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center gap-2 w-full mt-1 py-2 rounded-md text-[hsl(40,80%,60%)] hover:text-[hsl(40,90%,70%)] transition-colors"
+            style={{ fontSize: "clamp(10px, 1.5vw, 13px)" }}
+          >
+            <img src={bmcIcon} alt="Buy Me a Coffee" className="w-5 h-5" />
+            <span className="retro-pixel-text">Buy Me a Coffee</span>
+          </a>
         </div>
 
       </Card>
