@@ -251,6 +251,16 @@ const Home = () => {
                 </Link>
               )}
             </div>
+            <a
+              href="https://buymeacoffee.com/qumran"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-2 mt-3"
+              style={{ fontSize: "10px", color: "hsl(40,80%,60%)", textDecoration: "none" }}
+            >
+              <img src={bmcIcon} alt="Buy Me a Coffee" className="w-4 h-4" />
+              <span className="retro-pixel-text">Buy Me a Coffee</span>
+            </a>
           </div>
         </section>
 
