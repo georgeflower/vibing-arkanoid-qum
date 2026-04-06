@@ -539,7 +539,9 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
       world.explosions = explosionPool.getActive();
     } else {
-      // Direct non-empty array: pool each explosion
+      // Direct non-empty array: represents the full new explosion state.
+      // Clear the pool first so already-active entries don't get duplicated.
+      explosionPool.releaseAll();
       for (const exp of updater) {
         explosionPool.acquire({
           id: getNextExplosionId(),
@@ -5485,7 +5487,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
             if (ENABLE_DEBUG_FEATURES) {
               console.log(`[MEGA BOSS DEBUG] ★★★ BALL ${ball.id} HIT THE CORE! ★★★`);
               console.log(`[MEGA BOSS DEBUG] Ball position: (${ball.x.toFixed(1)}, ${ball.y.toFixed(1)}), Core position: (${coreX.toFixed(1)}, ${coreY.toFixed(1)})`);
-            }            // Mark trap time immediately so the life-loss pass can't incorrectly deduct a life
+            }
+            // Mark trap time immediately so the life-loss pass can't incorrectly deduct a life
             // if state updates land on the next tick.
             megaBossTrapJustHappenedRef.current = Date.now();
 
@@ -7980,7 +7983,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     setShowHighScoreDisplay(true);
   };
 
-  const handleDailyChallengeSubmit = async () => {
+  const handleDailyChallengeSubmit = useCallback(async () => {
     try {
       if (!dailyChallengeData || !dailyChallengeResult) return;
       if (dailyChallengeTimedOut || dailyChallengeFailed) return; // Don't submit failed challenges
@@ -8001,14 +8004,14 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     } catch (err) {
       console.error("Failed to submit daily challenge:", err);
     }
-  };
+  }, [dailyChallengeData, dailyChallengeResult, dailyChallengeTimedOut, dailyChallengeFailed, totalPlayTime]);
 
   // Auto-submit daily challenge when result is shown (not timed out)
   useEffect(() => {
     if (showDailyChallengeResult && dailyChallengeResult && !dailyChallengeTimedOut && !dailyChallengeFailed) {
       handleDailyChallengeSubmit();
     }
-  }, [showDailyChallengeResult, dailyChallengeTimedOut, dailyChallengeFailed, dailyChallengeResult]);
+  }, [showDailyChallengeResult, dailyChallengeTimedOut, dailyChallengeFailed, dailyChallengeResult, handleDailyChallengeSubmit]);
 
   // Auto-submit high scores when user has stored initials
   const autoSubmittedRef = useRef<string | null>(null);
