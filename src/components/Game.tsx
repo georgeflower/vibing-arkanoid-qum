@@ -540,7 +540,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       world.explosions = explosionPool.getActive();
     } else {
       // Direct non-empty array: pool each explosion
-      for (const exp of updater as Explosion[]) {
+      for (const exp of updater) {
         explosionPool.acquire({
           id: getNextExplosionId(),
           x: exp.x,
