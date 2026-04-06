@@ -1,5 +1,3 @@
-
-
 ## Plan: Add Buy Me a Coffee Link
 
 ### Changes
@@ -13,7 +11,7 @@
 Both will use the uploaded icon (imported from `src/assets`) and link to `https://buymeacoffee.com/qumran`, opening in a new tab.
 
 ### Files
+
 - `src/assets/buymeacoffee.png` (new — copied from upload)
 - `src/pages/Home.tsx` — footer addition
 - `src/components/MainMenu.tsx` — bottom of menu card
-
