@@ -538,6 +538,22 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       }
 
       world.explosions = explosionPool.getActive();
+    } else {
+      // Direct non-empty array: represents the full new explosion state.
+      // Clear the pool first so already-active entries don't get duplicated.
+      explosionPool.releaseAll();
+      for (const exp of updater) {
+        explosionPool.acquire({
+          id: getNextExplosionId(),
+          x: exp.x,
+          y: exp.y,
+          frame: exp.frame,
+          maxFrames: exp.maxFrames,
+          enemyType: exp.enemyType,
+          particles: exp.particles,
+        });
+      }
+      world.explosions = explosionPool.getActive();
     }
   }, []);
   // ═══ PHASE 1: enemySpawnCount lives in world.enemySpawnCount (engine/state.ts) ═══
@@ -1406,6 +1422,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   const lastToastTimeRef = useRef<Record<string, number>>({});
   const TOAST_THROTTLE_MS = 500;
   const nextEnemyId = useRef(1);
+  const nextBombId = useRef(1);
   const timerIntervalRef = useRef<ReturnType<typeof setInterval>>();
   const totalPlayTimeIntervalRef = useRef<ReturnType<typeof setInterval>>();
   const totalPlayTimeStartedRef = useRef(false);
@@ -1611,10 +1628,6 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
   const handleBossHit = useCallback((x: number, y: number, isSuper: boolean) => {
     setBulletImpacts((prev) => [...prev, { x, y, startTime: Date.now(), isSuper }]);
-    // Clean up old impacts after 500ms
-    setTimeout(() => {
-      setBulletImpacts((prev) => prev.filter((impact) => Date.now() - impact.startTime < 500));
-    }, 600);
   }, []);
 
   // Handle fireball activation
@@ -2119,7 +2132,9 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     gameContainerRef,
     () => {
       if (gameState === "playing") {
-        console.log("[Swipe Gesture] Swipe-right detected, pausing game");
+        if (ENABLE_DEBUG_FEATURES) {
+          console.log("[Swipe Gesture] Swipe-right detected, pausing game");
+        }
         setGameState("paused");
         toast.info("Swiped to pause");
       }
@@ -2131,11 +2146,12 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     },
   );
 
-  // Cleanup expired shield impacts periodically (optimized for mobile)
+  // Cleanup expired shield and bullet impacts periodically (optimized for mobile)
   useEffect(() => {
     const cleanupInterval = setInterval(() => {
       const now = Date.now();
       setShieldImpacts((prev) => prev.filter((impact) => now - impact.startTime < impact.duration));
+      setBulletImpacts((prev) => prev.filter((impact) => now - impact.startTime < 500));
     }, 500);
 
     return () => clearInterval(cleanupInterval);
@@ -2368,7 +2384,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
           }
 
           const hasPowerUp = isIndestructible ? false : Math.random() < POWERUP_DROP_CHANCE;
-          const brickHitLevel = isDailyChallenge ? Math.min(15, Math.max(5, 10)) : currentLevel;
+          const brickHitLevel = isDailyChallenge ? 10 : currentLevel;
           const maxHits = isIndestructible ? 1 : brickType === "cracked" ? 3 : getBrickHits(brickHitLevel, row);
 
           let baseColor: string;
@@ -2774,7 +2790,6 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     setBrickHitSpeedAccumulated(0);
     setLastBossSpawnTime(0);
     setBossSpawnAnimation(null);
-    setTimer(0); // Reset timer on level clear (for turret drop chance reset)
     // Only clear boss state if the new level is NOT a boss level
     if (!BOSS_LEVELS.includes(newLevel)) {
       setBoss(null);
@@ -2970,7 +2985,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
           : null,
       );
     },
-    [gameState, isPointerLocked, SCALED_CANVAS_WIDTH, SCALED_CANVAS_HEIGHT],
+    [gameState, isPointerLocked, SCALED_CANVAS_WIDTH],
   );
   const activeTouchRef = useRef<number | null>(null);
   const secondTouchRef = useRef<number | null>(null);
@@ -3004,7 +3019,9 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
       // Single-tap to start game when in "ready" state (mobile start)
       if (gameState === "ready" && e.touches.length === 1) {
-        console.log("[Ready Tap Debug] readyTapStart: enabled - Single tap detected, starting game");
+        if (ENABLE_DEBUG_FEATURES) {
+          console.log("[Ready Tap Debug] readyTapStart: enabled - Single tap detected, starting game");
+        }
         const hasDestructibleBricks = bricks.some((brick) => !brick.isIndestructible);
         const isLevelComplete =
           hasDestructibleBricks && bricks.every((brick) => !brick.visible || brick.isIndestructible);
@@ -3037,7 +3054,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
               secondTouchRef.current = e.touches[i].identifier;
 
               // Calculate launch angle from second finger position relative to paddle
-              const rect = canvasRef.current.getBoundingClientRect();
+              const rect = getCanvasRect();
+              if (!rect) break;
               const scaleX = SCALED_CANVAS_WIDTH / rect.width;
               const touchX = (e.touches[i].clientX - rect.left) * scaleX;
 
@@ -3049,7 +3067,9 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
               const angle = normalizedX * 60; // -60 to +60 degrees
 
               setLaunchAngle(angle);
-              console.log("[Launch Debug] audioAndLaunchMode: applied - Second finger angle:", angle);
+              if (ENABLE_DEBUG_FEATURES) {
+                console.log("[Launch Debug] audioAndLaunchMode: applied - Second finger angle:", angle);
+              }
               break;
             }
           }
@@ -3073,22 +3093,26 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         activeTouchRef.current = e.touches[0].identifier;
 
         // Update paddle position immediately on touch start
-        const rect = canvasRef.current.getBoundingClientRect();
-        const scaleX = SCALED_CANVAS_WIDTH / rect.width;
-        const touchX = (e.touches[0].clientX - rect.left) * scaleX;
-        const newX = Math.max(0, Math.min(SCALED_CANVAS_WIDTH - paddle.width, touchX - paddle.width / 2));
-        setPaddle((prev) =>
-          prev
-            ? {
-                ...prev,
-                x: newX,
-              }
-            : null,
-        );
+        const rect = getCanvasRect();
+        if (rect) {
+          const scaleX = SCALED_CANVAS_WIDTH / rect.width;
+          const touchX = (e.touches[0].clientX - rect.left) * scaleX;
+          const newX = Math.max(0, Math.min(SCALED_CANVAS_WIDTH - paddle.width, touchX - paddle.width / 2));
+          setPaddle((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  x: newX,
+                }
+              : null,
+          );
+        }
 
         // Single tap on ball when waiting launches it (explicit launch)
         if (waitingBall && gameState === "playing" && e.touches.length === 1) {
-          console.log("[Launch Debug] Touch launch - Ball launched at angle:", launchAngle);
+          if (ENABLE_DEBUG_FEATURES) {
+            console.log("[Launch Debug] Touch launch - Ball launched at angle:", launchAngle);
+          }
           launchBallAtCurrentAngle();
         }
       }
@@ -3104,6 +3128,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       nextLevel,
       tutorialActive,
       launchBallAtCurrentAngle,
+      getCanvasRect,
     ],
   );
   const handleTouchMove = useCallback(
@@ -3197,7 +3222,9 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       }
       if (e.changedTouches[i].identifier === secondTouchRef.current) {
         secondTouchRef.current = null;
-        console.log("[Launch Debug] audioAndLaunchMode: default - Second finger released");
+        if (ENABLE_DEBUG_FEATURES) {
+          console.log("[Launch Debug] audioAndLaunchMode: default - Second finger released");
+        }
       }
     }
   }, []);
@@ -3376,22 +3403,6 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
             const newScale = Math.min(MAX_TIME_SCALE, gameLoopRef.current.getTimeScale() + 0.1);
             gameLoopRef.current.setTimeScale(newScale);
             toast.success(`Time scale: ${newScale.toFixed(1)}x`);
-          }
-        } else if (e.key === "q" || e.key === "Q") {
-          if (e.shiftKey) {
-            // Shift+Q: Toggle auto-adjust
-            toggleAutoAdjust();
-          } else {
-            // Q: Cycle quality levels
-            const levels: Array<"high" | "medium" | "low" | "potato"> = ["high", "medium", "low", "potato"];
-            const currentIndex = levels.indexOf(quality);
-            const nextIndex = (currentIndex + 1) % levels.length;
-            const nextQuality = levels[nextIndex];
-
-            // Use the hook's setQuality which handles everything properly
-            setQuality(nextQuality);
-            updateGameSettings({ qualityLevel: nextQuality });
-            saveGameSettings();
           }
         } else if (e.key === "c" || e.key === "C") {
           // Toggle collision debug logs
@@ -4846,7 +4857,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
             const randomAngle = (Math.random() * 160 - 80) * (Math.PI / 180); // -80 to +80 degrees
             const bulletSpeed = 4;
             const newBullet = bombPool.acquire({
-              id: Date.now() + Math.random(),
+              id: nextBombId.current++,
               x: enemy.x + enemy.width / 2 - 4,
               y: enemy.y + enemy.height,
               width: 8,
@@ -4862,7 +4873,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
             }
           } else {
             const newProjectile = bombPool.acquire({
-              id: Date.now() + Math.random(),
+              id: nextBombId.current++,
               x: enemy.x + enemy.width / 2 - 5,
               y: enemy.y + enemy.height,
               width: 10,
@@ -4885,8 +4896,9 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       }
 
       // Clean up timers for enemies that no longer exist
+      const activeEnemyIds = new Set(enemies.map((e) => e.id));
       enemyProjectileTimersRef.current.forEach((_, timerEnemyId) => {
-        if (!enemies.find((e) => e.id === timerEnemyId)) {
+        if (!activeEnemyIds.has(timerEnemyId)) {
           enemyProjectileTimersRef.current.delete(timerEnemyId);
         }
       });
@@ -5445,7 +5457,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       const now = Date.now();
 
       // DEBUG: Log Mega Boss state every 60 frames (~1 second)
-      if (frameCountRef.current % 60 === 0) {
+      if (ENABLE_DEBUG_FEATURES && frameCountRef.current % 60 === 0) {
         console.log(`[MEGA BOSS DEBUG] State:`, {
           corePhase: megaBoss.corePhase,
           outerShieldHP: megaBoss.outerShieldHP,
@@ -5467,13 +5479,15 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
           const coreY = megaBoss.y + megaBoss.height / 2;
           const distToCore = Math.sqrt(Math.pow(ball.x - coreX, 2) + Math.pow(ball.y - coreY, 2));
 
-          if (frameCountRef.current % 10 === 0) {
+          if (ENABLE_DEBUG_FEATURES && frameCountRef.current % 10 === 0) {
             console.log(`[MEGA BOSS DEBUG] Ball ${ball.id} distance to core: ${distToCore.toFixed(1)}px, inside boss: ${isBallInsideMegaBoss(ball, megaBoss)}, in hatch area: ${isBallInHatchArea(ball, megaBoss)}`);
           }
 
           if (!ball.waitingToLaunch && isBallInHatchArea(ball, megaBoss)) {
-            console.log(`[MEGA BOSS DEBUG] ★★★ BALL ${ball.id} HIT THE CORE! ★★★`);
-            console.log(`[MEGA BOSS DEBUG] Ball position: (${ball.x.toFixed(1)}, ${ball.y.toFixed(1)}), Core position: (${coreX.toFixed(1)}, ${coreY.toFixed(1)})`);
+            if (ENABLE_DEBUG_FEATURES) {
+              console.log(`[MEGA BOSS DEBUG] ★★★ BALL ${ball.id} HIT THE CORE! ★★★`);
+              console.log(`[MEGA BOSS DEBUG] Ball position: (${ball.x.toFixed(1)}, ${ball.y.toFixed(1)}), Core position: (${coreX.toFixed(1)}, ${coreY.toFixed(1)})`);
+            }
             // Mark trap time immediately so the life-loss pass can't incorrectly deduct a life
             // if state updates land on the next tick.
             megaBossTrapJustHappenedRef.current = Date.now();
@@ -5485,7 +5499,9 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
             // Hide the trapped ball
             setBalls((prev) => prev.filter((b) => b.id !== ball.id));
 
-            console.log(`[MEGA BOSS DEBUG] Ball trapped, danger balls scheduled: ${(trappedBoss as MegaBoss).scheduledDangerBalls.length}`);
+            if (ENABLE_DEBUG_FEATURES) {
+              console.log(`[MEGA BOSS DEBUG] Ball trapped, danger balls scheduled: ${(trappedBoss as MegaBoss).scheduledDangerBalls.length}`);
+            }
 
             toast.error("🔴 BALL TRAPPED IN CORE! Catch 5 danger balls!", { duration: 3000 });
             soundManager.playCannonModeSound();
@@ -5502,7 +5518,9 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       if (megaBoss.trappedBall && megaBoss.scheduledDangerBalls.length > 0) {
         const nextSpawnTime = megaBoss.scheduledDangerBalls[0];
         if (now >= nextSpawnTime) {
-          console.log(`[MEGA BOSS DEBUG] Spawning danger ball ${megaBoss.dangerBallsFired + 1}/5`);
+          if (ENABLE_DEBUG_FEATURES) {
+            console.log(`[MEGA BOSS DEBUG] Spawning danger ball ${megaBoss.dangerBallsFired + 1}/5`);
+          }
 
           // Spawn a danger ball
           const newDangerBall = spawnDangerBall(megaBoss);
@@ -5895,7 +5913,9 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
       // Check if danger ball phase should end successfully (all 5 core hits)
       if (shouldEndDangerBallPhase(megaBoss) && dangerBalls.length === 0 && hasSufficientCoreHits(megaBoss)) {
-        console.log(`[MEGA BOSS DEBUG] SUCCESS! All 5 core hits achieved - phase will advance via shouldReleaseBall`);
+        if (ENABLE_DEBUG_FEATURES) {
+          console.log(`[MEGA BOSS DEBUG] SUCCESS! All 5 core hits achieved - phase will advance via shouldReleaseBall`);
+        }
         // Success path is handled by shouldReleaseBall in the existing ball update code
       }
     }
@@ -6050,7 +6070,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
           if (boss) {
             const bossCenterX = boss.x + boss.width / 2;
             const bossCenterY = boss.y + boss.height / 2;
-            const dist = Math.sqrt(Math.pow(bossCenterX - attackCenterX, 2) + Math.pow(bossCenterY - attackCenterY, 2));
+            const dist = Math.hypot(bossCenterX - attackCenterX, bossCenterY - attackCenterY);
             if (dist < closestDist) {
               closestDist = dist;
               closestTarget = boss;
@@ -6061,7 +6081,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
           for (const rb of resurrectedBosses) {
             const rbCenterX = rb.x + rb.width / 2;
             const rbCenterY = rb.y + rb.height / 2;
-            const dist = Math.sqrt(Math.pow(rbCenterX - attackCenterX, 2) + Math.pow(rbCenterY - attackCenterY, 2));
+            const dist = Math.hypot(rbCenterX - attackCenterX, rbCenterY - attackCenterY);
             if (dist < closestDist) {
               closestDist = dist;
               closestTarget = rb;
@@ -6072,9 +6092,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
           for (const enemy of enemies) {
             const enemyCenterX = enemy.x + enemy.width / 2;
             const enemyCenterY = enemy.y + enemy.height / 2;
-            const dist = Math.sqrt(
-              Math.pow(enemyCenterX - attackCenterX, 2) + Math.pow(enemyCenterY - attackCenterY, 2),
-            );
+            const dist = Math.hypot(enemyCenterX - attackCenterX, enemyCenterY - attackCenterY);
             if (dist < closestDist) {
               closestDist = dist;
               closestTarget = enemy;
@@ -6089,7 +6107,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
             // Calculate direction to target
             const dirX = targetCenterX - attackCenterX;
             const dirY = targetCenterY - attackCenterY;
-            const dirLength = Math.sqrt(dirX * dirX + dirY * dirY);
+            const dirLength = Math.hypot(dirX, dirY);
 
             if (dirLength > 0) {
               // Normalize direction
@@ -6264,7 +6282,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
             ) {
               const REFLECTED_ATTACK_COOLDOWN_MS = 1000;
               const nowMs = world.simTimeMs; // sim-time, not wall-clock
-              const lastHitMs = (rb as any).lastHitAt || 0;
+              const lastHitMs = rb.lastHitAt ?? 0;
               const canDamage = nowMs - lastHitMs >= REFLECTED_ATTACK_COOLDOWN_MS;
 
               if (ENABLE_DEBUG_FEATURES && debugSettings.enableCollisionLogging) {
@@ -6521,7 +6539,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
           const speed = 2.5;
           const angle = Math.random() * Math.PI * 2;
           const crossBallEnemy = enemyPool.acquire({
-            id: Date.now() + Math.random() * 1000,
+            id: nextEnemyId.current++,
             type: "crossBall",
             x: midX - 17.5, // Center the 35x35 enemy
             y: midY - 17.5,
@@ -6637,7 +6655,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
           const speed = 3.0;
           const angle = Math.random() * Math.PI * 2;
           const largeSphereEnemy = enemyPool.acquire({
-            id: Date.now() + Math.random() * 1000,
+            id: nextEnemyId.current++,
             type: "sphere",
             x: midX - 27.5, // Center larger sprite (55/2)
             y: midY - 27.5,
@@ -7135,13 +7153,19 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
               const megaBoss = boss as MegaBoss;
               // Skip if core already exposed or ball is trapped
               if (megaBoss.coreExposed || megaBoss.trappedBall) {
-                console.log(`[MEGA BOSS DEBUG] Core exposed - bullets blocked, hit core with ball!`);
+                if (ENABLE_DEBUG_FEATURES) {
+                  console.log(`[MEGA BOSS DEBUG] Core exposed - bullets blocked, hit core with ball!`);
+                }
                 continue;
               }
 
-              console.log(`[MEGA BOSS DEBUG] Turret bullet hit! Damage: ${hit.damage}`);
+              if (ENABLE_DEBUG_FEATURES) {
+                console.log(`[MEGA BOSS DEBUG] Turret bullet hit! Damage: ${hit.damage}`);
+              }
               const { newOuterHP, newInnerHP, shouldExposeCore } = handleMegaBossOuterDamage(megaBoss, hit.damage);
-              console.log(`[MEGA BOSS DEBUG] Shield damage: ${megaBoss.outerShieldRemoved ? megaBoss.innerShieldHP : megaBoss.outerShieldHP} -> ${megaBoss.outerShieldRemoved ? newInnerHP : newOuterHP}`);
+              if (ENABLE_DEBUG_FEATURES) {
+                console.log(`[MEGA BOSS DEBUG] Shield damage: ${megaBoss.outerShieldRemoved ? megaBoss.innerShieldHP : megaBoss.outerShieldHP} -> ${megaBoss.outerShieldRemoved ? newInnerHP : newOuterHP}`);
+              }
               megaBoss.outerShieldHP = newOuterHP;
               megaBoss.innerShieldHP = newInnerHP;
 
@@ -7150,7 +7174,9 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
               megaBoss.lastHitAt = world.simTimeMs;
 
               if (shouldExposeCore) {
-                console.log(`[MEGA BOSS DEBUG] ★★★ CORE EXPOSED VIA TURRET! ★★★`);
+                if (ENABLE_DEBUG_FEATURES) {
+                  console.log(`[MEGA BOSS DEBUG] ★★★ CORE EXPOSED VIA TURRET! ★★★`);
+                }
                 Object.assign(megaBoss, exposeMegaBossCore(megaBoss));
                 megaBoss.currentHealth = 0;
                 triggerScreenShake(12, 600);
@@ -7957,7 +7983,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     setShowHighScoreDisplay(true);
   };
 
-  const handleDailyChallengeSubmit = async () => {
+  const handleDailyChallengeSubmit = useCallback(async () => {
     try {
       if (!dailyChallengeData || !dailyChallengeResult) return;
       if (dailyChallengeTimedOut || dailyChallengeFailed) return; // Don't submit failed challenges
@@ -7978,14 +8004,14 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     } catch (err) {
       console.error("Failed to submit daily challenge:", err);
     }
-  };
+  }, [dailyChallengeData, dailyChallengeResult, dailyChallengeTimedOut, dailyChallengeFailed, totalPlayTime]);
 
   // Auto-submit daily challenge when result is shown (not timed out)
   useEffect(() => {
     if (showDailyChallengeResult && dailyChallengeResult && !dailyChallengeTimedOut && !dailyChallengeFailed) {
       handleDailyChallengeSubmit();
     }
-  }, [showDailyChallengeResult, dailyChallengeTimedOut]);
+  }, [showDailyChallengeResult, dailyChallengeTimedOut, dailyChallengeFailed, dailyChallengeResult, handleDailyChallengeSubmit]);
 
   // Auto-submit high scores when user has stored initials
   const autoSubmittedRef = useRef<string | null>(null);
@@ -8395,14 +8421,18 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
           if (titleVisible || gameScale !== scaleFactor) {
             setTitleVisible(false);
             setGameScale(scaleFactor);
-            console.log(`[Desktop Layout] desktopLayoutMode: titleHidden, scale: ${scaleFactor.toFixed(2)}`);
+            if (ENABLE_DEBUG_FEATURES) {
+              console.log(`[Desktop Layout] desktopLayoutMode: titleHidden, scale: ${scaleFactor.toFixed(2)}`);
+            }
           }
         } else {
           // Show title and reset scale
           if (!titleVisible || gameScale !== 1) {
             setTitleVisible(true);
             setGameScale(1);
-            console.log(`[Desktop Layout] desktopLayoutMode: titleVisible, scale: 1.0`);
+            if (ENABLE_DEBUG_FEATURES) {
+              console.log(`[Desktop Layout] desktopLayoutMode: titleVisible, scale: 1.0`);
+            }
           }
         }
 
