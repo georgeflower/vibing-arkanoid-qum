@@ -9,6 +9,7 @@ export interface DebugSettings {
   showFrameProfiler: boolean;
   showPowerUpWeights: boolean;
   showPoolStats: boolean;
+  showBallSpeed: boolean;
   enableCollisionLogging: boolean;
   enablePowerUpLogging: boolean;
   enablePerformanceLogging: boolean;
@@ -36,6 +37,7 @@ const DEFAULT_SETTINGS: DebugSettings = {
   showFrameProfiler: false,
   showPowerUpWeights: false,
   showPoolStats: false,
+  showBallSpeed: false,
   enableCollisionLogging: true,
   enablePowerUpLogging: false,
   enablePerformanceLogging: false, // Off by default to reduce hot-path overhead
@@ -77,6 +79,7 @@ export const useDebugSettings = () => {
         currentSettings.showFrameProfiler ||
         currentSettings.showPowerUpWeights ||
         currentSettings.showPoolStats ||
+        currentSettings.showBallSpeed ||
         currentSettings.enableCollisionLogging ||
         currentSettings.enablePowerUpLogging ||
         currentSettings.enablePerformanceLogging ||
