@@ -232,13 +232,29 @@ export const usePowerUps = (
               soundManager.playMultiballSound();
               if (balls.length > 0) {
               const baseBall = balls[0];
+                const MIN_SPLIT_SPEED = 4.5;
                 const newDx1 = baseBall.dx - 2;
                 const newDx2 = baseBall.dx + 2;
-                const speed1 = Math.sqrt(newDx1 * newDx1 + baseBall.dy * baseBall.dy);
-                const speed2 = Math.sqrt(newDx2 * newDx2 + baseBall.dy * baseBall.dy);
+                let speed1 = Math.sqrt(newDx1 * newDx1 + baseBall.dy * baseBall.dy);
+                let speed2 = Math.sqrt(newDx2 * newDx2 + baseBall.dy * baseBall.dy);
+                // Ensure neither split ball is slower than the minimum
+                let finalDx1 = newDx1, finalDy1 = baseBall.dy;
+                let finalDx2 = newDx2, finalDy2 = baseBall.dy;
+                if (speed1 < MIN_SPLIT_SPEED && speed1 > 0.01) {
+                  const scale = MIN_SPLIT_SPEED / speed1;
+                  finalDx1 *= scale;
+                  finalDy1 *= scale;
+                  speed1 = MIN_SPLIT_SPEED;
+                }
+                if (speed2 < MIN_SPLIT_SPEED && speed2 > 0.01) {
+                  const scale = MIN_SPLIT_SPEED / speed2;
+                  finalDx2 *= scale;
+                  finalDy2 *= scale;
+                  speed2 = MIN_SPLIT_SPEED;
+                }
                 const newBalls: Ball[] = [
-                  { ...baseBall, id: Date.now() + 1, dx: newDx1, speed: speed1, rotation: Math.random() * 360 },
-                  { ...baseBall, id: Date.now() + 2, dx: newDx2, speed: speed2, rotation: Math.random() * 360 },
+                  { ...baseBall, id: Date.now() + 1, dx: finalDx1, dy: finalDy1, speed: speed1, rotation: Math.random() * 360 },
+                  { ...baseBall, id: Date.now() + 2, dx: finalDx2, dy: finalDy2, speed: speed2, rotation: Math.random() * 360 },
                 ];
                 setBalls(prev => [...prev, ...newBalls]);
                 toast.success("Multi-ball activated!");
