@@ -1,17 +1,40 @@
-## Plan: Add Buy Me a Coffee Link
 
-### Changes
 
-**1. Copy the uploaded icon to `src/assets/buymeacoffee.png`**
+## Analysis: Ball Speed Drops on Paddle Hit
 
-**2. `src/pages/Home.tsx`** — Add a Buy Me a Coffee link in the footer, next to the GitHub link or in the footer section alongside Privacy/Terms links.
+### Root Cause
 
-**3. `src/components/MainMenu.tsx`** — Add a small Buy Me a Coffee link/button at the bottom of the menu card, after the Login/Profile button.
+When a ball destroys a brick, its velocity (`dx`/`dy`) is scaled up (lines 1094-1095 in `physics.ts`):
+```
+ccdResult.ball.dx *= 1 + speedIncrease;
+ccdResult.ball.dy *= 1 + speedIncrease;
+```
 
-Both will use the uploaded icon (imported from `src/assets`) and link to `https://buymeacoffee.com/qumran`, opening in a new tab.
+But `ball.speed` (the target speed property) is **never updated** to reflect this increase.
+
+Then when the ball hits the paddle (lines 671-678), speed is normalized **bidirectionally** back to `ball.speed`:
+```
+const targetSpd = ccdResult.ball.speed;  // still the old, lower value
+const scale = targetSpd / currentSpd;
+ccdResult.ball.dx *= scale;  // scales DOWN to stale target
+ccdResult.ball.dy *= scale;
+```
+
+This erases all accumulated brick-hit speed gains every paddle bounce — exactly matching the logs (e.g., 5.02 → 4.50, 4.59 → 4.50).
+
+### Fix
+
+**File: `src/engine/physics.ts`** — After scaling `dx`/`dy` on brick destruction (lines 1094-1095), also update `ball.speed` to match:
+
+```typescript
+ccdResult.ball.dx *= 1 + speedIncrease;
+ccdResult.ball.dy *= 1 + speedIncrease;
+// Sync ball.speed so paddle normalization preserves the increase
+ccdResult.ball.speed = Math.hypot(ccdResult.ball.dx, ccdResult.ball.dy);
+```
+
+This is a one-line addition. The paddle normalization will then normalize to the correct (increased) speed, and the slowdown power-up reset in `usePowerUps.ts` (which already reduces `speedMultiplier` by 10% and resets `brickHitSpeedAccumulated`) will continue to work correctly since it operates on the multiplier, not `ball.speed` directly.
 
 ### Files
+- `src/engine/physics.ts` — add 1 line after line 1095
 
-- `src/assets/buymeacoffee.png` (new — copied from upload)
-- `src/pages/Home.tsx` — footer addition
-- `src/components/MainMenu.tsx` — bottom of menu card
