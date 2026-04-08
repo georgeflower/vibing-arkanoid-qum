@@ -1093,6 +1093,8 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
                 );
                 ccdResult.ball.dx *= 1 + speedIncrease;
                 ccdResult.ball.dy *= 1 + speedIncrease;
+                // Sync ball.speed so paddle normalization preserves the increase
+                ccdResult.ball.speed = Math.hypot(ccdResult.ball.dx, ccdResult.ball.dy);
               }
 
               if (!isDuplicate) {
