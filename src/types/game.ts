@@ -37,6 +37,7 @@ export interface Ball {
   releasedFromBossTime?: number; // Timestamp when ball was released from Mega Boss
   releaseSpeedScale?: number; // Speed multiplier for slow-start ramp (0.3 → 1.0)
   lastGravityResetTime?: number; // Last collision time (paddle/brick/enemy) for gravity delay
+  speedBoostAccumulated?: number; // Per-ball accumulated speed increase from brick hits
 }
 
 export interface Paddle {

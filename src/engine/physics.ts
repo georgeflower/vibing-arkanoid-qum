@@ -1074,27 +1074,28 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
                 bricksDestroyedCount++;
               }
 
-              // Speed increase — cap based on total speed
-              const brickHitSpeedAccumulated = world.brickHitSpeedAccumulated;
-              const currentTotalSpeed = speedMultiplier + brickHitSpeedAccumulated;
-              if (currentTotalSpeed < maxTotalSpeed) {
+              // Speed increase — per-ball cap so multiball doesn't stagnate
+              const ballAccumulated = ccdResult.ball.speedBoostAccumulated ?? 0;
+              const speedBudget = maxTotalSpeed - speedMultiplier;
+              if (ballAccumulated < speedBudget) {
                 const remainingBrickCount = bricks.filter(
                   (b) => b.visible && !b.isIndestructible && (!brickUpdates.has(b.id) || brickUpdates.get(b.id)!.visible),
                 ).length;
                 let baseSpeedIncrease = 0.006;
                 if (remainingBrickCount <= 10) {
-                  // Scale from 0.013 (10 left) up to 0.038 (1 left) — ~40% reduction
                   baseSpeedIncrease = 0.013 + (10 - remainingBrickCount) * 0.0028;
                 }
-                const speedIncrease = Math.min(baseSpeedIncrease, maxTotalSpeed - currentTotalSpeed);
-                world.brickHitSpeedAccumulated = Math.min(
-                  maxTotalSpeed - speedMultiplier,
-                  world.brickHitSpeedAccumulated + speedIncrease,
-                );
+                const speedIncrease = Math.min(baseSpeedIncrease, speedBudget - ballAccumulated);
+                ccdResult.ball.speedBoostAccumulated = ballAccumulated + speedIncrease;
                 ccdResult.ball.dx *= 1 + speedIncrease;
                 ccdResult.ball.dy *= 1 + speedIncrease;
-                // Sync ball.speed so paddle normalization preserves the increase
                 ccdResult.ball.speed = Math.hypot(ccdResult.ball.dx, ccdResult.ball.dy);
+
+                // Update global accumulator as max across all balls (for HUD/display)
+                world.brickHitSpeedAccumulated = Math.max(
+                  world.brickHitSpeedAccumulated,
+                  ccdResult.ball.speedBoostAccumulated,
+                );
               }
 
               if (!isDuplicate) {
