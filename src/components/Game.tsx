@@ -51,6 +51,7 @@ import { getParticleLimits, shouldCreateParticle, calculateParticleCount } from 
 import { FrameProfilerOverlay } from "./FrameProfilerOverlay";
 import { FpsOverlay } from "./FpsOverlay";
 import { PoolStatsOverlay } from "./PoolStatsOverlay";
+import { BallSpeedDebugOverlay } from "./BallSpeedDebugOverlay";
 import { CCDPerformanceTracker } from "@/utils/rollingStats";
 import { debugLogger } from "@/utils/debugLogger";
 import { particlePool } from "@/utils/particlePool";
@@ -9253,6 +9254,9 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
                     {/* Pool Stats Overlay */}
                     <PoolStatsOverlay visible={debugSettings.showPoolStats} />
+
+                    {/* Ball Speed Debug Overlay */}
+                    <BallSpeedDebugOverlay visible={debugSettings.showBallSpeed} />
 
                     {/* Collision History Viewer */}
                     {debugSettings.showCollisionHistory && (

@@ -104,6 +104,12 @@ export const DebugDashboard = ({ isOpen, onClose, settings, onToggle, onReset }:
               onChange={() => onToggle("showPoolStats")}
               description="Entity pools, spatial hash, brick cache"
             />
+            <DebugToggle
+              label="Ball Speed Monitor"
+              checked={settings.showBallSpeed}
+              onChange={() => onToggle("showBallSpeed")}
+              description="Track ball speeds, flag drops without slowdown"
+            />
           </div>
         </section>
 
