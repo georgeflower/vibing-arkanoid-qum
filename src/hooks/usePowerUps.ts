@@ -307,6 +307,7 @@ export const usePowerUps = (
                     speed: newBallSpeed,
                     dx: newBallSpeed * Math.sin(angle),
                     dy: -newBallSpeed * Math.cos(angle),
+                    speedBoostAccumulated: 0,
                   };
                 }));
                 return newSpeed;
