@@ -1,8 +1,5 @@
 import { useEffect, useRef, useCallback, useState } from "react";
 
-const DESKTOP_BREAKPOINT = 769;
-const DESKTOP_PADDING_OFFSET = 16;
-
 interface CanvasResizeOptions {
   enabled: boolean;
   containerRef: React.RefObject<HTMLDivElement>;
@@ -37,20 +34,21 @@ export function useCanvasResize({
   });
 
   const rafRef = useRef<number | null>(null);
+  const lastAppliedRef = useRef({ w: 0, h: 0 });
 
   const calculateSize = useCallback(() => {
     if (!containerRef.current || !gameGlowRef.current) return;
 
     const container = containerRef.current;
-    const viewportWidth = window.innerWidth;
-    // Desktop keeps the metal-game-area's 8px padding on both sides; mobile removes it in CSS.
-    const paddingOffset = viewportWidth >= DESKTOP_BREAKPOINT ? DESKTOP_PADDING_OFFSET : 0;
+    const cs = getComputedStyle(container);
+    const padX = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
+    const padY = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
     const isTouchDevice = navigator.maxTouchPoints > 0;
     const visibleHeight = isTouchDevice
       ? Math.min(container.clientHeight, window.visualViewport?.height ?? container.clientHeight)
       : container.clientHeight;
-    const availableWidth = Math.max(0, container.clientWidth - paddingOffset);
-    const availableHeight = Math.max(0, visibleHeight - paddingOffset);
+    const availableWidth = Math.max(0, container.clientWidth - padX);
+    const availableHeight = Math.max(0, visibleHeight - padY);
 
     if (availableWidth === 0 || availableHeight === 0) return;
 
@@ -71,6 +69,15 @@ export function useCanvasResize({
 
     const finalDisplayWidth = Math.floor(displayWidth);
     const finalDisplayHeight = Math.floor(displayHeight);
+
+    if (
+      Math.abs(finalDisplayWidth - lastAppliedRef.current.w) <= 1 &&
+      Math.abs(finalDisplayHeight - lastAppliedRef.current.h) <= 1
+    ) {
+      return;
+    }
+
+    lastAppliedRef.current = { w: finalDisplayWidth, h: finalDisplayHeight };
     const scale = displayWidth / logicalWidth;
 
     setSize({
