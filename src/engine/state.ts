@@ -92,6 +92,10 @@ export interface GameWorld {
   simTimeSeconds: number; // floating-point seconds since level start
   simTimeMs: number;      // integer milliseconds (Math.floor(simTimeSeconds * 1000)), for convenience
 
+  // Render-interpolation timing (written by physics loop, read by render loop)
+  lastPhysicsUpdateTime: number; // performance.now() timestamp of last physics frame
+  lastPhysicsDtMs: number;       // wall-clock ms the last physics step covered
+
   // Score & lives live here so the game loop can mutate them
   // without setState. React reads them via hudSnapshot polling.
   score: number;
@@ -136,6 +140,9 @@ const WORLD_DEFAULTS: Readonly<GameWorld> = Object.freeze({
 
   simTimeSeconds: 0,
   simTimeMs: 0,
+
+  lastPhysicsUpdateTime: 0,
+  lastPhysicsDtMs: 1000 / 60,
 
   score: 0,
   lives: 3,
@@ -190,6 +197,8 @@ export function resetWorld(overrides?: Partial<GameWorld>): void {
   world.backgroundHue = WORLD_DEFAULTS.backgroundHue;
   world.simTimeSeconds = WORLD_DEFAULTS.simTimeSeconds;
   world.simTimeMs = WORLD_DEFAULTS.simTimeMs;
+  world.lastPhysicsUpdateTime = WORLD_DEFAULTS.lastPhysicsUpdateTime;
+  world.lastPhysicsDtMs = WORLD_DEFAULTS.lastPhysicsDtMs;
   world.score = WORLD_DEFAULTS.score;
   world.lives = WORLD_DEFAULTS.lives;
 

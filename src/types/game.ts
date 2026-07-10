@@ -33,6 +33,8 @@ export interface Ball {
   skipRemainingSubsteps?: boolean; // Exit substep loop after brick hit to prevent tunneling
   isHoming?: boolean; // Ball curves toward boss
   previousY?: number; // Y position before CCD pass (for anti-rescue check)
+  renderPrevX?: number; // X position at start of physics step (for render interpolation)
+  renderPrevY?: number; // Y position at start of physics step (for render interpolation)
   lastPaddleHitTime?: number; // Timestamp (ms) of last paddle hit (for cooldown)
   releasedFromBossTime?: number; // Timestamp when ball was released from Mega Boss
   releaseSpeedScale?: number; // Speed multiplier for slow-start ramp (0.3 → 1.0)
