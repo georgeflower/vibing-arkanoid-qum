@@ -300,7 +300,7 @@ export const useAdaptiveQuality = (options: AdaptiveQualityOptions = {}) => {
 
       if (fpsHistoryRef.current.length < MIN_WARMUP_SAMPLES || now - lastAdjustmentTimeRef.current < adjustmentCooldownMs) {
         // Early warning system
-        if (fpsHistoryRef.current.length >= MAX_FPS_SAMPLES) {
+        if (fpsHistoryRef.current.length === MAX_FPS_SAMPLES) {
           const recentAvg =
             fpsHistoryRef.current.slice(-MAX_FPS_SAMPLES).reduce((sum, f) => sum + f, 0) / MAX_FPS_SAMPLES;
           const threshold = quality === 'high' ? mediumFpsThreshold : lowFpsThreshold;

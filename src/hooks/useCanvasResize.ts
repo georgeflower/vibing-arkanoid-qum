@@ -43,7 +43,7 @@ export function useCanvasResize({
     const paddingOffset = viewportWidth >= 769 ? 16 : 0;
     const isTouchDevice = navigator.maxTouchPoints > 0;
     const visibleHeight = isTouchDevice
-      ? Math.min(container.clientHeight, window.visualViewport?.height ?? Infinity)
+      ? Math.min(container.clientHeight, window.visualViewport?.height ?? container.clientHeight)
       : container.clientHeight;
     const availableWidth = Math.max(0, container.clientWidth - paddingOffset);
     const availableHeight = Math.max(0, visibleHeight - paddingOffset);

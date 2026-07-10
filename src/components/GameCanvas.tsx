@@ -29,17 +29,20 @@ interface GameCanvasProps {
   height: number;
 }
 
-type BackgroundImageAssetKey =
+type PatternBackgroundImageAssetKey =
   | "backgroundImage4"
   | "backgroundImage69"
   | "backgroundImage1114"
-  | "backgroundImage1620"
+  | "backgroundImage1620";
+
+type BackgroundImageAssetKey =
+  | PatternBackgroundImageAssetKey
   | "bossLevel5Bg"
   | "bossLevel10Bg"
   | "bossLevel15Bg"
   | "bossLevel20Bg";
 
-const backgroundPatternKeys: Partial<Record<keyof AssetRefs, string>> = {
+const backgroundPatternKeys: Record<PatternBackgroundImageAssetKey, string> = {
   backgroundImage4: "bg4",
   backgroundImage69: "bg69",
   backgroundImage1114: "bg1114",
@@ -143,8 +146,8 @@ export const GameCanvas = forwardRef<HTMLCanvasElement, GameCanvasProps>(
 
          assets[key] = img;
 
-         const patternKey = backgroundPatternKeys[key];
-         if (patternKey) {
+         if (key in backgroundPatternKeys) {
+           const patternKey = backgroundPatternKeys[key as PatternBackgroundImageAssetKey];
            assets.patterns[patternKey] = null;
            if (key === "backgroundImage4") {
              setBackgroundTile4Ready(true);
