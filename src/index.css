@@ -148,24 +148,13 @@ All colors MUST be HSL.
 
   /* Responsive canvas scaling for non-fullscreen */
   .game-glow canvas {
-    max-width: calc(95vw - 220px); /* Account for side panels (60px + 140px) + gaps + borders */
-    max-height: 85vh;
-    width: auto !important;
-    height: auto !important;
-    object-fit: contain;
+    display: block;
   }
 
   /* Mobile adjustments */
   @media (max-width: 768px) {
     .game-glow {
-      max-width: 92vw;
-      max-height: 75vh;
       width: fit-content;
-    }
-
-    .game-glow canvas {
-      max-width: 92vw; /* Side panels hidden on mobile */
-      max-height: 75vh;
     }
   }
 
@@ -490,10 +479,6 @@ All colors MUST be HSL.
     max-width: calc(100% - 210px); /* Adjust for left (50px) + right (120px) panels + gaps */
   }
 
-  .game-glow canvas {
-    max-width: calc(95vw - 210px); /* Account for different panel sizes */
-  }
-
   .right-stat-label {
     font-size: 6px;
   }
@@ -534,12 +519,16 @@ All colors MUST be HSL.
   }
 
   .metal-game-area {
-    padding: 4px;
+    padding: 0;
     max-width: 100%; /* Full width on mobile since panels are hidden */
   }
 
   .metal-bottom-bar {
     padding: 8px;
+  }
+
+  .metal-frame {
+    padding: 2px;
   }
 
   .fullscreen-btn {
@@ -554,11 +543,14 @@ All colors MUST be HSL.
   padding: 0 !important;
   box-shadow: none !important;
   width: 100%;
-  height: 100dvh;
+  height: 100%;
   overflow: hidden;
   max-width: 100%;
-  max-height: 100dvh;
+  max-height: 100%;
   margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   /* Block all browser gestures in fullscreen */
   touch-action: none !important;
   -webkit-overflow-scrolling: auto !important;
@@ -577,10 +569,13 @@ All colors MUST be HSL.
 
 .metal-frame.mobile-fullscreen-mode .metal-main-content {
   width: 100%;
-  height: 100dvh;
+  height: 100%;
   margin: 0;
   padding: 0;
   gap: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .metal-frame.mobile-fullscreen-mode .metal-game-area {
@@ -590,21 +585,15 @@ All colors MUST be HSL.
   box-shadow: none !important;
   max-width: 100%;
   width: 100%;
-  height: 100dvh;
+  height: 100%;
   border-radius: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .metal-frame.mobile-fullscreen-mode .game-glow {
-  width: 100% !important;
-  height: 100dvh !important;
   box-shadow: none !important;
-}
-
-.metal-frame.mobile-fullscreen-mode .game-glow canvas {
-  max-width: 100% !important;
-  max-height: 100dvh !important;
-  width: 100% !important;
-  height: 100dvh !important;
 }
 
 /* iOS Fullscreen Simulation */
@@ -621,6 +610,13 @@ All colors MUST be HSL.
   overflow: hidden;
   z-index: 9999;
   background: hsl(var(--background));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
   /* Aggressive iOS gesture blocking */
   touch-action: pan-y !important;
   overscroll-behavior: none !important;

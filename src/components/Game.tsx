@@ -1431,7 +1431,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   const launchAngleIntervalRef = useRef<ReturnType<typeof setInterval>>();
   const fullscreenContainerRef = useRef<HTMLDivElement>(null);
   const gameContainerRef = useRef<HTMLDivElement>(null);
-  //const gameAreaRef = useRef<HTMLDivElement>(null);
+  const gameAreaRef = useRef<HTMLDivElement>(null);
   const gameGlowRef = useRef<HTMLDivElement>(null);
   const timerStartedRef = useRef(false);
   const nextLevelRef = useRef<(() => void) | null>(null);
@@ -1833,18 +1833,14 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   //    frameRef: gameContainerRef,
   //  });
 
-  // Dynamic canvas resize for desktop - uses ResizeObserver
-  //  const {
-  //displayWidth,
-  //displayHeight,
-  //scale: dynamicScale,
-  //} = useCanvasResize({
-  //    enabled: !isMobileDevice,
-  //containerRef: gameAreaRef,
-  //gameGlowRef,
-  //logicalWidth: SCALED_CANVAS_WIDTH,
-  //logicalHeight: SCALED_CANVAS_HEIGHT,
-  //});
+  useCanvasResize({
+    enabled: true,
+    containerRef: gameAreaRef,
+    gameGlowRef,
+    canvasRef,
+    logicalWidth: SCALED_CANVAS_WIDTH,
+    logicalHeight: SCALED_CANVAS_HEIGHT,
+  });
 
   // Helper function to create explosion particles based on enemy type
   // OPTIMIZED: Uses particle pool instead of creating new arrays
@@ -8663,21 +8659,11 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                 </div>
 
                 {/* Game Canvas - Apply scale transform when title is hidden (desktop only) */}
-                <div className="metal-game-area">
+                <div ref={gameAreaRef} className="metal-game-area">
                   <div
                     ref={gameGlowRef}
                     className={`game-glow relative ${isFullscreen ? "game-canvas-wrapper" : ""}`}
-                    style={
-                      isMobileDevice
-                        ? {
-                            transformOrigin: "top center",
-                          }
-                        : {
-                            width: `${SCALED_CANVAS_WIDTH}px`,
-                            height: `${SCALED_CANVAS_HEIGHT}px`,
-                            transformOrigin: "top center",
-                          }
-                    }
+                    style={{ transformOrigin: "top center" }}
                   >
                     <GameCanvas ref={canvasRef} width={SCALED_CANVAS_WIDTH} height={SCALED_CANVAS_HEIGHT} />
 

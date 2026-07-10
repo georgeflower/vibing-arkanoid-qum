@@ -4,6 +4,27 @@ import { ENABLE_HIGH_QUALITY } from "@/constants/game";
 
 export type QualityLevel = "potato" | "low" | "medium" | "high";
 
+const LAST_QUALITY_STORAGE_KEY = "va_lastQuality";
+const QUALITY_ORDER: QualityLevel[] = ["potato", "low", "medium", "high"];
+const MAX_FPS_SAMPLES = 10;
+const MIN_WARMUP_SAMPLES = 5;
+const DEFAULT_LOW_END_CORE_COUNT = 4;
+const UNKNOWN_CORE_COUNT_FALLBACK = 8;
+
+interface PerformanceProfilerSummary {
+  totalObjects: number;
+}
+
+interface PerformanceProfiler {
+  getFrameSummary(): PerformanceProfilerSummary;
+}
+
+declare global {
+  interface Window {
+    performanceProfiler?: PerformanceProfiler;
+  }
+}
+
 export interface QualitySettings {
   level: QualityLevel;
   particleMultiplier: number;
@@ -98,6 +119,31 @@ export { QUALITY_PRESETS };
 
 let cachedGPUDetection: boolean | null = null;
 
+function isQualityLevel(value: string | null): value is QualityLevel {
+  return value !== null && QUALITY_ORDER.includes(value as QualityLevel);
+}
+
+function clampQualityLevel(requested: QualityLevel, maxLevel: QualityLevel): QualityLevel {
+  return QUALITY_ORDER.indexOf(requested) > QUALITY_ORDER.indexOf(maxLevel) ? maxLevel : requested;
+}
+
+function getStoredQuality(): QualityLevel | null {
+  try {
+    const storedQuality = localStorage.getItem(LAST_QUALITY_STORAGE_KEY);
+    return isQualityLevel(storedQuality) ? storedQuality : null;
+  } catch {
+    return null;
+  }
+}
+
+function persistQuality(quality: QualityLevel): void {
+  try {
+    localStorage.setItem(LAST_QUALITY_STORAGE_KEY, quality);
+  } catch {
+    // Ignore storage failures (e.g. private browsing)
+  }
+}
+
 function detectIntegratedGPU(): boolean {
   if (cachedGPUDetection !== null) {
     return cachedGPUDetection;
@@ -137,6 +183,14 @@ function detectIntegratedGPU(): boolean {
   }
 }
 
+function detectLowEndDevice(): boolean {
+  const isMobileUA = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+  const lowCores = (navigator.hardwareConcurrency ?? UNKNOWN_CORE_COUNT_FALLBACK) <= DEFAULT_LOW_END_CORE_COUNT;
+  const deviceMemory = (navigator as Navigator & { deviceMemory?: number }).deviceMemory;
+  const lowMemory = deviceMemory !== undefined && deviceMemory <= 4;
+  return isMobileUA || lowCores || lowMemory;
+}
+
 interface PerformanceLogEntry {
   timestamp: number;
   fps: number;
@@ -150,13 +204,16 @@ export const useAdaptiveQuality = (options: AdaptiveQualityOptions = {}) => {
     lowFpsThreshold = 45,
     mediumFpsThreshold = 52,
     highFpsThreshold = 58,
-    sampleWindow = 2,
     enableLogging = true,
   } = options;
 
   // GPU detection: force medium on integrated GPUs
   const hasIntegratedGPU = useRef(detectIntegratedGPU()).current;
-  const forcedInitial = hasIntegratedGPU && initialQuality === "high" ? "medium" : initialQuality;
+  const isLowEndDevice = useRef(detectLowEndDevice()).current;
+  const storedQuality = useRef(getStoredQuality()).current;
+  const maxInitialQuality = !ENABLE_HIGH_QUALITY || hasIntegratedGPU ? "medium" : "high";
+  const preferredInitialQuality = storedQuality ?? (isLowEndDevice ? "medium" : initialQuality);
+  const forcedInitial = clampQualityLevel(preferredInitialQuality, maxInitialQuality);
 
   const [quality, setQuality] = useState<QualityLevel>(forcedInitial);
   const [autoAdjustEnabled, setAutoAdjustEnabled] = useState(autoAdjust);
@@ -165,6 +222,7 @@ export const useAdaptiveQuality = (options: AdaptiveQualityOptions = {}) => {
   const setExternalQuality = useCallback((q: QualityLevel) => {
     const capped = !ENABLE_HIGH_QUALITY && q === "high" ? "medium" : q;
     setQuality(capped);
+    persistQuality(capped);
     fpsHistoryRef.current = [];
     lastAdjustmentTimeRef.current = performance.now();
   }, []);
@@ -224,8 +282,8 @@ export const useAdaptiveQuality = (options: AdaptiveQualityOptions = {}) => {
             `Avg: ${avgFps} | Min: ${stats.min.toFixed(0)} | Max: ${stats.max.toFixed(0)}`;
           
           // If detailed metrics are available (from performance profiler), include them
-          if ((window as any).performanceProfiler) {
-            const summary = (window as any).performanceProfiler.getFrameSummary();
+          if (window.performanceProfiler) {
+            const summary = window.performanceProfiler.getFrameSummary();
             console.log(baseLog + ` | Objects: ${summary.totalObjects}`);
           } else {
             console.log(baseLog);
@@ -238,15 +296,18 @@ export const useAdaptiveQuality = (options: AdaptiveQualityOptions = {}) => {
       if (!autoAdjustEnabled) return;
 
       fpsHistoryRef.current.push(fps);
-      const maxSamples = sampleWindow * 10;
-      if (fpsHistoryRef.current.length > maxSamples) {
+      if (fpsHistoryRef.current.length > MAX_FPS_SAMPLES) {
         fpsHistoryRef.current.shift();
       }
 
-      if (fpsHistoryRef.current.length < 30 || now - lastAdjustmentTimeRef.current < adjustmentCooldownMs) {
+      const isWarmingUp = fpsHistoryRef.current.length < MIN_WARMUP_SAMPLES;
+      const isCoolingDown = now - lastAdjustmentTimeRef.current < adjustmentCooldownMs;
+
+      if (isWarmingUp || isCoolingDown) {
         // Early warning system
-        if (fpsHistoryRef.current.length >= 10) {
-          const recentAvg = fpsHistoryRef.current.slice(-10).reduce((sum, f) => sum + f, 0) / 10;
+        if (!isWarmingUp && fpsHistoryRef.current.length === MAX_FPS_SAMPLES) {
+          const recentAvg =
+            fpsHistoryRef.current.slice(-MAX_FPS_SAMPLES).reduce((sum, f) => sum + f, 0) / MAX_FPS_SAMPLES;
           const threshold = quality === 'high' ? mediumFpsThreshold : lowFpsThreshold;
           
           if (recentAvg < threshold && now - warningThresholdRef.current > 5000) {
@@ -297,6 +358,7 @@ export const useAdaptiveQuality = (options: AdaptiveQualityOptions = {}) => {
         );
 
         setQuality(targetQuality);
+        persistQuality(targetQuality);
         lastAdjustmentTimeRef.current = now;
         fpsHistoryRef.current = [];
         qualityStatsRef.current[targetQuality] = { min: Infinity, max: 0, samples: 0, sum: 0 };
@@ -310,12 +372,13 @@ export const useAdaptiveQuality = (options: AdaptiveQualityOptions = {}) => {
         }
       }
     },
-    [quality, autoAdjustEnabled, lowFpsThreshold, mediumFpsThreshold, highFpsThreshold, sampleWindow, lockedToLow],
+    [quality, autoAdjustEnabled, lowFpsThreshold, mediumFpsThreshold, highFpsThreshold, lockedToLow, enableLogging],
   );
 
   const setManualQuality = useCallback((newQuality: QualityLevel) => {
     const capped = !ENABLE_HIGH_QUALITY && newQuality === "high" ? "medium" : newQuality;
     setQuality(capped);
+    persistQuality(capped);
     fpsHistoryRef.current = [];
     lastAdjustmentTimeRef.current = performance.now();
     toast.success(`Quality set to ${capped}`);

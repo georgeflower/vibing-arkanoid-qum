@@ -20,13 +20,15 @@ import { renderFrame } from "@/engine/canvasRenderer";
 // while allowing smoother rendering on capable hardware.
 const TARGET_FPS_HIGH = 120;
 const TARGET_FPS_LOW = 60;
+const IS_MOBILE = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
 let currentTargetFps = TARGET_FPS_HIGH;
 let minFrameInterval = 1000 / currentTargetFps;
 
 /** Update the render target FPS based on quality level */
 export function setRenderTargetFps(qualityLevel: "potato" | "low" | "medium" | "high"): void {
   const TARGET_FPS_POTATO = 30;
-  const newTarget = qualityLevel === "potato" ? TARGET_FPS_POTATO : qualityLevel === "low" ? TARGET_FPS_LOW : TARGET_FPS_HIGH;
+  const qualityTarget = qualityLevel === "potato" ? TARGET_FPS_POTATO : qualityLevel === "low" ? TARGET_FPS_LOW : TARGET_FPS_HIGH;
+  const newTarget = qualityLevel === "potato" ? TARGET_FPS_POTATO : IS_MOBILE ? Math.min(qualityTarget, 60) : qualityTarget;
   if (newTarget !== currentTargetFps) {
     currentTargetFps = newTarget;
     minFrameInterval = 1000 / currentTargetFps;
