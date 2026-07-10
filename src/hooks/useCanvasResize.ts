@@ -1,5 +1,8 @@
 import { useEffect, useRef, useCallback, useState } from "react";
 
+const DESKTOP_BREAKPOINT = 769;
+const DESKTOP_PADDING_OFFSET = 16;
+
 interface CanvasResizeOptions {
   enabled: boolean;
   containerRef: React.RefObject<HTMLDivElement>;
@@ -40,7 +43,7 @@ export function useCanvasResize({
 
     const container = containerRef.current;
     const viewportWidth = window.innerWidth;
-    const paddingOffset = viewportWidth >= 769 ? 16 : 0;
+    const paddingOffset = viewportWidth >= DESKTOP_BREAKPOINT ? DESKTOP_PADDING_OFFSET : 0;
     const isTouchDevice = navigator.maxTouchPoints > 0;
     const visibleHeight = isTouchDevice
       ? Math.min(container.clientHeight, window.visualViewport?.height ?? container.clientHeight)

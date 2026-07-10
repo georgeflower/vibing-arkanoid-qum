@@ -8,6 +8,7 @@ const LAST_QUALITY_STORAGE_KEY = "va_lastQuality";
 const QUALITY_ORDER: QualityLevel[] = ["potato", "low", "medium", "high"];
 const MAX_FPS_SAMPLES = 10;
 const MIN_WARMUP_SAMPLES = 5;
+const DEFAULT_LOW_END_CORE_COUNT = 4;
 
 interface PerformanceProfilerSummary {
   totalObjects: number;
@@ -183,7 +184,7 @@ function detectIntegratedGPU(): boolean {
 
 function detectLowEndDevice(): boolean {
   const isMobileUA = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
-  const lowCores = (navigator.hardwareConcurrency ?? 8) <= 4;
+  const lowCores = (navigator.hardwareConcurrency ?? DEFAULT_LOW_END_CORE_COUNT) <= DEFAULT_LOW_END_CORE_COUNT;
   const deviceMemory = (navigator as Navigator & { deviceMemory?: number }).deviceMemory;
   const lowMemory = deviceMemory !== undefined && deviceMemory <= 4;
   return isMobileUA || lowCores || lowMemory;
@@ -298,9 +299,12 @@ export const useAdaptiveQuality = (options: AdaptiveQualityOptions = {}) => {
         fpsHistoryRef.current.shift();
       }
 
-      if (fpsHistoryRef.current.length < MIN_WARMUP_SAMPLES || now - lastAdjustmentTimeRef.current < adjustmentCooldownMs) {
+      const isWarmingUp = fpsHistoryRef.current.length < MIN_WARMUP_SAMPLES;
+      const isCoolingDown = now - lastAdjustmentTimeRef.current < adjustmentCooldownMs;
+
+      if (isWarmingUp || isCoolingDown) {
         // Early warning system
-        if (fpsHistoryRef.current.length === MAX_FPS_SAMPLES) {
+        if (!isWarmingUp && fpsHistoryRef.current.length === MAX_FPS_SAMPLES) {
           const recentAvg =
             fpsHistoryRef.current.slice(-MAX_FPS_SAMPLES).reduce((sum, f) => sum + f, 0) / MAX_FPS_SAMPLES;
           const threshold = quality === 'high' ? mediumFpsThreshold : lowFpsThreshold;
