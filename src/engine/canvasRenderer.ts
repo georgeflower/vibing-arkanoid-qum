@@ -757,13 +757,18 @@ export function renderFrame(
     ) {
       const rdx = ball.x - ball.renderPrevX;
       const rdy = ball.y - ball.renderPrevY;
-      // Teleport guard: skip interpolation if the ball jumped more than ~3x its
-      // expected per-step travel (Second Chance save, mega-boss trap/release,
+      // Teleport guard: skip interpolation when the ball jumped an unusually large
+      // distance in one physics step (Second Chance save, mega-boss trap/release,
       // boundary clamp) to avoid ghost streaks.
+      // `expected` is a generous per-step budget (speed px-per-frame * 3 headroom,
+      // minimum 4 px).  The threshold is (expected * 3)² so the actual distance
+      // limit is 9× the per-step budget — a large jump must be 9× that budget to
+      // trigger the guard, keeping it conservative and avoiding false snaps.
+      const TELEPORT_GUARD_FACTOR = 3; // actual-distance limit = expected * TELEPORT_GUARD_FACTOR
       const stepDistSq = rdx * rdx + rdy * rdy;
       const speed = Math.hypot(ball.dx, ball.dy);
       const expected = Math.max(4, speed * 3);
-      if (stepDistSq <= expected * expected * 9) {
+      if (stepDistSq <= expected * expected * TELEPORT_GUARD_FACTOR * TELEPORT_GUARD_FACTOR) {
         drawX = ball.renderPrevX + rdx * alpha;
         drawY = ball.renderPrevY + rdy * alpha;
       }
