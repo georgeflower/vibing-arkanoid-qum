@@ -1,8 +1,5 @@
 import { useEffect, useRef, useCallback, useState } from "react";
 
-const DESKTOP_BREAKPOINT = 769;
-const DESKTOP_PADDING_OFFSET = 16;
-
 interface CanvasResizeOptions {
   enabled: boolean;
   containerRef: React.RefObject<HTMLDivElement>;
@@ -37,20 +34,21 @@ export function useCanvasResize({
   });
 
   const rafRef = useRef<number | null>(null);
+  const lastAppliedSizeRef = useRef({ width: -Infinity, height: -Infinity });
 
   const calculateSize = useCallback(() => {
     if (!containerRef.current || !gameGlowRef.current) return;
 
     const container = containerRef.current;
-    const viewportWidth = window.innerWidth;
-    // Desktop keeps the metal-game-area's 8px padding on both sides; mobile removes it in CSS.
-    const paddingOffset = viewportWidth >= DESKTOP_BREAKPOINT ? DESKTOP_PADDING_OFFSET : 0;
+    const cs = getComputedStyle(container);
+    const padX = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
+    const padY = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
     const isTouchDevice = navigator.maxTouchPoints > 0;
     const visibleHeight = isTouchDevice
       ? Math.min(container.clientHeight, window.visualViewport?.height ?? container.clientHeight)
       : container.clientHeight;
-    const availableWidth = Math.max(0, container.clientWidth - paddingOffset);
-    const availableHeight = Math.max(0, visibleHeight - paddingOffset);
+    const availableWidth = Math.max(0, container.clientWidth - padX);
+    const availableHeight = Math.max(0, visibleHeight - padY);
 
     if (availableWidth === 0 || availableHeight === 0) return;
 
@@ -71,6 +69,15 @@ export function useCanvasResize({
 
     const finalDisplayWidth = Math.floor(displayWidth);
     const finalDisplayHeight = Math.floor(displayHeight);
+
+    // Skip no-op reapplication caused by 1px rounding jitter to prevent resize feedback churn.
+    if (
+      Math.abs(finalDisplayWidth - lastAppliedSizeRef.current.width) <= 1 &&
+      Math.abs(finalDisplayHeight - lastAppliedSizeRef.current.height) <= 1
+    ) {
+      return;
+    }
+
     const scale = displayWidth / logicalWidth;
 
     setSize({
@@ -87,6 +94,8 @@ export function useCanvasResize({
       canvasRef.current.style.width = `${finalDisplayWidth}px`;
       canvasRef.current.style.height = `${finalDisplayHeight}px`;
     }
+
+    lastAppliedSizeRef.current = { width: finalDisplayWidth, height: finalDisplayHeight };
   }, [canvasRef, containerRef, gameGlowRef, logicalWidth, logicalHeight]);
 
   const debouncedCalculate = useCallback(() => {
