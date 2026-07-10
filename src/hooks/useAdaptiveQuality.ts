@@ -6,6 +6,22 @@ export type QualityLevel = "potato" | "low" | "medium" | "high";
 
 const LAST_QUALITY_STORAGE_KEY = "va_lastQuality";
 const QUALITY_ORDER: QualityLevel[] = ["potato", "low", "medium", "high"];
+const MAX_FPS_SAMPLES = 10;
+const MIN_WARMUP_SAMPLES = 5;
+
+interface PerformanceProfilerSummary {
+  totalObjects: number;
+}
+
+interface PerformanceProfiler {
+  getFrameSummary(): PerformanceProfilerSummary;
+}
+
+declare global {
+  interface Window {
+    performanceProfiler?: PerformanceProfiler;
+  }
+}
 
 export interface QualitySettings {
   level: QualityLevel;
@@ -168,8 +184,8 @@ function detectIntegratedGPU(): boolean {
 function detectLowEndDevice(): boolean {
   const isMobileUA = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
   const lowCores = (navigator.hardwareConcurrency ?? 8) <= 4;
-  const lowMemory = (navigator as Navigator & { deviceMemory?: number }).deviceMemory !== undefined &&
-    (navigator as Navigator & { deviceMemory?: number }).deviceMemory! <= 4;
+  const deviceMemory = (navigator as Navigator & { deviceMemory?: number }).deviceMemory;
+  const lowMemory = deviceMemory !== undefined && deviceMemory <= 4;
   return isMobileUA || lowCores || lowMemory;
 }
 
@@ -264,8 +280,8 @@ export const useAdaptiveQuality = (options: AdaptiveQualityOptions = {}) => {
             `Avg: ${avgFps} | Min: ${stats.min.toFixed(0)} | Max: ${stats.max.toFixed(0)}`;
           
           // If detailed metrics are available (from performance profiler), include them
-          if ((window as any).performanceProfiler) {
-            const summary = (window as any).performanceProfiler.getFrameSummary();
+          if (window.performanceProfiler) {
+            const summary = window.performanceProfiler.getFrameSummary();
             console.log(baseLog + ` | Objects: ${summary.totalObjects}`);
           } else {
             console.log(baseLog);
@@ -278,15 +294,15 @@ export const useAdaptiveQuality = (options: AdaptiveQualityOptions = {}) => {
       if (!autoAdjustEnabled) return;
 
       fpsHistoryRef.current.push(fps);
-      const maxSamples = 10;
-      if (fpsHistoryRef.current.length > maxSamples) {
+      if (fpsHistoryRef.current.length > MAX_FPS_SAMPLES) {
         fpsHistoryRef.current.shift();
       }
 
-      if (fpsHistoryRef.current.length < 5 || now - lastAdjustmentTimeRef.current < adjustmentCooldownMs) {
+      if (fpsHistoryRef.current.length < MIN_WARMUP_SAMPLES || now - lastAdjustmentTimeRef.current < adjustmentCooldownMs) {
         // Early warning system
-        if (fpsHistoryRef.current.length >= 10) {
-          const recentAvg = fpsHistoryRef.current.slice(-10).reduce((sum, f) => sum + f, 0) / 10;
+        if (fpsHistoryRef.current.length >= MAX_FPS_SAMPLES) {
+          const recentAvg =
+            fpsHistoryRef.current.slice(-MAX_FPS_SAMPLES).reduce((sum, f) => sum + f, 0) / MAX_FPS_SAMPLES;
           const threshold = quality === 'high' ? mediumFpsThreshold : lowFpsThreshold;
           
           if (recentAvg < threshold && now - warningThresholdRef.current > 5000) {
@@ -351,7 +367,7 @@ export const useAdaptiveQuality = (options: AdaptiveQualityOptions = {}) => {
         }
       }
     },
-    [quality, autoAdjustEnabled, lowFpsThreshold, mediumFpsThreshold, highFpsThreshold, lockedToLow],
+    [quality, autoAdjustEnabled, lowFpsThreshold, mediumFpsThreshold, highFpsThreshold, lockedToLow, enableLogging],
   );
 
   const setManualQuality = useCallback((newQuality: QualityLevel) => {

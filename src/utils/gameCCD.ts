@@ -5,7 +5,7 @@ import { ENABLE_DEBUG_FEATURES } from '@/constants/game';
 export interface CCDResult {
   ball: Ball | null;
   events: CollisionEvent[];
-  debug?: any;
+  debug?: unknown;
   substepsUsed: number;
   maxIterations: number;
   collisionCount: number;
@@ -187,8 +187,15 @@ export function processBallWithCCD(
 
   // Calculate collision count and max TOI iterations from debug data
   const collisionCount = result.events.length;
-  const toiIterationsUsed = ENABLE_DEBUG_FEATURES && result.debug && Array.isArray(result.debug) 
-    ? Math.max(...result.debug.map((d: any) => d.iter || 0), 0)
+  const debugSteps = ENABLE_DEBUG_FEATURES &&
+    result.debug &&
+    typeof result.debug === "object" &&
+    "debugSteps" in result.debug &&
+    Array.isArray(result.debug.debugSteps)
+    ? (result.debug.debugSteps as Array<{ iter?: number }>)
+    : [];
+  const toiIterationsUsed = debugSteps.length > 0
+    ? Math.max(...debugSteps.map((step) => step.iter || 0), 0)
     : 0;
 
   // Convert result back to game types

@@ -29,6 +29,16 @@ interface GameCanvasProps {
   height: number;
 }
 
+type BackgroundImageAssetKey =
+  | "backgroundImage4"
+  | "backgroundImage69"
+  | "backgroundImage1114"
+  | "backgroundImage1620"
+  | "bossLevel5Bg"
+  | "bossLevel10Bg"
+  | "bossLevel15Bg"
+  | "bossLevel20Bg";
+
 const backgroundPatternKeys: Partial<Record<keyof AssetRefs, string>> = {
   backgroundImage4: "bg4",
   backgroundImage69: "bg69",
@@ -125,13 +135,13 @@ export const GameCanvas = forwardRef<HTMLCanvasElement, GameCanvasProps>(
       });
 
       // Background tiles
-      const loadBg = (src: string, key: keyof AssetRefs) => {
+      const loadBg = (src: string, key: BackgroundImageAssetKey) => {
        const img = new Image();
        img.src = src;
        waitForImageDecode(img).finally(() => {
          if (cancelled) return;
 
-         (assets as any)[key] = img;
+         assets[key] = img;
 
          const patternKey = backgroundPatternKeys[key];
          if (patternKey) {
@@ -210,7 +220,10 @@ export const GameCanvas = forwardRef<HTMLCanvasElement, GameCanvasProps>(
       warmUpCanvasContexts(width, height);
 
       if (assets.backgroundImage4 && !assets.patterns.bg4) {
-        assets.patterns.bg4 = ctx.createPattern(assets.backgroundImage4, "repeat");
+        const backgroundPattern = ctx.createPattern(assets.backgroundImage4, "repeat");
+        if (backgroundPattern) {
+          assets.patterns.bg4 = backgroundPattern;
+        }
       }
 
       brickRenderer.initialize(width, height);
