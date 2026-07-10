@@ -43,6 +43,7 @@ export function useCanvasResize({
 
     const container = containerRef.current;
     const viewportWidth = window.innerWidth;
+    // Desktop keeps the metal-game-area's 8px padding on both sides; mobile removes it in CSS.
     const paddingOffset = viewportWidth >= DESKTOP_BREAKPOINT ? DESKTOP_PADDING_OFFSET : 0;
     const isTouchDevice = navigator.maxTouchPoints > 0;
     const visibleHeight = isTouchDevice

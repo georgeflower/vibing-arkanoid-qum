@@ -68,6 +68,7 @@ export const GameCanvas = forwardRef<HTMLCanvasElement, GameCanvasProps>(
   ({ width, height }, ref) => {
     const assetsRef = useRef<AssetRefs>(createAssetRefs());
     const stopLoopRef = useRef<(() => void) | null>(null);
+    const warmedBrickCacheKeyRef = useRef("");
     const [crackedImagesLoaded, setCrackedImagesLoaded] = useState(false);
     const [backgroundTile4Ready, setBackgroundTile4Ready] = useState(false);
 
@@ -231,7 +232,11 @@ export const GameCanvas = forwardRef<HTMLCanvasElement, GameCanvasProps>(
 
       brickRenderer.initialize(width, height);
       if (world.bricks.length > 0) {
-        brickRenderer.updateCache(world.bricks, renderState.qualitySettings);
+        const brickCacheKey = `${width}x${height}:${world.bricks.length}:${renderState.qualitySettings.level}:${crackedImagesLoaded}`;
+        if (warmedBrickCacheKeyRef.current !== brickCacheKey) {
+          brickRenderer.updateCache(world.bricks, renderState.qualitySettings);
+          warmedBrickCacheKeyRef.current = brickCacheKey;
+        }
       }
     }, [backgroundTile4Ready, crackedImagesLoaded, ref, width, height]);
 
