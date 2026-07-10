@@ -34,7 +34,7 @@ export function useCanvasResize({
   });
 
   const rafRef = useRef<number | null>(null);
-  const lastAppliedRef = useRef({ width: -Infinity, height: -Infinity });
+  const lastAppliedSizeRef = useRef({ width: -Infinity, height: -Infinity });
 
   const calculateSize = useCallback(() => {
     if (!containerRef.current || !gameGlowRef.current) return;
@@ -70,9 +70,10 @@ export function useCanvasResize({
     const finalDisplayWidth = Math.floor(displayWidth);
     const finalDisplayHeight = Math.floor(displayHeight);
 
+    // Skip no-op reapplication caused by 1px rounding jitter to prevent resize feedback churn.
     if (
-      Math.abs(finalDisplayWidth - lastAppliedRef.current.width) <= 1 &&
-      Math.abs(finalDisplayHeight - lastAppliedRef.current.height) <= 1
+      Math.abs(finalDisplayWidth - lastAppliedSizeRef.current.width) <= 1 &&
+      Math.abs(finalDisplayHeight - lastAppliedSizeRef.current.height) <= 1
     ) {
       return;
     }
@@ -94,7 +95,7 @@ export function useCanvasResize({
       canvasRef.current.style.height = `${finalDisplayHeight}px`;
     }
 
-    lastAppliedRef.current = { width: finalDisplayWidth, height: finalDisplayHeight };
+    lastAppliedSizeRef.current = { width: finalDisplayWidth, height: finalDisplayHeight };
   }, [canvasRef, containerRef, gameGlowRef, logicalWidth, logicalHeight]);
 
   const debouncedCalculate = useCallback(() => {
