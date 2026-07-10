@@ -34,7 +34,7 @@ export function useCanvasResize({
   });
 
   const rafRef = useRef<number | null>(null);
-  const lastAppliedRef = useRef({ w: 0, h: 0 });
+  const lastAppliedRef = useRef({ width: 0, height: 0 });
 
   const calculateSize = useCallback(() => {
     if (!containerRef.current || !gameGlowRef.current) return;
@@ -71,13 +71,13 @@ export function useCanvasResize({
     const finalDisplayHeight = Math.floor(displayHeight);
 
     if (
-      Math.abs(finalDisplayWidth - lastAppliedRef.current.w) <= 1 &&
-      Math.abs(finalDisplayHeight - lastAppliedRef.current.h) <= 1
+      Math.abs(finalDisplayWidth - lastAppliedRef.current.width) <= 1 &&
+      Math.abs(finalDisplayHeight - lastAppliedRef.current.height) <= 1
     ) {
       return;
     }
 
-    lastAppliedRef.current = { w: finalDisplayWidth, h: finalDisplayHeight };
+    lastAppliedRef.current = { width: finalDisplayWidth, height: finalDisplayHeight };
     const scale = displayWidth / logicalWidth;
 
     setSize({
