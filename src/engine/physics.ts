@@ -492,6 +492,8 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
   // ═══ Phase 0: Store previousY ═══
   for (const ball of balls) {
     ball.previousY = ball.y;
+    ball.renderPrevX = ball.x;
+    ball.renderPrevY = ball.y;
   }
 
   // ═══ Phase 0: Boss-First Swept Collision ═══

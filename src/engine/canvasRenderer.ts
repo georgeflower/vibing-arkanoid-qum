@@ -444,6 +444,7 @@ export function renderFrame(
   rs: RenderState,
   assets: AssetRefs,
   now: number,
+  alpha: number = 1,
 ): void {
   const { width, height } = rs;
   const level = rs.level;
@@ -746,6 +747,28 @@ export function renderFrame(
   balls.forEach((ball) => {
     const ballColor = ball.isFireball ? "hsl(30, 85%, 55%)" : "hsl(0, 0%, 92%)";
 
+    // Render-interpolation: compute draw position between last two physics states
+    let drawX = ball.x;
+    let drawY = ball.y;
+    if (
+      !ball.waitingToLaunch &&
+      ball.renderPrevX !== undefined &&
+      ball.renderPrevY !== undefined
+    ) {
+      const rdx = ball.x - ball.renderPrevX;
+      const rdy = ball.y - ball.renderPrevY;
+      // Teleport guard: skip interpolation if the ball jumped more than ~3x its
+      // expected per-step travel (Second Chance save, mega-boss trap/release,
+      // boundary clamp) to avoid ghost streaks.
+      const stepDistSq = rdx * rdx + rdy * rdy;
+      const speed = Math.hypot(ball.dx, ball.dy);
+      const expected = Math.max(4, speed * 3);
+      if (stepDistSq <= expected * expected * 9) {
+        drawX = ball.renderPrevX + rdx * alpha;
+        drawY = ball.renderPrevY + rdy * alpha;
+      }
+    }
+
     // Get Ready glow
     if (getReadyGlow && getReadyGlow.opacity > 0) {
       ctx.save();
@@ -766,7 +789,7 @@ export function renderFrame(
           [1, "rgba(100, 200, 255, 0)"],
         ],
       );
-      ctx.translate(ball.x, ball.y);
+      ctx.translate(drawX, drawY);
       ctx.fillStyle = glowGradient;
       ctx.beginPath();
       ctx.arc(0, 0, glowRadius, 0, Math.PI * 2);
@@ -807,7 +830,7 @@ export function renderFrame(
         ],
       );
       ctx.save();
-      ctx.translate(ball.x, ball.y);
+      ctx.translate(drawX, drawY);
       ctx.fillStyle = releaseGradient;
       ctx.beginPath();
       ctx.arc(0, 0, releaseGlowRadius, 0, Math.PI * 2);
@@ -818,13 +841,13 @@ export function renderFrame(
       ctx.lineWidth = 3;
       // shadowBlur removed — gradient fill handles the visual
       ctx.beginPath();
-      ctx.arc(ball.x, ball.y, ball.radius * 2.5 * pulseIntensity, 0, Math.PI * 2);
+      ctx.arc(drawX, drawY, ball.radius * 2.5 * pulseIntensity, 0, Math.PI * 2);
       ctx.stroke();
 
       ctx.strokeStyle = `rgba(100, 255, 255, ${glowOpacity * 0.6})`;
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.arc(ball.x, ball.y, ball.radius * 3.5 * pulseIntensity, 0, Math.PI * 2);
+      ctx.arc(drawX, drawY, ball.radius * 3.5 * pulseIntensity, 0, Math.PI * 2);
       ctx.stroke();
       ctx.restore();
 
@@ -835,7 +858,7 @@ export function renderFrame(
         ctx.setLineDash([10, 6]);
         ctx.lineDashOffset = -now / 40;
         ctx.beginPath();
-        ctx.moveTo(ball.x, ball.y);
+        ctx.moveTo(drawX, drawY);
         ctx.lineTo(paddle.x + paddle.width / 2, paddle.y);
         ctx.stroke();
         ctx.setLineDash([]);
@@ -867,7 +890,7 @@ export function renderFrame(
           [1, "rgba(80, 180, 255, 0)"],
         ],
       );
-      ctx.translate(ball.x, ball.y);
+      ctx.translate(drawX, drawY);
       ctx.fillStyle = chaosGradient;
       ctx.beginPath();
       ctx.arc(0, 0, chaosGlowRadius, 0, Math.PI * 2);
@@ -880,13 +903,13 @@ export function renderFrame(
       ctx.save();
       ctx.fillStyle = `rgba(0, 0, 0, ${0.5 + chaosLevel * 0.2})`;
       ctx.beginPath();
-      ctx.arc(ball.x, ball.y, visualRadius + 2 + chaosLevel, 0, Math.PI * 2);
+      ctx.arc(drawX, drawY, visualRadius + 2 + chaosLevel, 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
     }
 
     ctx.save();
-    ctx.translate(ball.x, ball.y);
+    ctx.translate(drawX, drawY);
 
     const gradient = ball.isFireball
       ? getCachedRadialGradient(
@@ -950,8 +973,8 @@ export function renderFrame(
       const speed = Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy);
       if (speed > 0) {
         for (let i = trailLength; i >= 1; i--) {
-          const trailX = ball.x - (ball.dx / speed) * ball.radius * i * 1.0;
-          const trailY = ball.y - (ball.dy / speed) * ball.radius * i * 1.0;
+          const trailX = drawX - (ball.dx / speed) * ball.radius * i * 1.0;
+          const trailY = drawY - (ball.dy / speed) * ball.radius * i * 1.0;
           const trailOpacity = 0.5 * (1 - i / (trailLength + 1));
           const trailSize = ball.radius * (1 - i / (trailLength + 2));
           ctx.save();
@@ -965,7 +988,7 @@ export function renderFrame(
       }
       ctx.fillStyle = "hsla(30, 85%, 55%, 0.25)";
       ctx.beginPath();
-      ctx.arc(ball.x, ball.y, ball.radius * 1.5, 0, Math.PI * 2);
+      ctx.arc(drawX, drawY, ball.radius * 1.5, 0, Math.PI * 2);
       ctx.fill();
     }
 
@@ -976,14 +999,14 @@ export function renderFrame(
       ctx.lineWidth = 2;
       ctx.setLineDash([5, 5]);
       ctx.beginPath();
-      ctx.moveTo(ball.x, ball.y);
+      ctx.moveTo(drawX, drawY);
       ctx.lineTo(boss.x + boss.width / 2, boss.y + boss.height / 2);
       ctx.stroke();
       ctx.setLineDash([]);
       // shadowBlur removed — red circle is sufficient
       ctx.fillStyle = "rgba(255, 0, 0, 0.3)";
       ctx.beginPath();
-      ctx.arc(ball.x, ball.y, ball.radius * 1.5, 0, Math.PI * 2);
+      ctx.arc(drawX, drawY, ball.radius * 1.5, 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
     }
@@ -992,8 +1015,8 @@ export function renderFrame(
     if (ball.waitingToLaunch) {
       const angle = (launchAngle * Math.PI) / 180;
       const lineLength = 100;
-      const endX = ball.x + Math.sin(angle) * lineLength;
-      const endY = ball.y - Math.cos(angle) * lineLength;
+      const endX = drawX + Math.sin(angle) * lineLength;
+      const endY = drawY - Math.cos(angle) * lineLength;
       dashOffset = (dashOffset + 1) % 20;
       // shadowBlur removed — dashed line is clearly visible
       ctx.strokeStyle = "hsl(0, 85%, 55%)";
@@ -1001,7 +1024,7 @@ export function renderFrame(
       ctx.setLineDash([8, 8]);
       ctx.lineDashOffset = -dashOffset;
       ctx.beginPath();
-      ctx.moveTo(ball.x, ball.y);
+      ctx.moveTo(drawX, drawY);
       ctx.lineTo(endX, endY);
       ctx.stroke();
       ctx.setLineDash([]);

@@ -116,7 +116,10 @@ export function startRenderLoop(canvas: HTMLCanvasElement, assets: AssetRefs): (
         // coordinate space but the GPU rasterizes fewer pixels.
         offCtx.setTransform(scale, 0, 0, scale, 0, 0);
 
-        renderFrame(offCtx, world, renderState, assets, now);
+        const alphaRaw = (now - world.lastPhysicsUpdateTime) / world.lastPhysicsDtMs;
+        const alpha = Math.min(1, Math.max(0, alphaRaw));
+
+        renderFrame(offCtx, world, renderState, assets, now, alpha);
 
         // Reset transform for next frame
         offCtx.setTransform(1, 0, 0, 1, 0, 0);
@@ -125,7 +128,9 @@ export function startRenderLoop(canvas: HTMLCanvasElement, assets: AssetRefs): (
         ctx.drawImage(offCanvas, 0, 0, renderState.width, renderState.height);
       }
     } else {
-      renderFrame(ctx, world, renderState, assets, now);
+      const alphaRaw = (now - world.lastPhysicsUpdateTime) / world.lastPhysicsDtMs;
+      const alpha = Math.min(1, Math.max(0, alphaRaw));
+      renderFrame(ctx, world, renderState, assets, now, alpha);
     }
   };
 

@@ -4608,6 +4608,10 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       ball.rotation = ((ball.rotation || 0) + 180 * dtSecondsRef.current) % 360; // 180 deg/s = 3 deg/frame at 60fps
     }
 
+    // Record physics frame timing for render-side interpolation
+    world.lastPhysicsUpdateTime = performance.now();
+    world.lastPhysicsDtMs = Math.max(1, dtSecondsRef.current * 1000);
+
     // Update bonus letters - OPTIMIZED: In-place mutation with sine wave motion
     const currentTime = Date.now();
     // Direct world mutation — no React state updater, no stale-closure risk
