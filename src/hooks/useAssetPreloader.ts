@@ -124,9 +124,17 @@ const loadAsset = (entry: AssetEntry): Promise<void> =>
   new Promise((resolve) => {
     if (entry.type === "image") {
       const img = new Image();
-      img.onload = () => resolve();
-      img.onerror = () => resolve();
       img.src = entry.url;
+      if (typeof img.decode === "function") {
+        img.decode()
+          .catch(() => {})
+          .finally(() => resolve());
+      } else if (img.complete) {
+        resolve();
+      } else {
+        img.onload = () => resolve();
+        img.onerror = () => resolve();
+      }
     } else {
       fetch(entry.url, { method: "HEAD" })
         .then(() => resolve())

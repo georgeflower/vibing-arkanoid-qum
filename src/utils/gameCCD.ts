@@ -70,7 +70,7 @@ export function processBallWithCCD(
   const PHYSICS_SUBSTEPS = Math.max(2, Math.min(desiredSubsteps, MAX_SUBSTEPS));
   
   // Log high substep counts for debugging
-  if (PHYSICS_SUBSTEPS > 12) {
+  if (ENABLE_DEBUG_FEATURES && PHYSICS_SUBSTEPS > 12) {
     console.warn(`[CCD] High substeps: ${PHYSICS_SUBSTEPS}, ballSpeed: ${ballSpeed.toFixed(2)}, speedMult: ${gameState.speedMultiplier.toFixed(2)}, quality: ${gameState.qualityLevel}`);
   }
   

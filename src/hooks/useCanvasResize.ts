@@ -4,6 +4,7 @@ interface CanvasResizeOptions {
   enabled: boolean;
   containerRef: React.RefObject<HTMLDivElement>;
   gameGlowRef: React.RefObject<HTMLDivElement>;
+  canvasRef?: React.RefObject<HTMLCanvasElement>;
   logicalWidth: number; // SCALED_CANVAS_WIDTH
   logicalHeight: number; // SCALED_CANVAS_HEIGHT
 }
@@ -22,6 +23,7 @@ export function useCanvasResize({
   enabled,
   containerRef,
   gameGlowRef,
+  canvasRef,
   logicalWidth,
   logicalHeight,
 }: CanvasResizeOptions): CanvasSize {
@@ -37,19 +39,16 @@ export function useCanvasResize({
     if (!containerRef.current || !gameGlowRef.current) return;
 
     const container = containerRef.current;
-    
-    // Don't imperatively size on narrow viewports - let CSS handle it
-    // This prevents conflicts when sidebars are hidden via CSS media queries
     const viewportWidth = window.innerWidth;
-    if (viewportWidth < 769) {
-      // Clear any previously set inline styles
-      gameGlowRef.current.style.width = '';
-      gameGlowRef.current.style.height = '';
-      return;
-    }
+    const paddingOffset = viewportWidth >= 769 ? 16 : 0;
+    const isTouchDevice = navigator.maxTouchPoints > 0;
+    const visibleHeight = isTouchDevice
+      ? Math.min(container.clientHeight, window.visualViewport?.height ?? Infinity)
+      : container.clientHeight;
+    const availableWidth = Math.max(0, container.clientWidth - paddingOffset);
+    const availableHeight = Math.max(0, visibleHeight - paddingOffset);
 
-    const availableWidth = container.clientWidth - 16; // Account for padding
-    const availableHeight = container.clientHeight - 16;
+    if (availableWidth === 0 || availableHeight === 0) return;
 
     // Calculate scale to fit while maintaining aspect ratio
     const aspectRatio = logicalWidth / logicalHeight;
@@ -66,18 +65,25 @@ export function useCanvasResize({
       displayHeight = displayWidth / aspectRatio;
     }
 
+    const finalDisplayWidth = Math.floor(displayWidth);
+    const finalDisplayHeight = Math.floor(displayHeight);
     const scale = displayWidth / logicalWidth;
 
     setSize({
-      displayWidth: Math.floor(displayWidth),
-      displayHeight: Math.floor(displayHeight),
+      displayWidth: finalDisplayWidth,
+      displayHeight: finalDisplayHeight,
       scale,
     });
 
     // Apply size to game-glow container
-    gameGlowRef.current.style.width = `${Math.floor(displayWidth)}px`;
-    gameGlowRef.current.style.height = `${Math.floor(displayHeight)}px`;
-  }, [containerRef, gameGlowRef, logicalWidth, logicalHeight]);
+    gameGlowRef.current.style.width = `${finalDisplayWidth}px`;
+    gameGlowRef.current.style.height = `${finalDisplayHeight}px`;
+
+    if (canvasRef?.current) {
+      canvasRef.current.style.width = `${finalDisplayWidth}px`;
+      canvasRef.current.style.height = `${finalDisplayHeight}px`;
+    }
+  }, [canvasRef, containerRef, gameGlowRef, logicalWidth, logicalHeight]);
 
   const debouncedCalculate = useCallback(() => {
     if (rafRef.current) {
@@ -110,6 +116,21 @@ export function useCanvasResize({
       }
     };
   }, [enabled, containerRef, debouncedCalculate, calculateSize]);
+
+  useEffect(() => {
+    if (!enabled) return;
+
+    const vv = window.visualViewport;
+    if (!vv) return;
+
+    vv.addEventListener("resize", debouncedCalculate);
+    vv.addEventListener("scroll", debouncedCalculate);
+
+    return () => {
+      vv.removeEventListener("resize", debouncedCalculate);
+      vv.removeEventListener("scroll", debouncedCalculate);
+    };
+  }, [debouncedCalculate, enabled]);
 
   return size;
 }
