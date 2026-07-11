@@ -403,24 +403,41 @@ export const useAdaptiveQuality = (options: AdaptiveQualityOptions = {}) => {
     persistQuality(capped);
     fpsHistoryRef.current = [];
     lastAdjustmentTimeRef.current = performance.now();
+    // Manual pick clears any lockout and switches to manual mode.
+    lowQualityDropCountRef.current = 0;
+    lockoutEscapeCounterRef.current = 0;
+    setLockedToLow(false);
+    setAutoAdjustEnabled(false);
     toast.success(`Quality set to ${capped}`);
   }, []);
 
   const toggleAutoAdjust = useCallback(() => {
     setAutoAdjustEnabled((prev) => {
       const newValue = !prev;
+      if (newValue) {
+        fpsHistoryRef.current = [];
+        lastAdjustmentTimeRef.current = performance.now();
+      }
       toast.success(newValue ? "Auto quality adjustment enabled" : "Auto quality adjustment disabled");
       return newValue;
     });
   }, []);
 
+  const setAutoAdjust = useCallback((enabled: boolean) => {
+    setAutoAdjustEnabled(enabled);
+    if (enabled) {
+      fpsHistoryRef.current = [];
+      lastAdjustmentTimeRef.current = performance.now();
+    }
+  }, []);
+
   const resetQualityLockout = useCallback(() => {
     lowQualityDropCountRef.current = 0;
+    lockoutEscapeCounterRef.current = 0;
     setLockedToLow(false);
-    setQuality(ENABLE_HIGH_QUALITY ? initialQuality : "medium");
     fpsHistoryRef.current = [];
     console.log('[Performance] Quality lockout reset for new game');
-  }, [initialQuality]);
+  }, []);
 
   const getPerformanceLog = useCallback(() => {
     return {
@@ -435,11 +452,14 @@ export const useAdaptiveQuality = (options: AdaptiveQualityOptions = {}) => {
     qualitySettings: getQualitySettings(),
     updateFps,
     setQuality: setManualQuality,
+    applyQualitySilently,
     autoAdjustEnabled,
     toggleAutoAdjust,
+    setAutoAdjust,
     getPerformanceLog,
     resetQualityLockout,
     lockedToLow,
     isIntegratedGPU: hasIntegratedGPU,
+
   };
 };
