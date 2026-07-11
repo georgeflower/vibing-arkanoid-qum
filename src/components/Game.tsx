@@ -9233,6 +9233,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                     }}
 
                     portalContainer={fullscreenContainerRef.current}
+                    lockedToLow={lockedToLow}
+
                   />
                 )}
 
