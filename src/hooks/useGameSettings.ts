@@ -12,10 +12,12 @@ export interface GameSettings {
   currentTrack: number;
   // Video
   qualityLevel: QualityLevel;
+  qualityMode: "auto" | "manual";
   crtEnabled: boolean;
   showFpsOverlay: boolean;
   canvasResolution: string; // derived from qualityLevel, not user-configurable
 }
+
 
 const STORAGE_KEY = "gameSettings";
 
@@ -31,6 +33,7 @@ const DEFAULT_SETTINGS: GameSettings = {
   sfxVolume: 70,
   currentTrack: 0,
   qualityLevel: "high",
+  qualityMode: "auto",
   crtEnabled: true,
   showFpsOverlay: false,
   canvasResolution: "850x650",
@@ -44,11 +47,13 @@ export const SOUND_DEFAULTS: Pick<GameSettings, "musicEnabled" | "sfxEnabled" | 
   currentTrack: 0,
 };
 
-export const VIDEO_DEFAULTS: Pick<GameSettings, "qualityLevel" | "crtEnabled" | "showFpsOverlay"> = {
+export const VIDEO_DEFAULTS: Pick<GameSettings, "qualityLevel" | "qualityMode" | "crtEnabled" | "showFpsOverlay"> = {
   qualityLevel: "high",
+  qualityMode: "auto",
   crtEnabled: true,
   showFpsOverlay: false,
 };
+
 
 export function loadSettings(): GameSettings {
   try {

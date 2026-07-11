@@ -213,14 +213,24 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   // Detect updates but don't apply during gameplay - defer until back at menu
   useServiceWorkerUpdate({ shouldApplyUpdate: false });
 
-  // Parse resolution from settings
+  // Parse resolution from settings — but do NOT resize a running game.
+  // Only pick up new resolution values when we're not actively playing/paused;
+  // a mid-game change stays pending until the next game.
+  const pendingResolutionRef = useRef<string>(gameSettingsData.canvasResolution);
+  const [activeResolution, setActiveResolution] = useState<string>(gameSettingsData.canvasResolution);
+  useEffect(() => {
+    pendingResolutionRef.current = gameSettingsData.canvasResolution;
+  }, [gameSettingsData.canvasResolution]);
+
   const parsedResolution = useMemo(() => {
-    const res = gameSettingsData.canvasResolution;
+    const res = activeResolution;
     if (!res || res === "850x650") return undefined; // use default
     const [w, h] = res.split("x").map(Number);
     if (!w || !h) return undefined;
     return { width: w, height: h };
-  }, [gameSettingsData.canvasResolution]);
+  }, [activeResolution]);
+
+
 
   // Centralized scaled constants
   const {
@@ -334,6 +344,15 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   // Level progress tracking
   const { updateMaxLevel } = useLevelProgress();
   const [gameState, setGameState] = useState<GameState>("ready");
+
+  // Promote pending resolution → active only when no game is in progress.
+  useEffect(() => {
+    if (gameState !== "playing" && gameState !== "paused") {
+      const pending = pendingResolutionRef.current;
+      setActiveResolution((prev) => (prev === pending ? prev : pending));
+    }
+  }, [gameState, gameSettingsData.canvasResolution]);
+
   // ═══ PHASE 1: bricks lives in world.bricks (engine/state.ts) ═══
   const bricks = world.bricks;
   const setBricks = useCallback((updater: Brick[] | ((prev: Brick[]) => Brick[])) => {
@@ -1775,10 +1794,10 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   );
 
   // Adaptive quality system
-  const { quality, qualitySettings, updateFps, setQuality, toggleAutoAdjust, autoAdjustEnabled, resetQualityLockout } =
+  const { quality, qualitySettings, updateFps, setQuality, applyQualitySilently, toggleAutoAdjust, setAutoAdjust, autoAdjustEnabled, resetQualityLockout, lockedToLow } =
     useAdaptiveQuality({
       initialQuality: ENABLE_HIGH_QUALITY ? "high" : "medium",
-      autoAdjust: true,
+      autoAdjust: gameSettingsData.qualityMode !== "manual",
       lowFpsThreshold: 50,
       mediumFpsThreshold: 55,
       highFpsThreshold: 55,
@@ -1787,12 +1806,23 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       isFullscreen,
     });
 
-  // ═══ Sync settings quality → adaptive quality system ═══
+  // ═══ One-time mount sync: if user had a manual quality saved, apply it silently ═══
+  const initialQualitySyncRef = useRef(false);
   useEffect(() => {
-    if (gameSettingsData.qualityLevel && gameSettingsData.qualityLevel !== quality) {
-      setQuality(gameSettingsData.qualityLevel);
+    if (initialQualitySyncRef.current) return;
+    initialQualitySyncRef.current = true;
+    if (gameSettingsData.qualityMode === "manual" && gameSettingsData.qualityLevel) {
+      applyQualitySilently(gameSettingsData.qualityLevel);
     }
-  }, [gameSettingsData.qualityLevel, setQuality]);
+    // Intentionally read once; changes are handled by onSettingsSaved and Q-key.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ═══ Keep auto-adjust flag synced when the user toggles mode via settings ═══
+  useEffect(() => {
+    setAutoAdjust(gameSettingsData.qualityMode !== "manual");
+  }, [gameSettingsData.qualityMode, setAutoAdjust]);
+
 
   // ═══ Sync React state → renderState singleton (for decoupled canvas rendering) ═══
   useEffect(() => {
@@ -3358,17 +3388,22 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         toast.success(enabled ? "Music on" : "Music muted");
       } else if (e.key === "q" || e.key === "Q") {
         if (e.shiftKey) {
-          toggleAutoAdjust();
+          const nextAuto = !autoAdjustEnabled;
+          setAutoAdjust(nextAuto);
+          updateGameSettings({ qualityMode: nextAuto ? "auto" : "manual" });
+          saveGameSettings();
+          toast.success(nextAuto ? "Auto quality adjustment enabled" : "Auto quality adjustment disabled");
         } else {
           const levels: Array<"high" | "medium" | "low" | "potato"> = ["high", "medium", "low", "potato"];
           const currentIndex = levels.indexOf(quality);
           const nextIndex = (currentIndex + 1) % levels.length;
           const nextQuality = levels[nextIndex];
           setQuality(nextQuality);
-          updateGameSettings({ qualityLevel: nextQuality });
+          updateGameSettings({ qualityLevel: nextQuality, qualityMode: "manual" });
           saveGameSettings();
         }
       }
+
 
       // ═══════════════════════════════════════════════════════════════
       // ████████╗ DEBUG KEYBOARD CONTROLS - REMOVE BEFORE PRODUCTION ████████╗
@@ -9189,10 +9224,17 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                     hideTrigger
                     onPauseMenuShow={() => setSettingsOpenFromPause(false)}
                     onSettingsSaved={(s) => {
-                      setQuality(s.qualityLevel);
                       updateGameSettings(s);
+                      if (s.qualityMode === "manual") {
+                        setQuality(s.qualityLevel);
+                      } else {
+                        setAutoAdjust(true);
+                      }
                     }}
+
                     portalContainer={fullscreenContainerRef.current}
+                    lockedToLow={lockedToLow}
+
                   />
                 )}
 
