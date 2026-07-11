@@ -32,7 +32,10 @@ interface SettingsDialogProps {
   onSettingsSaved?: (settings: GameSettingsType) => void;
   /** Portal container element for rendering dialog inside fullscreen containers */
   portalContainer?: HTMLElement | null;
+  /** When true, show a notice that quality is currently locked to LOW */
+  lockedToLow?: boolean;
 }
+
 
 type TabId = "video" | "sound";
 
