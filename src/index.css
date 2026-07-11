@@ -139,11 +139,7 @@ All colors MUST be HSL.
   }
 
   .game-canvas-wrapper canvas {
-    max-width: calc(100vw - 200px);
-    max-height: calc(100vh - 100px);
-    width: auto !important;
-    height: auto !important;
-    object-fit: contain;
+    display: block;
   }
 
   /* Responsive canvas scaling for non-fullscreen */
