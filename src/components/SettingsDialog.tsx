@@ -140,13 +140,32 @@ export const SettingsDialog = ({
           Quality Preset
         </Label>
         <RadioGroup
-          value={draft.qualityLevel}
+          value={draft.qualityMode === "auto" ? "auto" : draft.qualityLevel}
           onValueChange={(v) => {
             soundManager.playMenuClick();
-            updateDraft({ qualityLevel: v as QualityLevel });
+            if (v === "auto") {
+              updateDraft({ qualityMode: "auto" });
+            } else {
+              updateDraft({ qualityMode: "manual", qualityLevel: v as QualityLevel });
+            }
           }}
           className="space-y-1.5"
         >
+          <div className="flex items-start space-x-2">
+            <RadioGroupItem value="auto" id="q-auto" className="mt-0.5" />
+            <div className="flex flex-col">
+              <Label
+                htmlFor="q-auto"
+                className="cursor-pointer retro-pixel-text text-xs"
+                style={{ color: "hsl(0, 0%, 85%)" }}
+              >
+                Auto (recommended)
+              </Label>
+              <span className="retro-pixel-text text-[9px]" style={{ color: "hsl(0, 0%, 55%)" }}>
+                Adjusts quality automatically based on FPS
+              </span>
+            </div>
+          </div>
           {QUALITY_LEVELS.map((q) => (
             <div key={q.value} className="flex items-start space-x-2">
               <RadioGroupItem value={q.value} id={`q-${q.value}`} className="mt-0.5" />
@@ -165,10 +184,16 @@ export const SettingsDialog = ({
             </div>
           ))}
         </RadioGroup>
+        {lockedToLow && (
+          <p className="retro-pixel-text text-[9px] mt-1" style={{ color: "hsl(40, 90%, 60%)" }}>
+            Quality is locked to LOW this session due to low FPS — choosing a preset unlocks it.
+          </p>
+        )}
         <p className="retro-pixel-text text-[9px] mt-1" style={{ color: "hsl(0, 0%, 50%)" }}>
-          Press <strong>Q</strong> to cycle quality • <strong>Shift+Q</strong> toggle auto
+          Q: cycle quality • Shift+Q: toggle auto (desktop)
         </p>
       </div>
+
 
       {/* CRT */}
       <div className="flex items-center justify-between">
