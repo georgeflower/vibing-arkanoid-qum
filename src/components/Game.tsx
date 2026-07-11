@@ -215,16 +215,12 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
   // Parse resolution from settings — but do NOT resize a running game.
   // Only pick up new resolution values when we're not actively playing/paused;
-  // a mid-game change stays pending until the next game (see initGame consumption below).
+  // a mid-game change stays pending until the next game.
   const pendingResolutionRef = useRef<string>(gameSettingsData.canvasResolution);
   const [activeResolution, setActiveResolution] = useState<string>(gameSettingsData.canvasResolution);
   useEffect(() => {
     pendingResolutionRef.current = gameSettingsData.canvasResolution;
-    // Safe states to apply immediately (no game in progress)
-    if (gameState !== "playing" && gameState !== "paused") {
-      setActiveResolution(gameSettingsData.canvasResolution);
-    }
-  }, [gameSettingsData.canvasResolution, gameState]);
+  }, [gameSettingsData.canvasResolution]);
 
   const parsedResolution = useMemo(() => {
     const res = activeResolution;
@@ -233,6 +229,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     if (!w || !h) return undefined;
     return { width: w, height: h };
   }, [activeResolution]);
+
 
 
   // Centralized scaled constants
