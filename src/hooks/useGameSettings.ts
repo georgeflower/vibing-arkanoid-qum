@@ -12,10 +12,12 @@ export interface GameSettings {
   currentTrack: number;
   // Video
   qualityLevel: QualityLevel;
+  qualityMode: "auto" | "manual";
   crtEnabled: boolean;
   showFpsOverlay: boolean;
   canvasResolution: string; // derived from qualityLevel, not user-configurable
 }
+
 
 const STORAGE_KEY = "gameSettings";
 
