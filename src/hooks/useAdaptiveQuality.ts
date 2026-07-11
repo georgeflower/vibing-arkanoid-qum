@@ -299,10 +299,28 @@ export const useAdaptiveQuality = (options: AdaptiveQualityOptions = {}) => {
 
       if (!autoAdjustEnabled) return;
 
+      // Lockout escape hatch: sustained good FPS while locked to LOW clears the lock.
+      if (lockedToLow) {
+        if (fps >= highFpsThreshold) {
+          lockoutEscapeCounterRef.current++;
+          if (lockoutEscapeCounterRef.current >= 60) {
+            setLockedToLow(false);
+            lowQualityDropCountRef.current = 1;
+            lockoutEscapeCounterRef.current = 0;
+            console.log('[Performance] LOW-quality lockout cleared after 60s of sustained good FPS');
+          }
+        } else {
+          lockoutEscapeCounterRef.current = 0;
+        }
+      } else {
+        lockoutEscapeCounterRef.current = 0;
+      }
+
       fpsHistoryRef.current.push(fps);
       if (fpsHistoryRef.current.length > MAX_FPS_SAMPLES) {
         fpsHistoryRef.current.shift();
       }
+
 
       const isWarmingUp = fpsHistoryRef.current.length < MIN_WARMUP_SAMPLES;
       const isCoolingDown = now - lastAdjustmentTimeRef.current < adjustmentCooldownMs;
