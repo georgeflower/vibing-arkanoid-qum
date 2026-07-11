@@ -9205,9 +9205,14 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                     hideTrigger
                     onPauseMenuShow={() => setSettingsOpenFromPause(false)}
                     onSettingsSaved={(s) => {
-                      setQuality(s.qualityLevel);
                       updateGameSettings(s);
+                      if (s.qualityMode === "manual") {
+                        setQuality(s.qualityLevel);
+                      } else {
+                        setAutoAdjust(true);
+                      }
                     }}
+
                     portalContainer={fullscreenContainerRef.current}
                   />
                 )}
