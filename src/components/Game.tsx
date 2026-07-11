@@ -344,6 +344,15 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   // Level progress tracking
   const { updateMaxLevel } = useLevelProgress();
   const [gameState, setGameState] = useState<GameState>("ready");
+
+  // Promote pending resolution → active only when no game is in progress.
+  useEffect(() => {
+    if (gameState !== "playing" && gameState !== "paused") {
+      const pending = pendingResolutionRef.current;
+      setActiveResolution((prev) => (prev === pending ? prev : pending));
+    }
+  }, [gameState, gameSettingsData.canvasResolution]);
+
   // ═══ PHASE 1: bricks lives in world.bricks (engine/state.ts) ═══
   const bricks = world.bricks;
   const setBricks = useCallback((updater: Brick[] | ((prev: Brick[]) => Brick[])) => {
