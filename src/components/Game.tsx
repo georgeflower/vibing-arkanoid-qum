@@ -3369,17 +3369,22 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         toast.success(enabled ? "Music on" : "Music muted");
       } else if (e.key === "q" || e.key === "Q") {
         if (e.shiftKey) {
-          toggleAutoAdjust();
+          const nextAuto = !autoAdjustEnabled;
+          setAutoAdjust(nextAuto);
+          updateGameSettings({ qualityMode: nextAuto ? "auto" : "manual" });
+          saveGameSettings();
+          toast.success(nextAuto ? "Auto quality adjustment enabled" : "Auto quality adjustment disabled");
         } else {
           const levels: Array<"high" | "medium" | "low" | "potato"> = ["high", "medium", "low", "potato"];
           const currentIndex = levels.indexOf(quality);
           const nextIndex = (currentIndex + 1) % levels.length;
           const nextQuality = levels[nextIndex];
           setQuality(nextQuality);
-          updateGameSettings({ qualityLevel: nextQuality });
+          updateGameSettings({ qualityLevel: nextQuality, qualityMode: "manual" });
           saveGameSettings();
         }
       }
+
 
       // ═══════════════════════════════════════════════════════════════
       // ████████╗ DEBUG KEYBOARD CONTROLS - REMOVE BEFORE PRODUCTION ████████╗
