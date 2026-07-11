@@ -63,7 +63,9 @@ export const SettingsDialog = ({
   onPauseMenuShow,
   onSettingsSaved,
   portalContainer,
+  lockedToLow = false,
 }: SettingsDialogProps) => {
+
   const { settings, updateSettings, saveSettings, resetSoundDefaults, resetVideoDefaults } = useGameSettings();
   const [internalOpen, setInternalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<TabId>("video");
