@@ -401,12 +401,24 @@ export const useAdaptiveQuality = (options: AdaptiveQualityOptions = {}) => {
     persistQuality(capped);
     fpsHistoryRef.current = [];
     lastAdjustmentTimeRef.current = performance.now();
-    // Manual pick clears any lockout and switches to manual mode.
     lowQualityDropCountRef.current = 0;
     lockoutEscapeCounterRef.current = 0;
     setLockedToLow(false);
     setAutoAdjustEnabled(false);
     toast.success(`Quality set to ${capped}`);
+  }, []);
+
+  // Silent version of setManualQuality — no toast (used by reactive settings sync).
+  const applyManualQuality = useCallback((newQuality: QualityLevel) => {
+    const capped = !ENABLE_HIGH_QUALITY && newQuality === "high" ? "medium" : newQuality;
+    setQuality(capped);
+    persistQuality(capped);
+    fpsHistoryRef.current = [];
+    lastAdjustmentTimeRef.current = performance.now();
+    lowQualityDropCountRef.current = 0;
+    lockoutEscapeCounterRef.current = 0;
+    setLockedToLow(false);
+    setAutoAdjustEnabled(false);
   }, []);
 
   const toggleAutoAdjust = useCallback(() => {
@@ -422,11 +434,14 @@ export const useAdaptiveQuality = (options: AdaptiveQualityOptions = {}) => {
   }, []);
 
   const setAutoAdjust = useCallback((enabled: boolean) => {
-    setAutoAdjustEnabled(enabled);
-    if (enabled) {
-      fpsHistoryRef.current = [];
-      lastAdjustmentTimeRef.current = performance.now();
-    }
+    setAutoAdjustEnabled((prev) => {
+      if (prev === enabled) return prev;
+      if (enabled) {
+        fpsHistoryRef.current = [];
+        lastAdjustmentTimeRef.current = performance.now();
+      }
+      return enabled;
+    });
   }, []);
 
   const resetQualityLockout = useCallback(() => {
