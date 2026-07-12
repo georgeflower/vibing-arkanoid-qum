@@ -115,8 +115,12 @@ export const SettingsDialog = ({
     // Commit draft to real settings and persist
     updateSettings(draft);
     saveSettings(draft);
+    if (draft.musicEnabled) {
+      soundManager.setCurrentTrack(draft.currentTrack);
+    }
     onSettingsSaved?.(draft);
     soundManager.playMenuClick();
+
 
     // Close dialog
     if (isControlled) {
