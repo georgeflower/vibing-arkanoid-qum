@@ -84,8 +84,10 @@ async function saveSettingsToCloud(settings: GameSettings): Promise<void> {
     if (!session) return;
     await supabase
       .from("player_profiles")
-      .update({ settings_json: settings as any })
-      .eq("user_id", session.user.id);
+      .upsert(
+        { user_id: session.user.id, settings_json: settings as any, display_name: session.user.email ?? "Player" } as any,
+        { onConflict: "user_id" },
+      );
   } catch {}
 }
 
