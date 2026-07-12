@@ -9219,11 +9219,11 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                     onPauseMenuShow={() => setSettingsOpenFromPause(false)}
                     onSettingsSaved={(s) => {
                       updateGameSettings(s);
-                      if (s.qualityMode === "manual") {
-                        setQuality(s.qualityLevel);
-                      } else {
-                        setAutoAdjust(true);
-                      }
+                      alwaysToast.success(
+                        s.qualityMode === "auto"
+                          ? "Quality: Auto"
+                          : `Quality set to ${s.qualityLevel}`,
+                      );
                     }}
 
                     portalContainer={fullscreenContainerRef.current}
@@ -9242,11 +9242,16 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                   gameLoopRef={gameLoopRef}
                   musicEnabled={musicEnabled}
                   setMusicEnabled={setMusicEnabled}
+                  onMusicToggled={(enabled) => {
+                    updateGameSettings({ musicEnabled: enabled });
+                    saveGameSettings();
+                  }}
                   showFullscreenPrompt={showFullscreenPrompt}
                   onFullscreenPromptClick={handleFullscreenPromptClick}
                   showDebugDashboard={showDebugDashboard}
                   setShowDebugDashboard={setShowDebugDashboard}
                 />
+
 
                 {/* ═══════════════════════════════════════════════════════════════
                      ████████╗ DEBUG UI COMPONENTS - REMOVE BEFORE PRODUCTION ████████╗
