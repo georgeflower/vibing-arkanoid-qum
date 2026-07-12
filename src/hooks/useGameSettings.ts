@@ -16,6 +16,7 @@ export interface GameSettings {
   crtEnabled: boolean;
   showFpsOverlay: boolean;
   canvasResolution: string; // derived from qualityLevel, not user-configurable
+  updatedAt?: number;
 }
 
 
