@@ -255,13 +255,11 @@ export const useAdaptiveQuality = (options: AdaptiveQualityOptions = {}) => {
     }
   }, [hasIntegratedGPU]);
 
-  const getQualitySettings = useCallback((): QualitySettings => {
-    return {
-      level: quality,
-      autoAdjust: autoAdjustEnabled,
-      ...QUALITY_PRESETS[quality],
-    };
-  }, [quality, autoAdjustEnabled]);
+  const qualitySettings = useMemo<QualitySettings>(() => ({
+    level: quality,
+    autoAdjust: autoAdjustEnabled,
+    ...QUALITY_PRESETS[quality],
+  }), [quality, autoAdjustEnabled]);
 
   const updateFps = useCallback(
     (fps: number) => {
