@@ -47,6 +47,7 @@ export const MobileGameControls = ({
   gameLoopRef,
   musicEnabled,
   setMusicEnabled,
+  onMusicToggled,
   showFullscreenPrompt,
   onFullscreenPromptClick,
   showDebugDashboard,
