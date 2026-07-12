@@ -1794,7 +1794,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   );
 
   // Adaptive quality system
-  const { quality, qualitySettings, updateFps, setQuality, applyQualitySilently, toggleAutoAdjust, setAutoAdjust, autoAdjustEnabled, resetQualityLockout, lockedToLow } =
+  const { quality, qualitySettings, updateFps, setQuality, applyQualitySilently, applyManualQuality, toggleAutoAdjust, setAutoAdjust, autoAdjustEnabled, resetQualityLockout, lockedToLow } =
     useAdaptiveQuality({
       initialQuality: ENABLE_HIGH_QUALITY ? "high" : "medium",
       autoAdjust: gameSettingsData.qualityMode !== "manual",
@@ -1806,22 +1806,18 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       isFullscreen,
     });
 
-  // ═══ One-time mount sync: if user had a manual quality saved, apply it silently ═══
-  const initialQualitySyncRef = useRef(false);
+  // ═══ Reactive sync of persisted quality settings → adaptive hook ═══
   useEffect(() => {
-    if (initialQualitySyncRef.current) return;
-    initialQualitySyncRef.current = true;
     if (gameSettingsData.qualityMode === "manual" && gameSettingsData.qualityLevel) {
-      applyQualitySilently(gameSettingsData.qualityLevel);
+      if (gameSettingsData.qualityLevel !== quality) {
+        applyManualQuality(gameSettingsData.qualityLevel);
+      } else {
+        setAutoAdjust(false);
+      }
+    } else {
+      setAutoAdjust(true);
     }
-    // Intentionally read once; changes are handled by onSettingsSaved and Q-key.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // ═══ Keep auto-adjust flag synced when the user toggles mode via settings ═══
-  useEffect(() => {
-    setAutoAdjust(gameSettingsData.qualityMode !== "manual");
-  }, [gameSettingsData.qualityMode, setAutoAdjust]);
+  }, [gameSettingsData.qualityMode, gameSettingsData.qualityLevel, quality, applyManualQuality, setAutoAdjust]);
 
 
   // ═══ Sync React state → renderState singleton (for decoupled canvas rendering) ═══
