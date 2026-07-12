@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect } from "react";
 import type { QualityLevel } from "@/hooks/useAdaptiveQuality";
 import { soundManager } from "@/utils/sounds";
 import { supabase } from "@/integrations/supabase/client";
