@@ -2148,11 +2148,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
   // createHighScoreParticles removed — replaced by particlePool.acquireForHighScore
 
-  // Initialize sound settings - always enabled
-  useEffect(() => {
-    soundManager.setMusicEnabled(true);
-    soundManager.setSfxEnabled(true);
-  }, []);
+  // (Sound settings are applied by useGameSettings from persisted values.)
 
   // Cross-platform swipe-to-pause gesture (works on both iOS and Android)
   useSwipeGesture(
