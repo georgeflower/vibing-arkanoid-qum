@@ -16,6 +16,7 @@ interface MobileGameControlsProps {
   // Music control
   musicEnabled: boolean;
   setMusicEnabled: (enabled: boolean) => void;
+  onMusicToggled?: (enabled: boolean) => void;
 
   // Fullscreen
   showFullscreenPrompt: boolean;
