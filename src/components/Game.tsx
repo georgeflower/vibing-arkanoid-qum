@@ -3377,6 +3377,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         }
       } else if (e.key === "m" || e.key === "M") {
         const enabled = soundManager.toggleMute();
+        updateGameSettings({ musicEnabled: enabled });
+        saveGameSettings();
         toast.success(enabled ? "Music on" : "Music muted");
       } else if (e.key === "q" || e.key === "Q") {
         if (e.shiftKey) {
