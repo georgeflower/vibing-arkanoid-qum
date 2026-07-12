@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect } from "react";
 import type { QualityLevel } from "@/hooks/useAdaptiveQuality";
 import { soundManager } from "@/utils/sounds";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,6 +16,7 @@ export interface GameSettings {
   crtEnabled: boolean;
   showFpsOverlay: boolean;
   canvasResolution: string; // derived from qualityLevel, not user-configurable
+  updatedAt?: number;
 }
 
 
@@ -83,8 +84,10 @@ async function saveSettingsToCloud(settings: GameSettings): Promise<void> {
     if (!session) return;
     await supabase
       .from("player_profiles")
-      .update({ settings_json: settings as any })
-      .eq("user_id", session.user.id);
+      .upsert(
+        { user_id: session.user.id, settings_json: settings as any } as any,
+        { onConflict: "user_id" },
+      );
   } catch {}
 }
 
@@ -113,18 +116,25 @@ export function parseResolution(res: string): { width: number; height: number } 
   return { width: w || 850, height: h || 650 };
 }
 
+let cloudLoadDone = false;
+
 export const useGameSettings = () => {
   const [settings, setSettingsRaw] = useState<GameSettings>(loadSettings);
-  const cloudLoadedRef = useRef(false);
 
-  // Load from cloud on mount (prefer cloud)
+  // Load from cloud once per browser session (prefer newer of local vs cloud)
   useEffect(() => {
-    if (cloudLoadedRef.current) return;
-    cloudLoadedRef.current = true;
+    if (cloudLoadDone) return;
+    cloudLoadDone = true;
     loadSettingsFromCloud().then((cloud) => {
-      if (cloud) {
+      if (!cloud) return;
+      const local = loadSettings();
+      if ((cloud.updatedAt ?? 0) > (local.updatedAt ?? 0)) {
         setSettingsRaw(cloud);
         saveSettingsToLocal(cloud);
+        window.dispatchEvent(new CustomEvent('gameSettingsChanged'));
+      } else {
+        // Local is newer or equal — push local up to cloud so it doesn't win next reload
+        saveSettingsToCloud(local);
       }
     });
   }, []);
@@ -146,7 +156,8 @@ export const useGameSettings = () => {
   // Explicit save: writes to localStorage + cloud
   const saveSettings = useCallback((settingsToSave?: GameSettings) => {
     setSettingsRaw((prev) => {
-      const toSave = settingsToSave ?? prev;
+      const base = settingsToSave ?? prev;
+      const toSave: GameSettings = { ...base, updatedAt: Date.now() };
       saveSettingsToLocal(toSave);
       saveSettingsToCloud(toSave);
       window.dispatchEvent(new CustomEvent('gameSettingsChanged'));

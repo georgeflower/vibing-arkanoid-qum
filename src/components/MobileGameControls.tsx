@@ -16,6 +16,7 @@ interface MobileGameControlsProps {
   // Music control
   musicEnabled: boolean;
   setMusicEnabled: (enabled: boolean) => void;
+  onMusicToggled?: (enabled: boolean) => void;
 
   // Fullscreen
   showFullscreenPrompt: boolean;
@@ -46,6 +47,7 @@ export const MobileGameControls = ({
   gameLoopRef,
   musicEnabled,
   setMusicEnabled,
+  onMusicToggled,
   showFullscreenPrompt,
   onFullscreenPromptClick,
   showDebugDashboard,
@@ -113,6 +115,7 @@ export const MobileGameControls = ({
               if (newState) {
                 soundManager.playBackgroundMusic();
               }
+              onMusicToggled?.(newState);
             }}
             onClick={() => {
               const newState = !musicEnabled;
@@ -121,6 +124,7 @@ export const MobileGameControls = ({
               if (newState) {
                 soundManager.playBackgroundMusic();
               }
+              onMusicToggled?.(newState);
             }}
             className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-transparent border-2 border-white/30 flex items-center justify-center shadow-lg active:scale-95 hover:border-white/50 transition-all touch-manipulation"
             aria-label="Toggle Music"
