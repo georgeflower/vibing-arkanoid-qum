@@ -301,7 +301,6 @@ export const SettingsDialog = ({
           onValueChange={(v) => {
             const idx = parseInt(v);
             updateDraft({ currentTrack: idx });
-            soundManager.setCurrentTrack(idx);
           }}
           disabled={!draft.musicEnabled}
           className="space-y-1 max-h-40 overflow-y-auto custom-scrollbar pr-1"
