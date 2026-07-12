@@ -462,10 +462,11 @@ export const useAdaptiveQuality = (options: AdaptiveQualityOptions = {}) => {
 
   return {
     quality,
-    qualitySettings: getQualitySettings(),
+    qualitySettings,
     updateFps,
     setQuality: setManualQuality,
     applyQualitySilently,
+    applyManualQuality,
     autoAdjustEnabled,
     toggleAutoAdjust,
     setAutoAdjust,
@@ -473,6 +474,5 @@ export const useAdaptiveQuality = (options: AdaptiveQualityOptions = {}) => {
     resetQualityLockout,
     lockedToLow,
     isIntegratedGPU: hasIntegratedGPU,
-
   };
 };
