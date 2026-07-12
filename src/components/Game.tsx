@@ -14,7 +14,7 @@ import { BossRushScoreEntry } from "./BossRushScoreEntry";
 import { BossRushStatsOverlay } from "./BossRushStatsOverlay";
 import { useBossRushScores } from "@/hooks/useBossRushScores";
 import { Button } from "@/components/ui/button";
-import { debugToast as toast } from "@/utils/debugToast";
+import { debugToast as toast, alwaysToast } from "@/utils/debugToast";
 import { useServiceWorkerUpdate } from "@/hooks/useServiceWorkerUpdate";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { MobileGameControls } from "./MobileGameControls";
