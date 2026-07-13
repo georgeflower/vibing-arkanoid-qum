@@ -1819,6 +1819,7 @@ export function renderFrame(
     _particleBucketCount = 0;
     for (let index = 0; index < pooledParticles.length; index += particleStep) {
       const p = pooledParticles[index];
+      if (p.useCircle) continue;
       let bucket = _particleColorMap.get(p.color);
       if (!bucket) {
         if (_particleBucketCount >= _particleColorBuckets.length) {
