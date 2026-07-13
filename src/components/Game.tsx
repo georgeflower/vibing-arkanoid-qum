@@ -3035,6 +3035,18 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
   const handleTouchStart = useCallback(
     (e: TouchEvent) => {
+      // Interactive-element guard: let UI elements handle their own touches
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        target.closest("button, a, input, select, textarea, [role='button'], [data-no-game-touch]")
+      ) {
+        for (let i = 0; i < e.changedTouches.length; i++) {
+          uiTouchIdsRef.current.add(e.changedTouches[i].identifier);
+        }
+        return; // do not preventDefault — allow the UI to react
+      }
+
       // Don't process game input during tutorial - let TutorialOverlay handle it
       if (tutorialActive) return;
 
