@@ -1429,6 +1429,10 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
   const launchAngleDirectionRef = useRef(1);
   const animationFrameRef = useRef<number>();
+  const gameLoopFnRef = useRef<() => void>(() => {});
+  const gameLoopTickRef = useRef<() => void>(() => {
+    gameLoopFnRef.current();
+  });
   const nextBallId = useRef(1);
 
   // Track bricks destroyed this level for level 1 multiball rule
@@ -4528,7 +4532,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     const elapsed = frameNow - lastFrameTimeRef.current;
 
     if (elapsed < targetFrameTime) {
-      animationFrameRef.current = requestAnimationFrame(gameLoop);
+      animationFrameRef.current = requestAnimationFrame(gameLoopTickRef.current);
       lagDetectionRef.current.lastFrameEnd = frameNow;
       return;
     }
@@ -7350,7 +7354,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       }
     }
 
-    animationFrameRef.current = requestAnimationFrame(gameLoop);
+    animationFrameRef.current = requestAnimationFrame(gameLoopTickRef.current);
   }, [
     gameState,
     checkCollision,
@@ -7372,9 +7376,14 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     debugSettings,
   ]);
 
+  // Keep the trampoline pointed at the latest gameLoop without restarting the rAF chain
+  useEffect(() => {
+    gameLoopFnRef.current = gameLoop;
+  }, [gameLoop]);
+
   useEffect(() => {
     if (gameState === "playing") {
-      animationFrameRef.current = requestAnimationFrame(gameLoop);
+      animationFrameRef.current = requestAnimationFrame(gameLoopTickRef.current);
     } else {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
@@ -7385,7 +7394,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [gameState, gameLoop]);
+  }, [gameState]);
 
   // Separate useEffect for timer management - handle pause/resume
   // Include all pause-like states: paused, tutorial, boss rush stats overlay
