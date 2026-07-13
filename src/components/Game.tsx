@@ -3170,6 +3170,16 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   );
   const handleTouchMove = useCallback(
     (e: TouchEvent) => {
+      // Skip if all currently-changed touches originated on interactive UI elements
+      let hasGameTouch = false;
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        if (!uiTouchIdsRef.current.has(e.changedTouches[i].identifier)) {
+          hasGameTouch = true;
+          break;
+        }
+      }
+      if (!hasGameTouch) return; // let UI element receive the move
+
       const paddle = world.paddle; // live read from engine state
       if (!canvasRef.current || !paddle || gameState === "paused") return;
       e.preventDefault();
