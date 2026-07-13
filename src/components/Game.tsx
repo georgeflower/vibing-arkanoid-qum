@@ -1429,6 +1429,10 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
   const launchAngleDirectionRef = useRef(1);
   const animationFrameRef = useRef<number>();
+  const gameLoopFnRef = useRef<() => void>(() => {});
+  const gameLoopTickRef = useRef<() => void>(() => {
+    gameLoopFnRef.current();
+  });
   const nextBallId = useRef(1);
 
   // Track bricks destroyed this level for level 1 multiball rule
