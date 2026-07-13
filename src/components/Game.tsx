@@ -1456,6 +1456,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   const gameContainerRef = useRef<HTMLDivElement>(null);
   const gameAreaRef = useRef<HTMLDivElement>(null);
   const gameGlowRef = useRef<HTMLDivElement>(null);
+  // Touches that started on interactive UI elements — ignored for paddle control
+  const uiTouchIdsRef = useRef<Set<number>>(new Set());
   const timerStartedRef = useRef(false);
   const nextLevelRef = useRef<(() => void) | null>(null);
 
