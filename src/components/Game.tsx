@@ -1456,6 +1456,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   const gameContainerRef = useRef<HTMLDivElement>(null);
   const gameAreaRef = useRef<HTMLDivElement>(null);
   const gameGlowRef = useRef<HTMLDivElement>(null);
+  // Touches that started on interactive UI elements — ignored for paddle control
+  const uiTouchIdsRef = useRef<Set<number>>(new Set());
   const timerStartedRef = useRef(false);
   const nextLevelRef = useRef<(() => void) | null>(null);
 
@@ -3033,6 +3035,18 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
   const handleTouchStart = useCallback(
     (e: TouchEvent) => {
+      // Interactive-element guard: let UI elements handle their own touches
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        target.closest("button, a, input, select, textarea, [role='button'], [data-no-game-touch]")
+      ) {
+        for (let i = 0; i < e.changedTouches.length; i++) {
+          uiTouchIdsRef.current.add(e.changedTouches[i].identifier);
+        }
+        return; // do not preventDefault — allow the UI to react
+      }
+
       // Don't process game input during tutorial - let TutorialOverlay handle it
       if (tutorialActive) return;
 
@@ -3156,6 +3170,16 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   );
   const handleTouchMove = useCallback(
     (e: TouchEvent) => {
+      // Skip if all currently-changed touches originated on interactive UI elements
+      let hasGameTouch = false;
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        if (!uiTouchIdsRef.current.has(e.changedTouches[i].identifier)) {
+          hasGameTouch = true;
+          break;
+        }
+      }
+      if (!hasGameTouch) return; // let UI element receive the move
+
       const paddle = world.paddle; // live read from engine state
       if (!canvasRef.current || !paddle || gameState === "paused") return;
       e.preventDefault();
@@ -3240,10 +3264,15 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   const handleTouchEnd = useCallback((e: TouchEvent) => {
     // Clear active touches when they end
     for (let i = 0; i < e.changedTouches.length; i++) {
-      if (e.changedTouches[i].identifier === activeTouchRef.current) {
+      const id = e.changedTouches[i].identifier;
+      if (uiTouchIdsRef.current.has(id)) {
+        uiTouchIdsRef.current.delete(id);
+        continue; // don't touch paddle refs for UI-originated touches
+      }
+      if (id === activeTouchRef.current) {
         activeTouchRef.current = null;
       }
-      if (e.changedTouches[i].identifier === secondTouchRef.current) {
+      if (id === secondTouchRef.current) {
         secondTouchRef.current = null;
         if (ENABLE_DEBUG_FEATURES) {
           console.log("[Launch Debug] audioAndLaunchMode: default - Second finger released");
@@ -3586,13 +3615,21 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       }
     };
     canvas.addEventListener("mousemove", handleMouseMove);
-    canvas.addEventListener("touchstart", handleTouchStart, {
+    // Touch listeners attach to the outer gameplay container so touches anywhere on
+    // screen (including letterbox areas) steer the paddle. Fall back to canvas if
+    // the container ref isn't mounted yet.
+    const touchTarget: HTMLElement | HTMLCanvasElement =
+      gameContainerRef.current ?? canvas;
+    touchTarget.addEventListener("touchstart", handleTouchStart, {
       passive: false,
     });
-    canvas.addEventListener("touchmove", handleTouchMove, {
+    touchTarget.addEventListener("touchmove", handleTouchMove, {
       passive: false,
     });
-    canvas.addEventListener("touchend", handleTouchEnd, {
+    touchTarget.addEventListener("touchend", handleTouchEnd, {
+      passive: false,
+    });
+    touchTarget.addEventListener("touchcancel", handleTouchEnd, {
       passive: false,
     });
     canvas.addEventListener("click", handleClick);
@@ -3600,9 +3637,10 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     document.addEventListener("pointerlockchange", handlePointerLockChange);
     return () => {
       canvas.removeEventListener("mousemove", handleMouseMove);
-      canvas.removeEventListener("touchstart", handleTouchStart);
-      canvas.removeEventListener("touchend", handleTouchEnd);
-      canvas.removeEventListener("touchmove", handleTouchMove);
+      touchTarget.removeEventListener("touchstart", handleTouchStart);
+      touchTarget.removeEventListener("touchend", handleTouchEnd);
+      touchTarget.removeEventListener("touchcancel", handleTouchEnd);
+      touchTarget.removeEventListener("touchmove", handleTouchMove);
       canvas.removeEventListener("click", handleClick);
       window.removeEventListener("keydown", handleKeyPress);
       document.removeEventListener("pointerlockchange", handlePointerLockChange);
@@ -8816,6 +8854,108 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                       </div>
                     )}
 
+                    {/* Mobile Power-Up Timers - Absolute overlay so appearing/expiring does NOT reflow the game area */}
+                    {isMobileDevice &&
+                      paddle &&
+                      (bossStunnerEndTime || reflectShieldEndTime || homingBallEndTime || fireballEndTime) && (
+                        <div
+                          className="absolute flex items-center gap-3 retro-pixel-text text-xs font-bold pointer-events-none"
+                          style={{
+                            bottom: "8px",
+                            left: "50%",
+                            transform: "translateX(-50%)",
+                            zIndex: 20,
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {bossStunnerEndTime && Date.now() < bossStunnerEndTime && (
+                            <span
+                              style={{
+                                color: `hsl(${Math.max(0, 50 - (1 - (bossStunnerEndTime - Date.now()) / 5000) * 50)}, 100%, 50%)`,
+                                textShadow: "0 0 8px currentColor",
+                                transform: `scale(${1 + Math.sin(Date.now() * 0.04) * 0.1})`,
+                                display: "inline-block",
+                              }}
+                            >
+                              STUN: {((bossStunnerEndTime - Date.now()) / 1000).toFixed(1)}s
+                            </span>
+                          )}
+                          {reflectShieldEndTime && Date.now() < reflectShieldEndTime && (
+                            <span
+                              style={{
+                                color: `hsl(${Math.max(0, 50 - (1 - (reflectShieldEndTime - Date.now()) / 15000) * 50)}, 100%, 50%)`,
+                                textShadow: "0 0 8px currentColor",
+                                transform: `scale(${1 + Math.sin(Date.now() * 0.04) * 0.1})`,
+                                display: "inline-block",
+                              }}
+                            >
+                              REFLECT: {((reflectShieldEndTime - Date.now()) / 1000).toFixed(1)}s
+                            </span>
+                          )}
+                          {homingBallEndTime && Date.now() < homingBallEndTime && (
+                            <span
+                              style={{
+                                color: `hsl(${Math.max(0, 50 - (1 - (homingBallEndTime - Date.now()) / 8000) * 50)}, 100%, 50%)`,
+                                textShadow: "0 0 8px currentColor",
+                                transform: `scale(${1 + Math.sin(Date.now() * 0.04) * 0.1})`,
+                                display: "inline-block",
+                              }}
+                            >
+                              MAGNET: {((homingBallEndTime - Date.now()) / 1000).toFixed(1)}s
+                            </span>
+                          )}
+                          {fireballEndTime && Date.now() < fireballEndTime && (
+                            <span
+                              style={{
+                                color: `hsl(${Math.max(0, 30 - (1 - (fireballEndTime - Date.now()) / FIREBALL_DURATION) * 30)}, 100%, 50%)`,
+                                textShadow: "0 0 8px currentColor",
+                                transform: `scale(${1 + Math.sin(Date.now() * 0.04) * 0.1})`,
+                                display: "inline-block",
+                              }}
+                            >
+                              FIREBALL: {((fireballEndTime - Date.now()) / 1000).toFixed(1)}s
+                            </span>
+                          )}
+                        </div>
+                      )}
+
+                    {/* Mobile Bonus Letter Tutorial - Absolute overlay (no layout shift) */}
+                    {isMobileDevice &&
+                      bonusLetterFloatingText?.active &&
+                      bonusLetters.length > 0 &&
+                      (() => {
+                        const elapsed = Date.now() - bonusLetterFloatingText.startTime;
+                        const duration = 4000;
+
+                        if (elapsed >= duration) {
+                          setTimeout(() => setBonusLetterFloatingText(null), 0);
+                          return null;
+                        }
+
+                        const zoomPhase = (elapsed / 500) * Math.PI;
+                        const zoomScale = 1 + Math.sin(zoomPhase) * 0.3;
+                        const opacity =
+                          elapsed < 500 ? elapsed / 500 : elapsed > duration - 500 ? (duration - elapsed) / 500 : 1;
+
+                        return (
+                          <div
+                            className="absolute retro-pixel-text text-xs font-bold pointer-events-none"
+                            style={{
+                              bottom: "28px",
+                              left: "50%",
+                              transform: `translateX(-50%) scale(${zoomScale})`,
+                              zIndex: 20,
+                              color: "hsl(48, 100%, 60%)",
+                              textShadow: "0 0 10px hsl(48, 100%, 60%), 0 0 20px hsl(48, 100%, 50%)",
+                              opacity,
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            Catch all letters for megabonus!
+                          </div>
+                        );
+                      })()}
+
                     {/* ═══════════════════════════════════════════════════════════════
                          ████████╗ DEBUG OVERLAYS - REMOVE BEFORE PRODUCTION ████████╗
                          ═══════════════════════════════════════════════════════════════ */}
@@ -9491,94 +9631,9 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                 </div>
               </div>
 
-              {/* Mobile Power-Up Timers - Outside scaled container for correct positioning */}
-              {isMobileDevice &&
-                paddle &&
-                (bossStunnerEndTime || reflectShieldEndTime || homingBallEndTime || fireballEndTime) && (
-                  <div className="flex justify-center items-center gap-3 py-2 retro-pixel-text text-xs font-bold pointer-events-none">
-                    {bossStunnerEndTime && Date.now() < bossStunnerEndTime && (
-                      <span
-                        style={{
-                          color: `hsl(${Math.max(0, 50 - (1 - (bossStunnerEndTime - Date.now()) / 5000) * 50)}, 100%, 50%)`,
-                          textShadow: "0 0 8px currentColor",
-                          transform: `scale(${1 + Math.sin(Date.now() * 0.04) * 0.1})`,
-                          display: "inline-block",
-                        }}
-                      >
-                        STUN: {((bossStunnerEndTime - Date.now()) / 1000).toFixed(1)}s
-                      </span>
-                    )}
-                    {reflectShieldEndTime && Date.now() < reflectShieldEndTime && (
-                      <span
-                        style={{
-                          color: `hsl(${Math.max(0, 50 - (1 - (reflectShieldEndTime - Date.now()) / 15000) * 50)}, 100%, 50%)`,
-                          textShadow: "0 0 8px currentColor",
-                          transform: `scale(${1 + Math.sin(Date.now() * 0.04) * 0.1})`,
-                          display: "inline-block",
-                        }}
-                      >
-                        REFLECT: {((reflectShieldEndTime - Date.now()) / 1000).toFixed(1)}s
-                      </span>
-                    )}
-                    {homingBallEndTime && Date.now() < homingBallEndTime && (
-                      <span
-                        style={{
-                          color: `hsl(${Math.max(0, 50 - (1 - (homingBallEndTime - Date.now()) / 8000) * 50)}, 100%, 50%)`,
-                          textShadow: "0 0 8px currentColor",
-                          transform: `scale(${1 + Math.sin(Date.now() * 0.04) * 0.1})`,
-                          display: "inline-block",
-                        }}
-                      >
-                        MAGNET: {((homingBallEndTime - Date.now()) / 1000).toFixed(1)}s
-                      </span>
-                    )}
-                    {fireballEndTime && Date.now() < fireballEndTime && (
-                      <span
-                        style={{
-                          color: `hsl(${Math.max(0, 30 - (1 - (fireballEndTime - Date.now()) / FIREBALL_DURATION) * 30)}, 100%, 50%)`,
-                          textShadow: "0 0 8px currentColor",
-                          transform: `scale(${1 + Math.sin(Date.now() * 0.04) * 0.1})`,
-                          display: "inline-block",
-                        }}
-                      >
-                        FIREBALL: {((fireballEndTime - Date.now()) / 1000).toFixed(1)}s
-                      </span>
-                    )}
-                  </div>
-                )}
+              {/* Mobile Power-Up Timers and Bonus Letter Tutorial now render as absolute overlays inside .game-glow (see above) to avoid reflowing the game area. */}
 
-              {/* Mobile Bonus Letter Tutorial - Outside scaled container */}
-              {isMobileDevice &&
-                bonusLetterFloatingText?.active &&
-                bonusLetters.length > 0 &&
-                (() => {
-                  const elapsed = Date.now() - bonusLetterFloatingText.startTime;
-                  const duration = 4000;
 
-                  if (elapsed >= duration) {
-                    setTimeout(() => setBonusLetterFloatingText(null), 0);
-                    return null;
-                  }
-
-                  const zoomPhase = (elapsed / 500) * Math.PI;
-                  const zoomScale = 1 + Math.sin(zoomPhase) * 0.3;
-                  const opacity =
-                    elapsed < 500 ? elapsed / 500 : elapsed > duration - 500 ? (duration - elapsed) / 500 : 1;
-
-                  return (
-                    <div
-                      className="flex justify-center py-1 retro-pixel-text text-xs font-bold pointer-events-none"
-                      style={{
-                        color: "hsl(48, 100%, 60%)",
-                        textShadow: "0 0 10px hsl(48, 100%, 60%), 0 0 20px hsl(48, 100%, 50%)",
-                        transform: `scale(${zoomScale})`,
-                        opacity,
-                      }}
-                    >
-                      Catch all letters for megabonus!
-                    </div>
-                  );
-                })()}
 
               {/* Compact HUD Overlay - Shown when frames are hidden */}
               {!framesVisible && (
