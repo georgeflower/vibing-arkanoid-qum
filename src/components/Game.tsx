@@ -3264,10 +3264,15 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   const handleTouchEnd = useCallback((e: TouchEvent) => {
     // Clear active touches when they end
     for (let i = 0; i < e.changedTouches.length; i++) {
-      if (e.changedTouches[i].identifier === activeTouchRef.current) {
+      const id = e.changedTouches[i].identifier;
+      if (uiTouchIdsRef.current.has(id)) {
+        uiTouchIdsRef.current.delete(id);
+        continue; // don't touch paddle refs for UI-originated touches
+      }
+      if (id === activeTouchRef.current) {
         activeTouchRef.current = null;
       }
-      if (e.changedTouches[i].identifier === secondTouchRef.current) {
+      if (id === secondTouchRef.current) {
         secondTouchRef.current = null;
         if (ENABLE_DEBUG_FEATURES) {
           console.log("[Launch Debug] audioAndLaunchMode: default - Second finger released");
