@@ -8816,6 +8816,108 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                       </div>
                     )}
 
+                    {/* Mobile Power-Up Timers - Absolute overlay so appearing/expiring does NOT reflow the game area */}
+                    {isMobileDevice &&
+                      paddle &&
+                      (bossStunnerEndTime || reflectShieldEndTime || homingBallEndTime || fireballEndTime) && (
+                        <div
+                          className="absolute flex items-center gap-3 retro-pixel-text text-xs font-bold pointer-events-none"
+                          style={{
+                            bottom: "8px",
+                            left: "50%",
+                            transform: "translateX(-50%)",
+                            zIndex: 20,
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {bossStunnerEndTime && Date.now() < bossStunnerEndTime && (
+                            <span
+                              style={{
+                                color: `hsl(${Math.max(0, 50 - (1 - (bossStunnerEndTime - Date.now()) / 5000) * 50)}, 100%, 50%)`,
+                                textShadow: "0 0 8px currentColor",
+                                transform: `scale(${1 + Math.sin(Date.now() * 0.04) * 0.1})`,
+                                display: "inline-block",
+                              }}
+                            >
+                              STUN: {((bossStunnerEndTime - Date.now()) / 1000).toFixed(1)}s
+                            </span>
+                          )}
+                          {reflectShieldEndTime && Date.now() < reflectShieldEndTime && (
+                            <span
+                              style={{
+                                color: `hsl(${Math.max(0, 50 - (1 - (reflectShieldEndTime - Date.now()) / 15000) * 50)}, 100%, 50%)`,
+                                textShadow: "0 0 8px currentColor",
+                                transform: `scale(${1 + Math.sin(Date.now() * 0.04) * 0.1})`,
+                                display: "inline-block",
+                              }}
+                            >
+                              REFLECT: {((reflectShieldEndTime - Date.now()) / 1000).toFixed(1)}s
+                            </span>
+                          )}
+                          {homingBallEndTime && Date.now() < homingBallEndTime && (
+                            <span
+                              style={{
+                                color: `hsl(${Math.max(0, 50 - (1 - (homingBallEndTime - Date.now()) / 8000) * 50)}, 100%, 50%)`,
+                                textShadow: "0 0 8px currentColor",
+                                transform: `scale(${1 + Math.sin(Date.now() * 0.04) * 0.1})`,
+                                display: "inline-block",
+                              }}
+                            >
+                              MAGNET: {((homingBallEndTime - Date.now()) / 1000).toFixed(1)}s
+                            </span>
+                          )}
+                          {fireballEndTime && Date.now() < fireballEndTime && (
+                            <span
+                              style={{
+                                color: `hsl(${Math.max(0, 30 - (1 - (fireballEndTime - Date.now()) / FIREBALL_DURATION) * 30)}, 100%, 50%)`,
+                                textShadow: "0 0 8px currentColor",
+                                transform: `scale(${1 + Math.sin(Date.now() * 0.04) * 0.1})`,
+                                display: "inline-block",
+                              }}
+                            >
+                              FIREBALL: {((fireballEndTime - Date.now()) / 1000).toFixed(1)}s
+                            </span>
+                          )}
+                        </div>
+                      )}
+
+                    {/* Mobile Bonus Letter Tutorial - Absolute overlay (no layout shift) */}
+                    {isMobileDevice &&
+                      bonusLetterFloatingText?.active &&
+                      bonusLetters.length > 0 &&
+                      (() => {
+                        const elapsed = Date.now() - bonusLetterFloatingText.startTime;
+                        const duration = 4000;
+
+                        if (elapsed >= duration) {
+                          setTimeout(() => setBonusLetterFloatingText(null), 0);
+                          return null;
+                        }
+
+                        const zoomPhase = (elapsed / 500) * Math.PI;
+                        const zoomScale = 1 + Math.sin(zoomPhase) * 0.3;
+                        const opacity =
+                          elapsed < 500 ? elapsed / 500 : elapsed > duration - 500 ? (duration - elapsed) / 500 : 1;
+
+                        return (
+                          <div
+                            className="absolute retro-pixel-text text-xs font-bold pointer-events-none"
+                            style={{
+                              bottom: "28px",
+                              left: "50%",
+                              transform: `translateX(-50%) scale(${zoomScale})`,
+                              zIndex: 20,
+                              color: "hsl(48, 100%, 60%)",
+                              textShadow: "0 0 10px hsl(48, 100%, 60%), 0 0 20px hsl(48, 100%, 50%)",
+                              opacity,
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            Catch all letters for megabonus!
+                          </div>
+                        );
+                      })()}
+
                     {/* ═══════════════════════════════════════════════════════════════
                          ████████╗ DEBUG OVERLAYS - REMOVE BEFORE PRODUCTION ████████╗
                          ═══════════════════════════════════════════════════════════════ */}
