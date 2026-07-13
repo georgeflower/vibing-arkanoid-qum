@@ -3615,13 +3615,21 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       }
     };
     canvas.addEventListener("mousemove", handleMouseMove);
-    canvas.addEventListener("touchstart", handleTouchStart, {
+    // Touch listeners attach to the outer gameplay container so touches anywhere on
+    // screen (including letterbox areas) steer the paddle. Fall back to canvas if
+    // the container ref isn't mounted yet.
+    const touchTarget: HTMLElement | HTMLCanvasElement =
+      gameContainerRef.current ?? canvas;
+    touchTarget.addEventListener("touchstart", handleTouchStart, {
       passive: false,
     });
-    canvas.addEventListener("touchmove", handleTouchMove, {
+    touchTarget.addEventListener("touchmove", handleTouchMove, {
       passive: false,
     });
-    canvas.addEventListener("touchend", handleTouchEnd, {
+    touchTarget.addEventListener("touchend", handleTouchEnd, {
+      passive: false,
+    });
+    touchTarget.addEventListener("touchcancel", handleTouchEnd, {
       passive: false,
     });
     canvas.addEventListener("click", handleClick);
@@ -3629,9 +3637,10 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     document.addEventListener("pointerlockchange", handlePointerLockChange);
     return () => {
       canvas.removeEventListener("mousemove", handleMouseMove);
-      canvas.removeEventListener("touchstart", handleTouchStart);
-      canvas.removeEventListener("touchend", handleTouchEnd);
-      canvas.removeEventListener("touchmove", handleTouchMove);
+      touchTarget.removeEventListener("touchstart", handleTouchStart);
+      touchTarget.removeEventListener("touchend", handleTouchEnd);
+      touchTarget.removeEventListener("touchcancel", handleTouchEnd);
+      touchTarget.removeEventListener("touchmove", handleTouchMove);
       canvas.removeEventListener("click", handleClick);
       window.removeEventListener("keydown", handleKeyPress);
       document.removeEventListener("pointerlockchange", handlePointerLockChange);
