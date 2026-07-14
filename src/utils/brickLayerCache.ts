@@ -22,6 +22,23 @@ export class BrickRenderer {
   private cache: BrickLayerCacheData | null = null;
   private crackedImages: HTMLImageElement[] = [];
   private isInitialized = false;
+  private prevStates: Map<number, number> = new Map(); // id -> encoded state
+  private metalByPos: Map<string, Brick> = new Map(); // "x,y" -> visible metal brick
+
+  private posKey(x: number, y: number): string {
+    return Math.round(x) + "," + Math.round(y);
+  }
+
+  private rebuildMetalIndex(bricks: Brick[]): void {
+    this.metalByPos.clear();
+    for (let i = 0; i < bricks.length; i++) {
+      const b = bricks[i];
+      if (b.visible && b.type === "metal") {
+        this.metalByPos.set(this.posKey(b.x, b.y), b);
+      }
+    }
+  }
+
 
   /**
    * Initialize the offscreen canvas
