@@ -95,7 +95,7 @@ class SoundManager {
       if (startVolume <= 0 || audio.paused) {
         audio.pause();
         audio.currentTime = 0;
-        audio.volume = startVolume || this.musicVolume;
+        audio.volume = this.musicVolume;
         resolve();
         return;
       }
@@ -110,12 +110,13 @@ class SoundManager {
           clearInterval(fade);
           audio.pause();
           audio.currentTime = 0;
-          audio.volume = startVolume;
+          audio.volume = this.musicVolume;
           resolve();
         }
       }, stepTime);
     });
   }
+
 
   stopBackgroundMusic() {
     this.musicTracks.forEach(track => {
@@ -1007,30 +1008,29 @@ class SoundManager {
 
   playBossIntroSound() {
     if (!this.sfxEnabled) return;
-    
+
     // Duck music volume by 80% during boss intro
-    const originalVolumes: number[] = [];
-    this.musicTracks.forEach((track, index) => {
+    this.musicTracks.forEach((track) => {
       if (track) {
-        originalVolumes[index] = track.volume;
-        track.volume = track.volume * 0.2; // Reduce to 20%
+        track.volume = this.musicVolume * 0.2;
       }
     });
-    
+
     const audio = new Audio('/siren-alarm-boss.ogg');
-    audio.volume = 0.7;
-    
+    audio.volume = Math.min(1, 0.7 * this.sfxVolume);
+
     // Restore music volume after boss intro sound ends
     audio.addEventListener('ended', () => {
-      this.musicTracks.forEach((track, index) => {
-        if (track && originalVolumes[index] !== undefined) {
-          track.volume = originalVolumes[index];
+      this.musicTracks.forEach((track) => {
+        if (track) {
+          track.volume = this.musicVolume;
         }
       });
     });
-    
+
     audio.play().catch(err => console.log('Boss intro sound failed:', err));
   }
+
 
   playPyramidBulletSound() {
     if (!this.sfxEnabled) return;
@@ -1318,21 +1318,35 @@ class SoundManager {
   stopBossMusic() {
     if (this.bossMusic && !this.bossMusic.paused) {
       const bossRef = this.bossMusic;
+      const sourceRef = this.bossMusicSource;
+      const analyserRef = this.analyser;
       this.fadeOutAudio(bossRef).then(() => {
         bossRef.pause();
+        try { sourceRef?.disconnect(); } catch {}
+        try { analyserRef?.disconnect(); } catch {}
         if (this.bossMusic === bossRef) {
           this.bossMusic = null;
         }
       });
+      this.analyser = null;
+      this.frequencyData = null;
+      this.bossMusicSource = null;
     } else if (this.bossMusic) {
       this.bossMusic.pause();
       this.bossMusic.currentTime = 0;
+      try { this.bossMusicSource?.disconnect(); } catch {}
+      try { this.analyser?.disconnect(); } catch {}
       this.bossMusic = null;
+      this.analyser = null;
+      this.frequencyData = null;
+      this.bossMusicSource = null;
+    } else {
+      this.analyser = null;
+      this.frequencyData = null;
+      this.bossMusicSource = null;
     }
-    this.analyser = null;
-    this.frequencyData = null;
-    this.bossMusicSource = null;
   }
+
 
   getBassEnergy(): number {
     if (!this.analyser || !this.frequencyData) return 0;
