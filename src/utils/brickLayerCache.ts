@@ -67,10 +67,10 @@ export class BrickRenderer {
       canvas,
       ctx,
       version: 0,
-      lastBrickHash: "",
       width,
       height
     };
+
     this.isInitialized = true;
   }
 
