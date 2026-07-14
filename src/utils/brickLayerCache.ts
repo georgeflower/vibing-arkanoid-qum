@@ -13,10 +13,10 @@ interface BrickLayerCacheData {
   canvas: OffscreenCanvas | HTMLCanvasElement;
   ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
   version: number;
-  lastBrickHash: string;
   width: number;
   height: number;
 }
+
 
 export class BrickRenderer {
   private cache: BrickLayerCacheData | null = null;
