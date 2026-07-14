@@ -1586,3 +1586,18 @@ class SoundManager {
 }
 
 export const soundManager = new SoundManager();
+
+// One-time unlock: resume the AudioContext on the first user gesture (iOS/Chrome autoplay policy)
+if (typeof window !== "undefined") {
+  const unlock = () => {
+    try {
+      soundManager.unlockAudio();
+    } catch {}
+    window.removeEventListener("pointerdown", unlock);
+    window.removeEventListener("touchstart", unlock);
+    window.removeEventListener("keydown", unlock);
+  };
+  window.addEventListener("pointerdown", unlock, { once: true });
+  window.addEventListener("touchstart", unlock, { once: true });
+  window.addEventListener("keydown", unlock, { once: true });
+}
