@@ -86,55 +86,18 @@ export class BrickRenderer {
   }
 
   /**
-   * Calculate hash of brick state for dirty checking
-   * Only tracks visibility and hit state - what changes during gameplay
+   * Calculate hash of brick state for dirty checking (unused; kept removed)
    */
-  private calculateBrickHash(bricks: Brick[]): string {
-    let hash = 0;
-    for (let i = 0; i < bricks.length; i++) {
-      const b = bricks[i];
-      if (b.visible) {
-        hash = (hash * 31 + b.id) | 0;
-        hash = (hash * 31 + b.hitsRemaining) | 0;
-      }
-    }
-    return hash.toString(36);
-  }
 
   /**
-   * Helper function to detect adjacent metal bricks for seamless rendering
+   * Helper function to detect adjacent metal bricks for seamless rendering (O(1))
    */
-  private getAdjacentMetalBricks(brick: Brick, allBricks: Brick[]) {
-    const tolerance = 6;
+  private getAdjacentMetalBricks(brick: Brick) {
     return {
-      top: allBricks.find(
-        (b) =>
-          b.visible &&
-          b.type === "metal" &&
-          Math.abs(b.x - brick.x) < tolerance &&
-          Math.abs(b.y + b.height - brick.y) < tolerance
-      ),
-      bottom: allBricks.find(
-        (b) =>
-          b.visible &&
-          b.type === "metal" &&
-          Math.abs(b.x - brick.x) < tolerance &&
-          Math.abs(b.y - (brick.y + brick.height)) < tolerance
-      ),
-      left: allBricks.find(
-        (b) =>
-          b.visible &&
-          b.type === "metal" &&
-          Math.abs(b.y - brick.y) < tolerance &&
-          Math.abs(b.x + b.width - brick.x) < tolerance
-      ),
-      right: allBricks.find(
-        (b) =>
-          b.visible &&
-          b.type === "metal" &&
-          Math.abs(b.y - brick.y) < tolerance &&
-          Math.abs(b.x - (brick.x + brick.width)) < tolerance
-      )
+      top: this.metalByPos.get(this.posKey(brick.x, brick.y - brick.height)),
+      bottom: this.metalByPos.get(this.posKey(brick.x, brick.y + brick.height)),
+      left: this.metalByPos.get(this.posKey(brick.x - brick.width, brick.y)),
+      right: this.metalByPos.get(this.posKey(brick.x + brick.width, brick.y))
     };
   }
 
@@ -151,13 +114,13 @@ export class BrickRenderer {
   private renderBrick(
     ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
     brick: Brick,
-    allBricks: Brick[],
     qualitySettings: QualitySettings
   ): void {
     ctx.shadowBlur = 0;
 
     if (brick.type === "metal") {
-      const adjacent = this.getAdjacentMetalBricks(brick, allBricks);
+      const adjacent = this.getAdjacentMetalBricks(brick);
+
 
       // Steel base color
       ctx.fillStyle = "hsl(0, 0%, 33%)";
