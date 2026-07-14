@@ -95,7 +95,7 @@ class SoundManager {
       if (startVolume <= 0 || audio.paused) {
         audio.pause();
         audio.currentTime = 0;
-        audio.volume = startVolume || this.musicVolume;
+        audio.volume = this.musicVolume;
         resolve();
         return;
       }
@@ -110,12 +110,13 @@ class SoundManager {
           clearInterval(fade);
           audio.pause();
           audio.currentTime = 0;
-          audio.volume = startVolume;
+          audio.volume = this.musicVolume;
           resolve();
         }
       }, stepTime);
     });
   }
+
 
   stopBackgroundMusic() {
     this.musicTracks.forEach(track => {
