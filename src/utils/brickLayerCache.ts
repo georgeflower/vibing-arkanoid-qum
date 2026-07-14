@@ -273,24 +273,57 @@ export class BrickRenderer {
   updateCache(bricks: Brick[], qualitySettings: QualitySettings): boolean {
     if (!this.cache || !this.isInitialized) return false;
 
-    const newHash = this.calculateBrickHash(bricks);
-    if (newHash === this.cache.lastBrickHash) {
-      return false; // No changes
-    }
-
-    // Clear and redraw
-    const ctx = this.cache.ctx;
-    ctx.clearRect(0, 0, this.cache.width, this.cache.height);
-
-    // Render all visible bricks
+    // Diff pass — O(n)
+    const changed: Brick[] = [];
+    let structuralChange = false;
+    if (this.prevStates.size !== bricks.length) structuralChange = true;
     for (let i = 0; i < bricks.length; i++) {
-      const brick = bricks[i];
-      if (brick.visible) {
-        this.renderBrick(ctx, brick, bricks, qualitySettings);
+      const b = bricks[i];
+      const enc = b.visible ? b.hitsRemaining : -1;
+      const prev = this.prevStates.get(b.id);
+      if (prev === undefined) structuralChange = true;
+      else if (prev !== enc) changed.push(b);
+    }
+    if (!structuralChange && changed.length === 0) return false;
+
+    const FULL_REBUILD_THRESHOLD = 12;
+    if (structuralChange || changed.length > FULL_REBUILD_THRESHOLD) {
+      this.rebuildMetalIndex(bricks);
+      const ctx = this.cache.ctx;
+      ctx.clearRect(0, 0, this.cache.width, this.cache.height);
+      for (let i = 0; i < bricks.length; i++) {
+        if (bricks[i].visible) this.renderBrick(ctx, bricks[i], qualitySettings);
+      }
+    } else {
+      const ctx = this.cache.ctx;
+      const toRedraw = new Map<number, Brick>();
+      for (const b of changed) {
+        toRedraw.set(b.id, b);
+        if (b.type === "metal") {
+          const adj = this.getAdjacentMetalBricks(b);
+          for (const n of [adj.top, adj.bottom, adj.left, adj.right]) {
+            if (n && n.visible) toRedraw.set(n.id, n);
+          }
+        }
+      }
+      // Update metal index for visibility changes BEFORE drawing neighbors
+      for (const b of changed) {
+        if (b.type === "metal") {
+          const key = this.posKey(b.x, b.y);
+          if (b.visible) this.metalByPos.set(key, b);
+          else this.metalByPos.delete(key);
+        }
+      }
+      for (const b of toRedraw.values()) {
+        ctx.clearRect(b.x - 1, b.y - 1, b.width + 2, b.height + 2);
+        if (b.visible) this.renderBrick(ctx, b, qualitySettings);
       }
     }
 
-    this.cache.lastBrickHash = newHash;
+    this.prevStates.clear();
+    for (let i = 0; i < bricks.length; i++) {
+      this.prevStates.set(bricks[i].id, bricks[i].visible ? bricks[i].hitsRemaining : -1);
+    }
     this.cache.version++;
     return true;
   }
@@ -308,10 +341,9 @@ export class BrickRenderer {
    * Force rebuild on next frame
    */
   invalidate(): void {
-    if (this.cache) {
-      this.cache.lastBrickHash = "";
-    }
+    this.prevStates.clear();
   }
+
 
   /**
    * Resize the cache canvas
