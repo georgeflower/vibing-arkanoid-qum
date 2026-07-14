@@ -1318,21 +1318,35 @@ class SoundManager {
   stopBossMusic() {
     if (this.bossMusic && !this.bossMusic.paused) {
       const bossRef = this.bossMusic;
+      const sourceRef = this.bossMusicSource;
+      const analyserRef = this.analyser;
       this.fadeOutAudio(bossRef).then(() => {
         bossRef.pause();
+        try { sourceRef?.disconnect(); } catch {}
+        try { analyserRef?.disconnect(); } catch {}
         if (this.bossMusic === bossRef) {
           this.bossMusic = null;
         }
       });
+      this.analyser = null;
+      this.frequencyData = null;
+      this.bossMusicSource = null;
     } else if (this.bossMusic) {
       this.bossMusic.pause();
       this.bossMusic.currentTime = 0;
+      try { this.bossMusicSource?.disconnect(); } catch {}
+      try { this.analyser?.disconnect(); } catch {}
       this.bossMusic = null;
+      this.analyser = null;
+      this.frequencyData = null;
+      this.bossMusicSource = null;
+    } else {
+      this.analyser = null;
+      this.frequencyData = null;
+      this.bossMusicSource = null;
     }
-    this.analyser = null;
-    this.frequencyData = null;
-    this.bossMusicSource = null;
   }
+
 
   getBassEnergy(): number {
     if (!this.analyser || !this.frequencyData) return 0;
