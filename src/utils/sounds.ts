@@ -37,7 +37,14 @@ class SoundManager {
     if (!this.audioContext) {
       this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
     }
+    if (this.audioContext && this.audioContext.state === "suspended") {
+      this.audioContext.resume().catch(() => {});
+    }
     return this.audioContext;
+  }
+
+  public unlockAudio() {
+    this.getAudioContext();
   }
 
   playBackgroundMusic(level: number = 1) {
@@ -1185,10 +1192,11 @@ class SoundManager {
         this.bossMusic.pause();
       }
     } else {
-      this.playBackgroundMusic();
-      // Resume boss music if it exists (was paused mid-boss fight)
       if (this.bossMusic) {
+        // Boss fight in progress — resume only the boss music
         this.bossMusic.play().catch(() => {});
+      } else {
+        this.playBackgroundMusic();
       }
     }
     return this.musicEnabled;

@@ -242,17 +242,6 @@ class ParticlePool {
     }
   }
 
-  update(): void {
-    for (const particle of this.activeParticles) {
-      particle.x += particle.vx;
-      particle.y += particle.vy;
-      particle.vy += 0.1; // gravity
-      particle.life -= 0.02;
-    }
-    
-    this.releaseExpired();
-  }
-
   releaseAll(): void {
     // Push all active back to pool without creating new arrays
     for (let i = this.activeParticles.length - 1; i >= 0; i--) {
