@@ -1008,30 +1008,29 @@ class SoundManager {
 
   playBossIntroSound() {
     if (!this.sfxEnabled) return;
-    
+
     // Duck music volume by 80% during boss intro
-    const originalVolumes: number[] = [];
-    this.musicTracks.forEach((track, index) => {
+    this.musicTracks.forEach((track) => {
       if (track) {
-        originalVolumes[index] = track.volume;
-        track.volume = track.volume * 0.2; // Reduce to 20%
+        track.volume = this.musicVolume * 0.2;
       }
     });
-    
+
     const audio = new Audio('/siren-alarm-boss.ogg');
-    audio.volume = 0.7;
-    
+    audio.volume = Math.min(1, 0.7 * this.sfxVolume);
+
     // Restore music volume after boss intro sound ends
     audio.addEventListener('ended', () => {
-      this.musicTracks.forEach((track, index) => {
-        if (track && originalVolumes[index] !== undefined) {
-          track.volume = originalVolumes[index];
+      this.musicTracks.forEach((track) => {
+        if (track) {
+          track.volume = this.musicVolume;
         }
       });
     });
-    
+
     audio.play().catch(err => console.log('Boss intro sound failed:', err));
   }
+
 
   playPyramidBulletSound() {
     if (!this.sfxEnabled) return;
