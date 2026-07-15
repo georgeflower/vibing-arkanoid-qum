@@ -23,21 +23,25 @@ export class BrickRenderer {
   private crackedImages: HTMLImageElement[] = [];
   private isInitialized = false;
   private prevStates: Map<number, number> = new Map(); // id -> encoded state
-  private metalByPos: Map<string, Brick> = new Map(); // "x,y" -> visible metal brick
+  private metalAdjacency: Map<number, { top?: Brick; bottom?: Brick; left?: Brick; right?: Brick }> = new Map();
 
-  private posKey(x: number, y: number): string {
-    return Math.round(x) + "," + Math.round(y);
-  }
-
-  private rebuildMetalIndex(bricks: Brick[]): void {
-    this.metalByPos.clear();
-    for (let i = 0; i < bricks.length; i++) {
-      const b = bricks[i];
-      if (b.visible && b.type === "metal") {
-        this.metalByPos.set(this.posKey(b.x, b.y), b);
+  private rebuildMetalAdjacency(bricks: Brick[]): void {
+    this.metalAdjacency.clear();
+    const metals = bricks.filter((b) => b.type === "metal");
+    const TOL = 6;
+    for (const b of metals) {
+      const entry: { top?: Brick; bottom?: Brick; left?: Brick; right?: Brick } = {};
+      for (const o of metals) {
+        if (o === b) continue;
+        if (Math.abs(o.x - b.x) < TOL && Math.abs(o.y - (b.y - b.height)) < TOL) entry.top = o;
+        else if (Math.abs(o.x - b.x) < TOL && Math.abs(o.y - (b.y + b.height)) < TOL) entry.bottom = o;
+        else if (Math.abs(o.y - b.y) < TOL && Math.abs(o.x - (b.x - b.width)) < TOL) entry.left = o;
+        else if (Math.abs(o.y - b.y) < TOL && Math.abs(o.x - (b.x + b.width)) < TOL) entry.right = o;
       }
+      this.metalAdjacency.set(b.id, entry);
     }
   }
+
 
 
   /**
