@@ -48,9 +48,12 @@ export class BrickRenderer {
    * Initialize the offscreen canvas
    */
   initialize(width: number, height: number): void {
+    this.prevStates.clear();
+    this.metalAdjacency.clear();
     // Try OffscreenCanvas first, fallback to regular canvas
     let canvas: OffscreenCanvas | HTMLCanvasElement;
     let ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D | null;
+
 
     if (typeof OffscreenCanvas !== "undefined") {
       canvas = new OffscreenCanvas(width, height);
