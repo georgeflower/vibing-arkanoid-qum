@@ -1354,7 +1354,7 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
   // ═══ Phase 4b: Speed ramp for balls released from Mega Boss ═══
   const RAMP_DURATION_MS = 1500;
   const TARGET_SPEED = 4;
-  const rampNow = Date.now();
+  const rampNow = world.simTimeMs;
   for (const ball of updatedBalls) {
     if (ball.releaseSpeedScale != null && ball.releasedFromBossTime) {
       const elapsed = rampNow - ball.releasedFromBossTime;
@@ -1381,12 +1381,12 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
 
   // Write updated balls to world
   world.balls = updatedBalls;
-  (window as any).currentBalls = updatedBalls;
+  if (ENABLE_DEBUG_FEATURES) (window as any).currentBalls = updatedBalls;
 
   // Check all balls lost (with mega boss trap guard)
   const megaBossHasTrappedBall =
     level === MEGA_BOSS_LEVEL && boss && isMegaBoss(boss) && (boss as MegaBoss).trappedBall !== null;
-  const justTrappedRecently = level === MEGA_BOSS_LEVEL && Date.now() - config.megaBossTrapJustHappenedTime < 1500;
+  const justTrappedRecently = level === MEGA_BOSS_LEVEL && world.simTimeMs - config.megaBossTrapJustHappenedTime < 1500;
   result.allBallsLost = updatedBalls.length === 0 && !megaBossHasTrappedBall && !justTrappedRecently;
 
   return result;
