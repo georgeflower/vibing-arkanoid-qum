@@ -168,6 +168,10 @@ function createEmptyResult(): PhysicsFrameResult {
   return _reusableResult;
 }
 
+// Module-level scratch sample ball for performBossFirstSweep (zero-alloc per sample)
+const _sampleBall = { x: 0, y: 0, dx: 0, dy: 0, radius: 0 };
+
+
 // ─── Boss-First Swept Collision ───
 // Performs continuous TOI check along ball's linear path for this dtSeconds.
 // Returns true if boss collision found and corrections applied.
@@ -189,7 +193,12 @@ function performBossFirstSweep(
     const alpha = s / samples;
     const sampleX = ball.x + ball.dx * (dtSeconds * alpha);
     const sampleY = ball.y + ball.dy * (dtSeconds * alpha);
-    const sampleBall: Ball = { ...ball, x: sampleX, y: sampleY };
+    _sampleBall.x = sampleX;
+    _sampleBall.y = sampleY;
+    _sampleBall.dx = ball.dx;
+    _sampleBall.dy = ball.dy;
+    _sampleBall.radius = ball.radius;
+    const sampleBall = _sampleBall;
 
     let collision: {
       newX: number;
