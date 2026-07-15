@@ -294,7 +294,7 @@ export class BrickRenderer {
 
     const FULL_REBUILD_THRESHOLD = 12;
     if (structuralChange || changed.length > FULL_REBUILD_THRESHOLD) {
-      this.rebuildMetalIndex(bricks);
+      this.rebuildMetalAdjacency(bricks);
       const ctx = this.cache.ctx;
       ctx.clearRect(0, 0, this.cache.width, this.cache.height);
       for (let i = 0; i < bricks.length; i++) {
@@ -312,14 +312,7 @@ export class BrickRenderer {
           }
         }
       }
-      // Update metal index for visibility changes BEFORE drawing neighbors
-      for (const b of changed) {
-        if (b.type === "metal") {
-          const key = this.posKey(b.x, b.y);
-          if (b.visible) this.metalByPos.set(key, b);
-          else this.metalByPos.delete(key);
-        }
-      }
+
       for (const b of toRedraw.values()) {
         ctx.clearRect(b.x - 1, b.y - 1, b.width + 2, b.height + 2);
         if (b.visible) this.renderBrick(ctx, b, qualitySettings);
