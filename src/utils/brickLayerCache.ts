@@ -97,13 +97,15 @@ export class BrickRenderer {
    * Helper function to detect adjacent metal bricks for seamless rendering (O(1))
    */
   private getAdjacentMetalBricks(brick: Brick) {
+    const adj = this.metalAdjacency.get(brick.id) ?? {};
     return {
-      top: this.metalByPos.get(this.posKey(brick.x, brick.y - brick.height)),
-      bottom: this.metalByPos.get(this.posKey(brick.x, brick.y + brick.height)),
-      left: this.metalByPos.get(this.posKey(brick.x - brick.width, brick.y)),
-      right: this.metalByPos.get(this.posKey(brick.x + brick.width, brick.y))
+      top: adj.top?.visible ? adj.top : undefined,
+      bottom: adj.bottom?.visible ? adj.bottom : undefined,
+      left: adj.left?.visible ? adj.left : undefined,
+      right: adj.right?.visible ? adj.right : undefined,
     };
   }
+
 
   /**
    * Check if image is valid and loaded
