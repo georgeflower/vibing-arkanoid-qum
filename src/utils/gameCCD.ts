@@ -2,6 +2,14 @@ import { processBallCCD, Ball as CCDBall, Brick as CCDBrick, Paddle as CCDPaddle
 import { Brick, Ball, Paddle, Boss, Enemy } from '@/types/game';
 import { ENABLE_DEBUG_FEATURES } from '@/constants/game';
 
+// Quality-aware substep caps (module scope — allocated once)
+const QUALITY_SUBSTEP_CAPS: Record<string, number> = {
+  potato: 4,
+  low: 8,
+  medium: 12,
+  high: 20,
+};
+
 export interface CCDResult {
   ball: Ball | null;
   events: CollisionEvent[];
@@ -56,13 +64,7 @@ export function processBallWithCCD(
   const perfStart = shouldMeasurePerf ? performance.now() : 0;
   
   // Quality-aware substep limits
-  const qualitySubstepCaps: Record<string, number> = {
-    potato: 4,
-    low: 8,
-    medium: 12,
-    high: 20
-  };
-  const MAX_SUBSTEPS = qualitySubstepCaps[gameState.qualityLevel || 'high'];
+  const MAX_SUBSTEPS = QUALITY_SUBSTEP_CAPS[gameState.qualityLevel || 'high'];
   
   // Calculate adaptive substeps based on ball speed
   const ballSpeed = Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy);
@@ -225,10 +227,12 @@ export function processBallWithCCD(
   const newDy = result.ball.dy / conversionFactor;
 
   // Speed anomaly detection: log when CCD round-trip changes ball speed unexpectedly
-  const inputSpeed = Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy);
-  const outputSpeed = Math.sqrt(newDx * newDx + newDy * newDy);
-  if (inputSpeed > 0.1 && Math.abs(outputSpeed - inputSpeed) / inputSpeed > 0.05) {
-    console.warn(`[SPEED] CCD round-trip anomaly: ball ${ball.id} speed ${inputSpeed.toFixed(3)} → ${outputSpeed.toFixed(3)} (${((outputSpeed/inputSpeed - 1) * 100).toFixed(1)}%) events=${result.events.length}`);
+  if (ENABLE_DEBUG_FEATURES) {
+    const inputSpeed = Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy);
+    const outputSpeed = Math.sqrt(newDx * newDx + newDy * newDy);
+    if (inputSpeed > 0.1 && Math.abs(outputSpeed - inputSpeed) / inputSpeed > 0.05) {
+      console.warn(`[SPEED] CCD round-trip anomaly: ball ${ball.id} speed ${inputSpeed.toFixed(3)} → ${outputSpeed.toFixed(3)} (${((outputSpeed/inputSpeed - 1) * 100).toFixed(1)}%) events=${result.events.length}`);
+    }
   }
 
   const updatedBall: Ball = {

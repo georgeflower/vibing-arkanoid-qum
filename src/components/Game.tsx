@@ -1249,20 +1249,12 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         });
       }
 
-      // Adjust ball timestamps to account for pause duration
+      // Ball timing fields (lastGravityResetTime, lastPaddleHitTime, releasedFromBossTime)
+      // are now sim-time based (world.simTimeMs) which freezes during pause.
+      // No adjustment needed for those. lastWallHitTime is still wall-clock.
       setBalls((prev) =>
         prev.map((ball) => ({
           ...ball,
-          lastGravityResetTime: ball.lastGravityResetTime
-            ? ball.lastGravityResetTime + pauseDuration
-            : ball.lastGravityResetTime,
-          lastPaddleHitTime: ball.lastPaddleHitTime ? ball.lastPaddleHitTime + pauseDuration : ball.lastPaddleHitTime,
-          releasedFromBossTime: ball.releasedFromBossTime
-            ? ball.releasedFromBossTime + pauseDuration
-            : ball.releasedFromBossTime,
-          // IMPORTANT: do not shift lastHitTime on pause resume.
-          // lastHitTime is used by sim-time based cooldown checks (world.simTimeMs),
-          // so adding wall-clock pauseDuration can suppress damage after unpause.
           lastHitTime: ball.lastHitTime,
           lastWallHitTime: ball.lastWallHitTime ? ball.lastWallHitTime + pauseDuration : ball.lastWallHitTime,
         })),
@@ -2966,8 +2958,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
             dx: speed * Math.sin(angle),
             dy: -speed * Math.cos(angle),
             waitingToLaunch: false,
-            lastPaddleHitTime: performance.now(),
-            lastGravityResetTime: performance.now(),
+            lastPaddleHitTime: world.simTimeMs,
+            lastGravityResetTime: world.simTimeMs,
           };
         }
         return ball;
@@ -3675,14 +3667,9 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     const minBrickDimension = Math.min(SCALED_BRICK_WIDTH, SCALED_BRICK_HEIGHT);
     const substeps = Math.max(2, Math.ceil((maxBallSpeed * speedMultiplier) / (minBrickDimension * 0.15)));
 
-    // Gravity info — freeze display while paused so the countdown doesn't tick
-    const isPausedNow = gameState === "paused" || gameState === "ready" || tutorialActive || bossRushStatsOverlayActive;
-    const gravityNow =
-      isPausedNow && pauseStartTimeRef.current !== null
-        ? performance.now() - (Date.now() - pauseStartTimeRef.current)
-        : performance.now();
+    // Gravity info — sim-time based (naturally freezes while paused)
     const firstBall = balls[0];
-    const timeSinceCollision = gravityNow - (firstBall?.lastGravityResetTime ?? gravityNow);
+    const timeSinceCollision = world.simTimeMs - (firstBall?.lastGravityResetTime ?? world.simTimeMs);
     const gravityActive = timeSinceCollision > GRAVITY_DELAY_MS;
     const gravityTimeLeft = gravityActive ? 0 : Math.max(0, (GRAVITY_DELAY_MS - timeSinceCollision) / 1000);
 
@@ -5562,7 +5549,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
             }
             // Mark trap time immediately so the life-loss pass can't incorrectly deduct a life
             // if state updates land on the next tick.
-            megaBossTrapJustHappenedRef.current = Date.now();
+            megaBossTrapJustHappenedRef.current = world.simTimeMs;
 
             // Trap the ball in the core!
             const trappedBoss = handleMegaBossCoreHit(megaBoss, ball);

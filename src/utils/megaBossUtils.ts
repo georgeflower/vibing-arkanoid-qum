@@ -1,6 +1,7 @@
 // Mega Boss creation and management utilities
 import type { Boss, Ball } from "@/types/game";
 import { MEGA_BOSS_CONFIG, MEGA_BOSS_POSITIONS, MEGA_BOSS_LEVEL } from "@/constants/megaBossConfig";
+import { world } from "@/engine/state";
 
 // Phase represents the current stage of the boss fight
 export type MegaBossCorePhase = 1 | 2 | 3;
@@ -259,7 +260,7 @@ export function releaseBallAndNextPhase(boss: MegaBoss): { boss: MegaBoss; relea
     dx: Math.sin(randomAngle) * initialSpeed,
     dy: -Math.abs(Math.cos(randomAngle)) * initialSpeed, // Always upward
     waitingToLaunch: false,
-    releasedFromBossTime: Date.now(),
+    releasedFromBossTime: world.simTimeMs,
     releaseSpeedScale: 0.3 // Start at 30% speed, ramp to 100%
   };
   
@@ -419,7 +420,7 @@ export function resetMegaBossPhaseProgress(boss: MegaBoss): { boss: MegaBoss; re
     dx: Math.sin(randomAngle) * initialSpeed,
     dy: -Math.abs(Math.cos(randomAngle)) * initialSpeed, // Always upward
     waitingToLaunch: false,
-    releasedFromBossTime: Date.now(),
+    releasedFromBossTime: world.simTimeMs,
     releaseSpeedScale: 0.3 // Start at 30% speed, ramp to 100%
   };
   

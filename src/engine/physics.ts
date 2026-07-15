@@ -168,6 +168,10 @@ function createEmptyResult(): PhysicsFrameResult {
   return _reusableResult;
 }
 
+// Module-level scratch sample ball for performBossFirstSweep (zero-alloc per sample)
+const _sampleBall = { x: 0, y: 0, dx: 0, dy: 0, radius: 0 };
+
+
 // ─── Boss-First Swept Collision ───
 // Performs continuous TOI check along ball's linear path for this dtSeconds.
 // Returns true if boss collision found and corrections applied.
@@ -189,7 +193,12 @@ function performBossFirstSweep(
     const alpha = s / samples;
     const sampleX = ball.x + ball.dx * (dtSeconds * alpha);
     const sampleY = ball.y + ball.dy * (dtSeconds * alpha);
-    const sampleBall: Ball = { ...ball, x: sampleX, y: sampleY };
+    _sampleBall.x = sampleX;
+    _sampleBall.y = sampleY;
+    _sampleBall.dx = ball.dx;
+    _sampleBall.dy = ball.dy;
+    _sampleBall.radius = ball.radius;
+    const sampleBall = _sampleBall;
 
     let collision: {
       newX: number;
@@ -483,6 +492,10 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
     return result;
   }
 
+  // O(1) brick lookup by id
+  const brickById = new Map<number, Brick>();
+  for (let i = 0; i < bricks.length; i++) brickById.set(bricks[i].id, bricks[i]);
+
   const { dtSeconds, frameTick, level, debugSettings, maxTotalSpeed, isBossRush } = config;
 
   // ═══ Advance simulation clock ═══
@@ -582,7 +595,7 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
   result.updatedPendingChainExplosions = config.pendingChainExplosions.filter((p) => now < p.triggerTime);
   const readyExplosions = config.pendingChainExplosions.filter((p) => now >= p.triggerTime);
   for (const pending of readyExplosions) {
-    const brick = bricks.find((b) => b.id === pending.brick.id);
+    const brick = brickById.get(pending.brick.id);
     if (brick && brick.visible) explosiveBricksToDetonate.push(brick);
   }
 
@@ -651,10 +664,10 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
           const checkDy = event.originalDy ?? ccdResult.ball.dy;
           const dot = checkDx * event.normal.x + checkDy * event.normal.y;
           const isRecentlyReleasedFromBoss =
-            ccdResult.ball.releasedFromBossTime && Date.now() - ccdResult.ball.releasedFromBossTime < 2000;
+            ccdResult.ball.releasedFromBossTime && world.simTimeMs - ccdResult.ball.releasedFromBossTime < 2000;
           if (dot >= 0 && !isRecentlyReleasedFromBoss) break;
 
-          const nowPerf = performance.now();
+          const nowPerf = world.simTimeMs;
           if (
             ccdResult.ball.lastPaddleHitTime !== undefined &&
             nowPerf - ccdResult.ball.lastPaddleHitTime < PHYSICS_CONFIG.PADDLE_HIT_COOLDOWN_MS
@@ -667,8 +680,8 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
           const speedBefore = Math.sqrt(ccdResult.ball.dx * ccdResult.ball.dx + ccdResult.ball.dy * ccdResult.ball.dy);
           ccdResult.ball.dx = speedBefore * Math.sin(angle);
           ccdResult.ball.dy = -Math.abs(speedBefore * Math.cos(angle));
-          ccdResult.ball.lastPaddleHitTime = performance.now();
-          ccdResult.ball.lastGravityResetTime = performance.now();
+          ccdResult.ball.lastPaddleHitTime = world.simTimeMs;
+          ccdResult.ball.lastGravityResetTime = world.simTimeMs;
 
           // Normalize speed bidirectionally to remove gravity contribution and prevent permanent slowdowns
           const currentSpd = Math.hypot(ccdResult.ball.dx, ccdResult.ball.dy);
@@ -713,7 +726,7 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
           const dotCorner = ccdResult.ball.dx * event.normal.x + ccdResult.ball.dy * event.normal.y;
           if (dotCorner >= 0) break;
 
-          const nowCorner = performance.now();
+          const nowCorner = world.simTimeMs;
           if (
             ccdResult.ball.lastPaddleHitTime !== undefined &&
             nowCorner - ccdResult.ball.lastPaddleHitTime < PHYSICS_CONFIG.PADDLE_HIT_COOLDOWN_MS
@@ -771,7 +784,7 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
             const enemyIndex = objectId - 100000;
             const enemy = enemies[enemyIndex];
             if (enemy && !isDuplicate) {
-              ccdResult.ball.lastGravityResetTime = performance.now();
+              ccdResult.ball.lastGravityResetTime = world.simTimeMs;
 
               if (ENABLE_DEBUG_FEATURES && debugSettings.enableCollisionLogging && ballBefore) {
                 const speedAfter = Math.hypot(ccdResult.ball.dx, ccdResult.ball.dy);
@@ -979,7 +992,7 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
           }
 
           // ─── Brick collision ───
-          const brick = bricks.find((b) => b.id === objectId);
+          const brick = brickById.get(objectId);
           if (!brick || !brick.visible) break;
           if (brickUpdates.has(brick.id)) break;
 
@@ -1054,7 +1067,7 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
             }
 
             if (!isDuplicate) {
-              ccdResult.ball.lastGravityResetTime = performance.now();
+              ccdResult.ball.lastGravityResetTime = world.simTimeMs;
             }
             const newHitsRemaining = brick.hitsRemaining - 1;
             const brickDestroyed = newHitsRemaining <= 0;
@@ -1080,9 +1093,14 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
               const ballAccumulated = ccdResult.ball.speedBoostAccumulated ?? 0;
               const speedBudget = maxTotalSpeed - speedMultiplier;
               if (ballAccumulated < speedBudget) {
-                const remainingBrickCount = bricks.filter(
-                  (b) => b.visible && !b.isIndestructible && (!brickUpdates.has(b.id) || brickUpdates.get(b.id)!.visible),
-                ).length;
+                let remainingBrickCount = 0;
+                for (let bi2 = 0; bi2 < bricks.length; bi2++) {
+                  const b = bricks[bi2];
+                  if (!b.visible || b.isIndestructible) continue;
+                  const upd = brickUpdates.get(b.id);
+                  if (upd && !upd.visible) continue;
+                  remainingBrickCount++;
+                }
                 let baseSpeedIncrease = 0.006;
                 if (remainingBrickCount <= 10) {
                   baseSpeedIncrease = 0.013 + (10 - remainingBrickCount) * 0.0028;
@@ -1187,7 +1205,7 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
 
   // ═══ Apply brick updates to world.bricks ═══
   for (const [id, update] of brickUpdates) {
-    const brick = bricks.find((b) => b.id === id);
+    const brick = brickById.get(id);
     if (brick) {
       brick.visible = update.visible;
       brick.hitsRemaining = update.hitsRemaining;
@@ -1204,9 +1222,16 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
   }
 
   // ═══ Apply enemy updates to world.enemies ═══
-  for (const [id, update] of enemiesToUpdate) {
-    const enemy = enemies.find((e) => e.id === id);
-    if (enemy) Object.assign(enemy, update);
+  if (enemiesToUpdate.size > 0) {
+    const enemyById = new Map<number, Enemy>();
+    for (let i = 0; i < enemies.length; i++) {
+      const e = enemies[i];
+      if (e.id !== undefined) enemyById.set(e.id, e);
+    }
+    for (const [id, update] of enemiesToUpdate) {
+      const enemy = enemyById.get(id);
+      if (enemy) Object.assign(enemy, update);
+    }
   }
 
   // Capture destroyed enemy data before removal
@@ -1259,7 +1284,7 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
   // ═══ Phase 3: Gravity ═══
   for (const r of ballResults) {
     if (r.ball && !r.ball.waitingToLaunch) {
-      const timeSinceCollision = performance.now() - (r.ball.lastGravityResetTime ?? 0);
+      const timeSinceCollision = world.simTimeMs - (r.ball.lastGravityResetTime ?? 0);
       if (timeSinceCollision > GRAVITY_DELAY_MS) {
         r.ball.dy += BALL_GRAVITY;
       }
@@ -1329,7 +1354,7 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
   // ═══ Phase 4b: Speed ramp for balls released from Mega Boss ═══
   const RAMP_DURATION_MS = 1500;
   const TARGET_SPEED = 4;
-  const rampNow = Date.now();
+  const rampNow = world.simTimeMs;
   for (const ball of updatedBalls) {
     if (ball.releaseSpeedScale != null && ball.releasedFromBossTime) {
       const elapsed = rampNow - ball.releasedFromBossTime;
@@ -1356,12 +1381,12 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
 
   // Write updated balls to world
   world.balls = updatedBalls;
-  (window as any).currentBalls = updatedBalls;
+  if (ENABLE_DEBUG_FEATURES) (window as any).currentBalls = updatedBalls;
 
   // Check all balls lost (with mega boss trap guard)
   const megaBossHasTrappedBall =
     level === MEGA_BOSS_LEVEL && boss && isMegaBoss(boss) && (boss as MegaBoss).trappedBall !== null;
-  const justTrappedRecently = level === MEGA_BOSS_LEVEL && Date.now() - config.megaBossTrapJustHappenedTime < 1500;
+  const justTrappedRecently = level === MEGA_BOSS_LEVEL && world.simTimeMs - config.megaBossTrapJustHappenedTime < 1500;
   result.allBallsLost = updatedBalls.length === 0 && !megaBossHasTrappedBall && !justTrappedRecently;
 
   return result;
