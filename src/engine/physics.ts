@@ -492,6 +492,10 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
     return result;
   }
 
+  // O(1) brick lookup by id
+  const brickById = new Map<number, Brick>();
+  for (let i = 0; i < bricks.length; i++) brickById.set(bricks[i].id, bricks[i]);
+
   const { dtSeconds, frameTick, level, debugSettings, maxTotalSpeed, isBossRush } = config;
 
   // ═══ Advance simulation clock ═══
