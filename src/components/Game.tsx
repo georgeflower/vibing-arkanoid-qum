@@ -4547,15 +4547,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     // ═══ PHASE 1: Frame Profiler Start (only if explicitly enabled) ═══
     if (profilerEnabled) frameProfiler.startFrame();
 
-    // Throttle to 120 FPS (use cached frameNow)
+    // FPS cap is enforced by physicsLoop; still compute elapsed for dt.
     const elapsed = frameNow - lastFrameTimeRef.current;
-
-    if (elapsed < targetFrameTime) {
-      animationFrameRef.current = requestAnimationFrame(gameLoopTickRef.current);
-      lagDetectionRef.current.lastFrameEnd = frameNow;
-      return;
-    }
-
     lastFrameTimeRef.current = frameNow - (elapsed % targetFrameTime);
 
     // Calculate actual delta time in seconds, clamped to 50ms max to prevent
