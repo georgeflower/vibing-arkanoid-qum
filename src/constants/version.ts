@@ -1,6 +1,19 @@
-export const GAME_VERSION = "0.9.981";
+export const GAME_VERSION = "0.9.982";
 
 export const CHANGELOG = [
+  {
+    version: "0.9.982",
+    changes: [
+      "Fixed: Mobile power-up timer overlay no longer shifts the game area up/down",
+      "Fixed: Touch dragging now works across the entire screen during gameplay (top, bottom, letterbox areas) without page scrolling",
+      "Fixed: Unmuting during a boss fight no longer starts both regular and boss music tracks",
+      "Fixed: Background music now fades in correctly after the mute toggle, respecting the music volume",
+      "Fixed: Pause/resume no longer causes ball gravity drift — all physics timing uses the unified simulation clock",
+      "Improved: Brick layer cache now redraws changed bricks incrementally with O(1) metal-brick adjacency",
+      "Improved: Physics loop extracted from React into a standalone engine module (same scheduling semantics, zero behavior change)",
+      "Improved: Hot-path physics lookups now use Maps instead of array scans; reduced allocations in boss collision sweeps",
+    ],
+  },
   {
     version: "0.9.981",
     changes: [
