@@ -114,6 +114,7 @@ import { useLevelProgress } from "@/hooks/useLevelProgress";
 import { soundManager } from "@/utils/sounds";
 import { FixedStepGameLoop } from "@/utils/gameLoop";
 import { DEFAULT_TIME_SCALE, MIN_TIME_SCALE, MAX_TIME_SCALE, FPS_CAP, MAX_DELTA_MS } from "@/constants/gameLoopConfig";
+import { setPhysicsCallback, startPhysicsLoop, stopPhysicsLoop } from "@/engine/physicsLoop";
 import { createBoss, createResurrectedPyramid } from "@/utils/bossUtils";
 import { performBossAttack } from "@/utils/bossAttacks";
 import { BOSS_LEVELS, BOSS_CONFIG, ATTACK_PATTERNS } from "@/constants/bossConfig";
@@ -1420,11 +1421,6 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   const [powerUpDropCounts, setPowerUpDropCounts] = useState<Partial<Record<PowerUpType, number>>>({});
 
   const launchAngleDirectionRef = useRef(1);
-  const animationFrameRef = useRef<number>();
-  const gameLoopFnRef = useRef<() => void>(() => {});
-  const gameLoopTickRef = useRef<() => void>(() => {
-    gameLoopFnRef.current();
-  });
   const nextBallId = useRef(1);
 
   // Track bricks destroyed this level for level 1 multiball rule
@@ -1534,10 +1530,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       // Clear enemy projectile timers map
       enemyProjectileTimersRef.current.clear();
 
-      // Cancel animation frame
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
+      // Stop physics loop
+      stopPhysicsLoop();
     };
   }, []);
 
@@ -4462,7 +4456,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
   }, []);
 
-  const gameLoop = useCallback(() => {
+  const gameLoop = useCallback((now: number) => {
     const paddle = world.paddle; // live read from engine state
     const balls = world.balls; // live read from engine state
     const bricks = world.bricks; // live read from engine state
@@ -4485,7 +4479,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     newlyReflectedBombIdsRef.current.clear();
 
     // ═══ MOBILE PERF: Cache performance.now() once per frame ═══
-    const frameNow = performance.now();
+    const frameNow = now;
 
     // ═══ MOBILE PERF: Single flag to gate all debug overhead ═══
     const shouldRunDebugCode =
@@ -4553,15 +4547,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     // ═══ PHASE 1: Frame Profiler Start (only if explicitly enabled) ═══
     if (profilerEnabled) frameProfiler.startFrame();
 
-    // Throttle to 120 FPS (use cached frameNow)
+    // FPS cap is enforced by physicsLoop; still compute elapsed for dt.
     const elapsed = frameNow - lastFrameTimeRef.current;
-
-    if (elapsed < targetFrameTime) {
-      animationFrameRef.current = requestAnimationFrame(gameLoopTickRef.current);
-      lagDetectionRef.current.lastFrameEnd = frameNow;
-      return;
-    }
-
     lastFrameTimeRef.current = frameNow - (elapsed % targetFrameTime);
 
     // Calculate actual delta time in seconds, clamped to 50ms max to prevent
@@ -7379,20 +7366,11 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       }
     }
 
-    animationFrameRef.current = requestAnimationFrame(gameLoopTickRef.current);
   }, [
     gameState,
     checkCollision,
     updatePowerUps,
     updateBullets,
-    // paddle removed — now lives in world.paddle (no React dependency)
-    // balls removed — now lives in world.balls (no React dependency)
-    // bricks removed — now lives in world.bricks (no React dependency)
-    // speedMultiplier removed — now lives in world.speedMultiplier (no React dependency)
-    // enemies removed — now lives in world.enemies (no React dependency)
-    // bombs removed — now lives in world.bombs (no React dependency)
-    // bossAttacks removed — now lives in world.bossAttacks (no React dependency)
-    // explosions removed — now lives in world.explosions (no React dependency)
     checkPowerUpCollision,
     score,
     isHighScore,
@@ -7401,24 +7379,18 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     debugSettings,
   ]);
 
-  // Keep the trampoline pointed at the latest gameLoop without restarting the rAF chain
+  // Register the latest gameLoop with the physics scheduler (cheap assignment).
   useEffect(() => {
-    gameLoopFnRef.current = gameLoop;
+    setPhysicsCallback((now) => gameLoop(now));
   }, [gameLoop]);
 
   useEffect(() => {
     if (gameState === "playing") {
-      animationFrameRef.current = requestAnimationFrame(gameLoopTickRef.current);
+      startPhysicsLoop();
     } else {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
+      stopPhysicsLoop();
     }
-    return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-    };
+    return () => stopPhysicsLoop();
   }, [gameState]);
 
   // Separate useEffect for timer management - handle pause/resume
@@ -7957,9 +7929,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     }
   };
   const handleRestart = useCallback(() => {
-    if (animationFrameRef.current) {
-      cancelAnimationFrame(animationFrameRef.current);
-    }
+    stopPhysicsLoop();
     soundManager.stopBossMusic();
     soundManager.stopBackgroundMusic();
     soundManager.stopHighScoreMusic();
