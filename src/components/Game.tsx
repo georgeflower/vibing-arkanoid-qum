@@ -7929,9 +7929,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     }
   };
   const handleRestart = useCallback(() => {
-    if (animationFrameRef.current) {
-      cancelAnimationFrame(animationFrameRef.current);
-    }
+    stopPhysicsLoop();
     soundManager.stopBossMusic();
     soundManager.stopBackgroundMusic();
     soundManager.stopHighScoreMusic();
