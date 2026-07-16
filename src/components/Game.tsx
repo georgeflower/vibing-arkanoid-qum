@@ -4479,7 +4479,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     newlyReflectedBombIdsRef.current.clear();
 
     // ═══ MOBILE PERF: Cache performance.now() once per frame ═══
-    const frameNow = performance.now();
+    const frameNow = now;
 
     // ═══ MOBILE PERF: Single flag to gate all debug overhead ═══
     const shouldRunDebugCode =
