@@ -1530,10 +1530,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       // Clear enemy projectile timers map
       enemyProjectileTimersRef.current.clear();
 
-      // Cancel animation frame
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
+      // Stop physics loop
+      stopPhysicsLoop();
     };
   }, []);
 
