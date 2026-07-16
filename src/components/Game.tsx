@@ -114,6 +114,7 @@ import { useLevelProgress } from "@/hooks/useLevelProgress";
 import { soundManager } from "@/utils/sounds";
 import { FixedStepGameLoop } from "@/utils/gameLoop";
 import { DEFAULT_TIME_SCALE, MIN_TIME_SCALE, MAX_TIME_SCALE, FPS_CAP, MAX_DELTA_MS } from "@/constants/gameLoopConfig";
+import { setPhysicsCallback, startPhysicsLoop, stopPhysicsLoop } from "@/engine/physicsLoop";
 import { createBoss, createResurrectedPyramid } from "@/utils/bossUtils";
 import { performBossAttack } from "@/utils/bossAttacks";
 import { BOSS_LEVELS, BOSS_CONFIG, ATTACK_PATTERNS } from "@/constants/bossConfig";
