@@ -4456,7 +4456,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
   }, []);
 
-  const gameLoop = useCallback(() => {
+  const gameLoop = useCallback((now: number) => {
     const paddle = world.paddle; // live read from engine state
     const balls = world.balls; // live read from engine state
     const bricks = world.bricks; // live read from engine state
