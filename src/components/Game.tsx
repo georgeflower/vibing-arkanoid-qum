@@ -7366,20 +7366,11 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       }
     }
 
-    animationFrameRef.current = requestAnimationFrame(gameLoopTickRef.current);
   }, [
     gameState,
     checkCollision,
     updatePowerUps,
     updateBullets,
-    // paddle removed — now lives in world.paddle (no React dependency)
-    // balls removed — now lives in world.balls (no React dependency)
-    // bricks removed — now lives in world.bricks (no React dependency)
-    // speedMultiplier removed — now lives in world.speedMultiplier (no React dependency)
-    // enemies removed — now lives in world.enemies (no React dependency)
-    // bombs removed — now lives in world.bombs (no React dependency)
-    // bossAttacks removed — now lives in world.bossAttacks (no React dependency)
-    // explosions removed — now lives in world.explosions (no React dependency)
     checkPowerUpCollision,
     score,
     isHighScore,
@@ -7388,24 +7379,18 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     debugSettings,
   ]);
 
-  // Keep the trampoline pointed at the latest gameLoop without restarting the rAF chain
+  // Register the latest gameLoop with the physics scheduler (cheap assignment).
   useEffect(() => {
-    gameLoopFnRef.current = gameLoop;
+    setPhysicsCallback((now) => gameLoop(now));
   }, [gameLoop]);
 
   useEffect(() => {
     if (gameState === "playing") {
-      animationFrameRef.current = requestAnimationFrame(gameLoopTickRef.current);
+      startPhysicsLoop();
     } else {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
+      stopPhysicsLoop();
     }
-    return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-    };
+    return () => stopPhysicsLoop();
   }, [gameState]);
 
   // Separate useEffect for timer management - handle pause/resume
