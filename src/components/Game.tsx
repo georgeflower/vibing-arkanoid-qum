@@ -1775,7 +1775,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     bricks,
     setPaddle,
     () => setBricksDestroyedByTurrets((prev) => prev + 1),
-    () => nextLevelRef.current?.(),
+    () => handleLevelClearedRef.current?.(),
     () => {
       // Turret depleted callback with cooldown
       const now = Date.now();
