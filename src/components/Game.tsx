@@ -1448,6 +1448,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   const uiTouchIdsRef = useRef<Set<number>>(new Set());
   const timerStartedRef = useRef(false);
   const nextLevelRef = useRef<(() => void) | null>(null);
+  const handleLevelClearedRef = useRef<(() => void) | null>(null);
+  const levelClearedHandledRef = useRef(false);
 
   // Fixed-step game loop
   const gameLoopRef = useRef<FixedStepGameLoop | null>(null);
@@ -1773,7 +1775,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     bricks,
     setPaddle,
     () => setBricksDestroyedByTurrets((prev) => prev + 1),
-    () => nextLevelRef.current?.(),
+    () => handleLevelClearedRef.current?.(),
     () => {
       // Turret depleted callback with cooldown
       const now = Date.now();
@@ -2476,6 +2478,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
     // Reset quality lockout for new game session
     resetQualityLockout();
+    levelClearedHandledRef.current = false;
 
     // Initialize paddle
     const initialPaddleX = SCALED_CANVAS_WIDTH / 2 - SCALED_PADDLE_WIDTH / 2;
@@ -2605,6 +2608,11 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     resetQualityLockout,
   ]);
   const nextLevel = useCallback(() => {
+    // Daily Challenge mode: single level, no progression — bail before any teardown
+    if (isDailyChallenge) {
+      return; // Should not reach here — daily challenge ends on allBricksCleared
+    }
+
     // Stop game loop before starting new level
     if (gameLoopRef.current) {
       gameLoopRef.current.stop();
@@ -2619,11 +2627,11 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     setBonusLetters([]);
     setDroppedLettersThisLevel(new Set());
 
+    // Reset idempotency guard so the next level can complete
+    levelClearedHandledRef.current = false;
+
     // Boss Rush mode: progress through boss order
-    // Daily Challenge mode: single level, no progression
-    if (isDailyChallenge) {
-      return; // Should not reach here — daily challenge ends on allBricksCleared
-    }
+
 
     if (isBossRush) {
       const nextBossIndex = bossRushIndex + 1;
@@ -2860,6 +2868,83 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
   // Update nextLevel ref whenever nextLevel function changes
   nextLevelRef.current = nextLevel;
+
+  // Unified level-cleared handler — called by both the physics path (ball) and the
+  // bullet path (turret). Idempotent: guarded so ball + bullet clearing the last
+  // bricks on the same frame does not fire twice.
+  const handleLevelCleared = useCallback(() => {
+    if (levelClearedHandledRef.current) return;
+    levelClearedHandledRef.current = true;
+
+    const bricks = world.bricks;
+    const hasDestructible = bricks.some((b) => !b.isIndestructible);
+    void hasDestructible;
+
+    soundManager.playWin();
+
+    // Daily Challenge mode: evaluate objectives and show result
+    if (isDailyChallenge && dailyChallengeData) {
+      setGameState("won");
+      soundManager.stopBackgroundMusic();
+
+      const challengeResult = evaluateObjectives(dailyChallengeData, {
+        livesLost: dailyChallengeLivesLostRef.current,
+        timeSeconds: totalPlayTime,
+        allBricksDestroyed: true,
+        score: scoreRef.current,
+        powerUpsCollected: dailyChallengePowerUpsRef.current,
+        bestCombo: hitStreakRef.current,
+      });
+      setDailyChallengeResult(challengeResult);
+      setShowDailyChallengeResult(true);
+      soundManager.playHighScoreMusic();
+      toast.success("⚡ Daily Challenge Complete!");
+    } else if (level >= FINAL_LEVEL) {
+      setScore((prev) => prev + 1000000);
+      setBeatLevel50Completed(true);
+      setGameState("won");
+      setShowEndScreen(true);
+      soundManager.stopBackgroundMusic();
+      toast.success(`🎉 YOU WIN! Level ${level} Complete! Bonus: +1,000,000 points!`);
+
+      // Submit lifetime stats on victory (skip if debug mode is active)
+      if (!isDebugModeActive(debugSettings)) {
+        submitGameStats({
+          bricksDestroyed: totalBricksDestroyedRef.current,
+          enemiesKilled: world.enemiesKilled,
+          bossesKilled: bossesKilledRef.current,
+          powerUpsCollected: powerUpsCollectedTypesRef.current.size,
+          powerUpTypes: Array.from(powerUpsCollectedTypesRef.current),
+          timePlayed: totalPlayTimeRef.current,
+          score: scoreRef.current + 1000000,
+          level: levelRef.current,
+          comboStreak: hitStreakRef.current,
+          difficulty: settings.difficulty,
+          isVictory: true,
+          collectedAllLetters: collectedLetters.size === 6,
+          gameMode: settings.gameMode,
+        }).then((ids) => {
+          if (ids.length > 0) setUnlockedAchievements(ids);
+        });
+      }
+    } else {
+      setGameState("ready");
+      toast.success(`Level ${level} Complete! Click to continue.`);
+    }
+
+    // Mark all bricks invisible
+    setBricks((prev) => prev.map((b) => ({ ...b, visible: false })));
+  }, [
+    isDailyChallenge,
+    dailyChallengeData,
+    totalPlayTime,
+    level,
+    debugSettings,
+    settings.difficulty,
+    settings.gameMode,
+    collectedLetters,
+  ]);
+  handleLevelClearedRef.current = handleLevelCleared;
 
   // Reset boss tutorial ref when level changes
   useEffect(() => {
@@ -4167,64 +4252,9 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
     // ═══ Win condition ═══
     if (result.allBricksCleared) {
-      const bricks = world.bricks;
-      const hasDestructible = bricks.some((b) => !b.isIndestructible);
-
-      soundManager.playWin();
-
-      // Daily Challenge mode: evaluate objectives and show result
-      if (isDailyChallenge && dailyChallengeData) {
-        setGameState("won");
-        soundManager.stopBackgroundMusic();
-
-        const challengeResult = evaluateObjectives(dailyChallengeData, {
-          livesLost: dailyChallengeLivesLostRef.current,
-          timeSeconds: totalPlayTime,
-          allBricksDestroyed: true,
-          score: scoreRef.current,
-          powerUpsCollected: dailyChallengePowerUpsRef.current,
-          bestCombo: hitStreakRef.current,
-        });
-        setDailyChallengeResult(challengeResult);
-        setShowDailyChallengeResult(true);
-        soundManager.playHighScoreMusic();
-        toast.success("⚡ Daily Challenge Complete!");
-      } else if (level >= FINAL_LEVEL) {
-        setScore((prev) => prev + 1000000);
-        setBeatLevel50Completed(true);
-        setGameState("won");
-        setShowEndScreen(true);
-        soundManager.stopBackgroundMusic();
-        toast.success(`🎉 YOU WIN! Level ${level} Complete! Bonus: +1,000,000 points!`);
-
-        // Submit lifetime stats on victory (skip if debug mode is active)
-        if (!isDebugModeActive(debugSettings)) {
-          submitGameStats({
-            bricksDestroyed: totalBricksDestroyedRef.current,
-            enemiesKilled: world.enemiesKilled,
-            bossesKilled: bossesKilledRef.current,
-            powerUpsCollected: powerUpsCollectedTypesRef.current.size,
-            powerUpTypes: Array.from(powerUpsCollectedTypesRef.current),
-            timePlayed: totalPlayTimeRef.current,
-            score: scoreRef.current + 1000000,
-            level: levelRef.current,
-            comboStreak: hitStreakRef.current,
-            difficulty: settings.difficulty,
-            isVictory: true,
-            collectedAllLetters: collectedLetters.size === 6,
-            gameMode: settings.gameMode,
-          }).then((ids) => {
-            if (ids.length > 0) setUnlockedAchievements(ids);
-          });
-        }
-      } else {
-        setGameState("ready");
-        toast.success(`Level ${level} Complete! Click to continue.`);
-      }
-
-      // Mark all bricks invisible
-      setBricks((prev) => prev.map((b) => ({ ...b, visible: false })));
+      handleLevelCleared();
     }
+
 
     // ═══ Enemy explosions ═══
     if (result.explosionsToCreate.length > 0) {
