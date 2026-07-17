@@ -2478,6 +2478,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
     // Reset quality lockout for new game session
     resetQualityLockout();
+    levelClearedHandledRef.current = false;
 
     // Initialize paddle
     const initialPaddleX = SCALED_CANVAS_WIDTH / 2 - SCALED_PADDLE_WIDTH / 2;
