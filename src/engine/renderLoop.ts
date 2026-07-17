@@ -99,7 +99,9 @@ export function startRenderLoop(canvas: HTMLCanvasElement, assets: AssetRefs): (
 
   let rafId: number | null = null;
   let running = true;
-  let lastFrameTime = 0;
+  lastTickTimestamp = 0;
+  tickCounter = 0;
+
 
   // Offscreen canvas for resolution scaling.
   // Eagerly create it for the current quality setting so that the very first
