@@ -1448,6 +1448,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   const uiTouchIdsRef = useRef<Set<number>>(new Set());
   const timerStartedRef = useRef(false);
   const nextLevelRef = useRef<(() => void) | null>(null);
+  const handleLevelClearedRef = useRef<(() => void) | null>(null);
+  const levelClearedHandledRef = useRef(false);
 
   // Fixed-step game loop
   const gameLoopRef = useRef<FixedStepGameLoop | null>(null);
