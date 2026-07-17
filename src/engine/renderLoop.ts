@@ -127,10 +127,11 @@ export function startRenderLoop(canvas: HTMLCanvasElement, assets: AssetRefs): (
     if (!running) return;
     rafId = requestAnimationFrame(loop);
 
-    // Skip frame if not enough time has elapsed (adaptive cap)
-    const elapsed = timestamp - lastFrameTime;
-    if (elapsed < minFrameInterval) return;
-    lastFrameTime = timestamp - (elapsed % minFrameInterval);
+    updateRefreshEstimate(timestamp);
+    tickCounter++;
+    frameDivider = computeFrameDivider();
+    if (tickCounter % frameDivider !== 0) return;
+
 
     const now = performance.now();
     const scale = renderState.qualitySettings.resolutionScale;
