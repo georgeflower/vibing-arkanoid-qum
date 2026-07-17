@@ -4252,64 +4252,9 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
     // ═══ Win condition ═══
     if (result.allBricksCleared) {
-      const bricks = world.bricks;
-      const hasDestructible = bricks.some((b) => !b.isIndestructible);
-
-      soundManager.playWin();
-
-      // Daily Challenge mode: evaluate objectives and show result
-      if (isDailyChallenge && dailyChallengeData) {
-        setGameState("won");
-        soundManager.stopBackgroundMusic();
-
-        const challengeResult = evaluateObjectives(dailyChallengeData, {
-          livesLost: dailyChallengeLivesLostRef.current,
-          timeSeconds: totalPlayTime,
-          allBricksDestroyed: true,
-          score: scoreRef.current,
-          powerUpsCollected: dailyChallengePowerUpsRef.current,
-          bestCombo: hitStreakRef.current,
-        });
-        setDailyChallengeResult(challengeResult);
-        setShowDailyChallengeResult(true);
-        soundManager.playHighScoreMusic();
-        toast.success("⚡ Daily Challenge Complete!");
-      } else if (level >= FINAL_LEVEL) {
-        setScore((prev) => prev + 1000000);
-        setBeatLevel50Completed(true);
-        setGameState("won");
-        setShowEndScreen(true);
-        soundManager.stopBackgroundMusic();
-        toast.success(`🎉 YOU WIN! Level ${level} Complete! Bonus: +1,000,000 points!`);
-
-        // Submit lifetime stats on victory (skip if debug mode is active)
-        if (!isDebugModeActive(debugSettings)) {
-          submitGameStats({
-            bricksDestroyed: totalBricksDestroyedRef.current,
-            enemiesKilled: world.enemiesKilled,
-            bossesKilled: bossesKilledRef.current,
-            powerUpsCollected: powerUpsCollectedTypesRef.current.size,
-            powerUpTypes: Array.from(powerUpsCollectedTypesRef.current),
-            timePlayed: totalPlayTimeRef.current,
-            score: scoreRef.current + 1000000,
-            level: levelRef.current,
-            comboStreak: hitStreakRef.current,
-            difficulty: settings.difficulty,
-            isVictory: true,
-            collectedAllLetters: collectedLetters.size === 6,
-            gameMode: settings.gameMode,
-          }).then((ids) => {
-            if (ids.length > 0) setUnlockedAchievements(ids);
-          });
-        }
-      } else {
-        setGameState("ready");
-        toast.success(`Level ${level} Complete! Click to continue.`);
-      }
-
-      // Mark all bricks invisible
-      setBricks((prev) => prev.map((b) => ({ ...b, visible: false })));
+      handleLevelCleared();
     }
+
 
     // ═══ Enemy explosions ═══
     if (result.explosionsToCreate.length > 0) {
