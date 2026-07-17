@@ -22,18 +22,54 @@ const TARGET_FPS_HIGH = 120;
 const TARGET_FPS_LOW = 60;
 const IS_MOBILE = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
 let currentTargetFps = TARGET_FPS_HIGH;
-let minFrameInterval = 1000 / currentTargetFps;
+
+// ─── Vsync-aligned pacing ───
+// Wall-clock frame skipping judders on panels whose refresh isn't a multiple
+// of the target (Android 90Hz / adaptive LTPO). Instead: estimate the real
+// refresh rate from rAF deltas and render every Nth tick — even cadence on
+// any panel, self-adjusting when adaptive refresh switches rates.
+let refreshEstimateMs = 1000 / 60; // EMA of rAF tick deltas
+let lastTickTimestamp = 0;
+let tickCounter = 0;
+let frameDivider = 1;
+
+function updateRefreshEstimate(timestamp: number): void {
+  if (lastTickTimestamp > 0) {
+    const delta = timestamp - lastTickTimestamp;
+    // Ignore outliers (tab background, GC stalls)
+    if (delta > 2 && delta < 100) {
+      refreshEstimateMs = refreshEstimateMs * 0.95 + delta * 0.05;
+    }
+  }
+  lastTickTimestamp = timestamp;
+}
+
+function computeFrameDivider(): number {
+  if (currentTargetFps <= 0) return 1; // 0 = native/uncapped
+  const refreshFps = 1000 / refreshEstimateMs;
+  // ceil: never exceed the target; render every Nth vsync tick evenly.
+  // 60Hz/60 -> 1, 120Hz/60 -> 2, 90Hz/60 -> 2 (even 45), 90Hz/30 -> 3 (even 30)
+  return Math.max(1, Math.ceil(refreshFps / currentTargetFps - 0.05)); // -0.05 tolerance for 60.1Hz-style jitter
+}
 
 /** Update the render target FPS based on quality level */
 export function setRenderTargetFps(qualityLevel: "potato" | "low" | "medium" | "high"): void {
   const TARGET_FPS_POTATO = 30;
-  const qualityTarget = qualityLevel === "potato" ? TARGET_FPS_POTATO : qualityLevel === "low" ? TARGET_FPS_LOW : TARGET_FPS_HIGH;
-  const newTarget = qualityLevel === "potato" ? TARGET_FPS_POTATO : IS_MOBILE ? Math.min(qualityTarget, 60) : qualityTarget;
+  let newTarget: number;
+  if (qualityLevel === "potato") {
+    newTarget = TARGET_FPS_POTATO;
+  } else if (qualityLevel === "low") {
+    newTarget = TARGET_FPS_LOW;
+  } else if (IS_MOBILE) {
+    newTarget = 0; // medium/high on mobile: render every vsync tick (native rate)
+  } else {
+    newTarget = TARGET_FPS_HIGH;
+  }
   if (newTarget !== currentTargetFps) {
     currentTargetFps = newTarget;
-    minFrameInterval = 1000 / currentTargetFps;
   }
 }
+
 
 export function startRenderLoop(canvas: HTMLCanvasElement, assets: AssetRefs): () => void {
   const ctx = canvas.getContext("2d", {
