@@ -2608,6 +2608,11 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     resetQualityLockout,
   ]);
   const nextLevel = useCallback(() => {
+    // Daily Challenge mode: single level, no progression — bail before any teardown
+    if (isDailyChallenge) {
+      return; // Should not reach here — daily challenge ends on allBricksCleared
+    }
+
     // Stop game loop before starting new level
     if (gameLoopRef.current) {
       gameLoopRef.current.stop();
@@ -2622,11 +2627,11 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     setBonusLetters([]);
     setDroppedLettersThisLevel(new Set());
 
+    // Reset idempotency guard so the next level can complete
+    levelClearedHandledRef.current = false;
+
     // Boss Rush mode: progress through boss order
-    // Daily Challenge mode: single level, no progression
-    if (isDailyChallenge) {
-      return; // Should not reach here — daily challenge ends on allBricksCleared
-    }
+
 
     if (isBossRush) {
       const nextBossIndex = bossRushIndex + 1;
