@@ -17,7 +17,7 @@ import { soundManager } from "@/utils/sounds";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { GAME_VERSION } from "@/constants/version";
-import { useServiceWorkerUpdate } from "@/hooks/useServiceWorkerUpdate";
+
 import { useAdaptiveQuality } from "@/hooks/useAdaptiveQuality";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { TopScoresDisplay } from "./TopScoresDisplay";
@@ -79,8 +79,6 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
     /iPhone|iPad|iPod/i.test(navigator.userAgent) ||
     (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 
-  // Force service worker update check and apply when at main menu
-  useServiceWorkerUpdate({ shouldApplyUpdate: true, isMainMenu: true });
 
   // Hidden developer feature: Press TAB to open level editor
   useEffect(() => {

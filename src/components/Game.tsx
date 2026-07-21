@@ -15,7 +15,7 @@ import { BossRushStatsOverlay } from "./BossRushStatsOverlay";
 import { useBossRushScores } from "@/hooks/useBossRushScores";
 import { Button } from "@/components/ui/button";
 import { debugToast as toast, alwaysToast } from "@/utils/debugToast";
-import { useServiceWorkerUpdate } from "@/hooks/useServiceWorkerUpdate";
+
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { MobileGameControls } from "./MobileGameControls";
 import { useScaledConstants } from "@/hooks/useScaledConstants";
@@ -211,8 +211,6 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Detect updates but don't apply during gameplay - defer until back at menu
-  useServiceWorkerUpdate({ shouldApplyUpdate: false });
 
   // Parse resolution from settings — but do NOT resize a running game.
   // Only pick up new resolution values when we're not actively playing/paused;
