@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useServiceWorkerUpdate } from "@/hooks/useServiceWorkerUpdate";
+
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import CRTOverlay from "@/components/CRTOverlay";
@@ -97,7 +97,7 @@ interface ScoreEntry {
 }
 
 const Home = () => {
-  useServiceWorkerUpdate({ isMainMenu: true, shouldApplyUpdate: true });
+  
   const [leaderboardTab, setLeaderboardTab] = useState<LeaderboardTab>("all-time");
   const [difficultyTab, setDifficultyTab] = useState<DifficultyTab>("all");
   const [scores, setScores] = useState<ScoreEntry[]>([]);
