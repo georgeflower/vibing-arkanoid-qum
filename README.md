@@ -23,6 +23,9 @@ A loving tribute to the legendary **Arkanoid** (Taito, 1986) — rebuilt from sc
 - **Player profiles** with unique usernames, custom avatars (256×256), public/private toggle, and leaderboard linking
 - **Daily Challenges** with procedural layouts, unique modifiers (125% speed, enemy spawns, no extra lives), objectives, and streak tracking
 - **Account system** with secure email-verified auth, Google Sign-In, lifetime stats, unlockable achievements, and full account deletion
+- **Settings menu** with persistent video and sound preferences
+- **FPS overlay** toggle for lightweight performance monitoring
+- **Buy Me a Coffee** support link in the main menu
 - **CRT overlay** and authentic retro pixel styling
 - **Adaptive quality** — automatically adjusts visual effects for smooth performance
 - **Mobile support** with touch controls and swipe gestures
