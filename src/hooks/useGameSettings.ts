@@ -59,7 +59,7 @@ export function loadSettings(): GameSettings {
     if (stored) {
       const parsed = JSON.parse(stored);
       // Strip removed keys
-      const { tutorialEnabled, showQualityIndicator, crtEnabled, ...rest } = parsed;
+      const { tutorialEnabled, showQualityIndicator, ...rest } = parsed;
       const merged = { ...DEFAULT_SETTINGS, ...rest };
       // Ensure resolution matches quality
       merged.canvasResolution = getResolutionForQuality(merged.qualityLevel);
@@ -101,7 +101,6 @@ async function loadSettingsFromCloud(): Promise<GameSettings | null> {
       const merged = { ...DEFAULT_SETTINGS, ...(data.settings_json as any) };
       // Strip removed keys and enforce resolution
       delete (merged as any).showQualityIndicator;
-      delete (merged as any).crtEnabled;
       merged.canvasResolution = getResolutionForQuality(merged.qualityLevel);
       return merged;
     }

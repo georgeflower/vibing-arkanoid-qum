@@ -124,15 +124,15 @@ import { resetAllPools, enemyPool, bombPool, explosionPool, getNextExplosionId, 
 import { brickRenderer } from "@/utils/brickLayerCache";
 import { setRenderTargetFps } from "@/engine/renderLoop";
 import { setPhysicsTargetFps } from "@/engine/physicsLoop";
+import { isMobileDevice, isIOSDevice } from "@/utils/deviceDetect";
 
 // Physics tick rate scales with quality so low/potato cut CPU work, not just GPU work.
-const IS_MOBILE_DEVICE = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
 const physicsFpsForQuality = (level: QualityLevel): number => {
   switch (level) {
     case "potato": return 45;
     case "low": return 60;
-    case "medium": return IS_MOBILE_DEVICE ? 60 : 90;
-    default: return IS_MOBILE_DEVICE ? 60 : 120;
+    case "medium": return isMobileDevice ? 60 : 90;
+    default: return isMobileDevice ? 60 : 120;
   } // end hitstop gameplay freeze block
 };
 
@@ -722,18 +722,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   const pendingChainExplosionsRef = useRef<Array<{ brick: Brick; triggerTime: number }>>([]);
 
   // ═══ Device Detection (needed early for multiple features) ═══
-  const [isMobileDevice] = useState(() => {
-    return (
-      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
-      ("ontouchstart" in window && window.matchMedia("(max-width: 768px)").matches)
-    );
-  });
-  const [isIOSDevice] = useState(() => {
-    return (
-      /iPhone|iPad|iPod/i.test(navigator.userAgent) ||
-      (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
-    );
-  });
+  // isMobileDevice and isIOSDevice are imported from @/utils/deviceDetect
 
   // ═══ Fullscreen and Layout State ═══
   const [showFullscreenPrompt, setShowFullscreenPrompt] = useState(false);
@@ -1967,14 +1956,14 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   // OPTIMIZED: Uses particle pool instead of creating new arrays
   const createExplosionParticles = useCallback(
     (x: number, y: number, enemyType: EnemyType): Particle[] => {
-      const particleCount = Math.round(qualitySettings.explosionParticles);
+      const particleCount = Math.max(1, Math.round(qualitySettings.explosionParticles * qualitySettings.particleMultiplier));
       // Add particles directly to the pool - no new array allocation
       particlePool.acquireForExplosion(x, y, particleCount, enemyType, gameLoopRef.current?.getTimeScale() ?? 1.0);
       // Return empty array for backwards compatibility with Explosion type
       // The actual particles are now managed by the pool
       return [];
     },
-    [qualitySettings.explosionParticles],
+    [qualitySettings.explosionParticles, qualitySettings.particleMultiplier],
   );
 
   // ═══ SHARED LIFE-LOSS & BOSS DEFEAT HELPERS ═══
@@ -4554,7 +4543,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
           particlePool.acquireForGameOver(
             SCALED_CANVAS_WIDTH / 2,
             SCALED_CANVAS_HEIGHT / 2,
-            100,
+            Math.max(1, Math.round(100 * qualitySettings.particleMultiplier)),
             gameLoopRef.current?.getTimeScale() ?? 1.0,
           );
           handleGameOver();
@@ -5839,7 +5828,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
           });
 
           // Create victory confetti particles using pool
-          const particleCount = Math.round(150 * (qualitySettings.explosionParticles / 50));
+          const particleCount = Math.max(1, Math.round(150 * (qualitySettings.explosionParticles / 50) * qualitySettings.particleMultiplier));
           particlePool.acquireForHighScore(
             bossCenter.x,
             bossCenter.y,
@@ -8133,7 +8122,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   const handleHighScoreSubmit = async (name: string) => {
     try {
       // Create a burst of particles on submission using pool
-      const particleCount = Math.round(150 * (qualitySettings.explosionParticles / 50));
+      const particleCount = Math.max(1, Math.round(150 * (qualitySettings.explosionParticles / 50) * qualitySettings.particleMultiplier));
       particlePool.acquireForHighScore(
         SCALED_CANVAS_WIDTH / 2,
         SCALED_CANVAS_HEIGHT / 2,

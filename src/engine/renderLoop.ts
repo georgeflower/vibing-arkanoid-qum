@@ -11,6 +11,7 @@ import { world } from "@/engine/state";
 import { renderState, type AssetRefs } from "@/engine/renderState";
 import { renderFrame } from "@/engine/canvasRenderer";
 import { QUALITY_PRESETS } from "@/hooks/useAdaptiveQuality";
+import { isMobileDevice as IS_MOBILE } from "@/utils/deviceDetect";
 
 /**
  * Start the render loop. Calls renderFrame every animation frame.
@@ -21,7 +22,6 @@ import { QUALITY_PRESETS } from "@/hooks/useAdaptiveQuality";
 // while allowing smoother rendering on capable hardware.
 const TARGET_FPS_HIGH = 120;
 const TARGET_FPS_LOW = 60;
-const IS_MOBILE = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
 let currentTargetFps = TARGET_FPS_HIGH;
 
 // ─── Vsync-aligned pacing ───

@@ -17,13 +17,17 @@ export const BRICK_PADDING = 4;
 export const BRICK_OFFSET_TOP = 90;
 export const BRICK_OFFSET_LEFT = (CANVAS_WIDTH - (BRICK_COLS * BRICK_WIDTH + (BRICK_COLS - 1) * BRICK_PADDING)) / 2;
 
-export const POWERUP_SIZE = 61; // Same as brick width
+export const POWERUP_SIZE = 61; // Power-up sprite size (larger than BRICK_WIDTH for visibility)
 export const POWERUP_FALL_SPEED = 2;
 export const POWERUP_DROP_CHANCE = 0.2; // 20%
 export const FIREBALL_DURATION = 5000; // 5 seconds
 
 // Final level - game ends after this level
 export const FINAL_LEVEL = 20;
+
+// Daily challenges run on a synthetic level above FINAL_LEVEL so normal
+// level-progression and boss-level checks never match them.
+export const DAILY_CHALLENGE_LEVEL = 21;
 
 export const BULLET_WIDTH = 4;
 export const BULLET_HEIGHT = 12;

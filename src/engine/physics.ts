@@ -27,6 +27,88 @@ export const GRAVITY_DELAY_MS = 10000;
 
 const BOSS_HIT_COOLDOWN_MS = 1000;
 
+// ─── Enemy Hit Config ───
+
+interface EnemyHitCfg {
+  /** Points awarded on kill (receives enemy for large-sphere variant). */
+  killPoints: (enemy: Enemy) => number;
+  /** Non-killing hit threshold: enemy survives while hits < maxPreKillHits. 0 = instant kill. */
+  maxPreKillHits: (enemy: Enemy) => number;
+  /** Non-kill toast (null for instant-kill enemies). */
+  nonKillToast: ((enemy: Enemy, currentHits: number) => { level: "warning"; message: string; key: string }) | null;
+  /** Kill toast message. */
+  killToastMessage: (enemy: Enemy, points: number) => string;
+  /** Screen shake on non-killing hit. */
+  nonKillShake: { intensity: number; duration: number } | null;
+  /** Extra screen shake on kill. */
+  killShake: { intensity: number; duration: number } | null;
+  /** Whether this enemy triggers largeSphereDrops on kill. */
+  isLargeSphereSource: (enemy: Enemy) => boolean;
+}
+
+const ENEMY_HIT_CONFIG: Record<EnemyType, EnemyHitCfg> = {
+  pyramid: {
+    killPoints: () => 300,
+    maxPreKillHits: () => 2,
+    nonKillToast: (_enemy, currentHits) => ({
+      level: "warning",
+      message: currentHits === 0 ? "Pyramid hit! 2 more hits needed" : "Pyramid is angry! 1 more hit!",
+      key: "pyramid_hit",
+    }),
+    killToastMessage: () => "Pyramid destroyed! +300 points",
+    nonKillShake: { intensity: 5, duration: 500 },
+    killShake: null,
+    isLargeSphereSource: () => false,
+  },
+  sphere: {
+    killPoints: (enemy) => (enemy.isLargeSphere ? 400 : 200),
+    maxPreKillHits: (enemy) => (enemy.isLargeSphere ? 2 : 1),
+    nonKillToast: (enemy, currentHits) => {
+      const maxHits = enemy.isLargeSphere ? 2 : 1;
+      const hitsLeft = maxHits - currentHits;
+      return {
+        level: "warning",
+        message: enemy.isLargeSphere
+          ? `Large sphere hit! ${hitsLeft} more hits!`
+          : "Sphere enemy is angry!",
+        key: "sphere_hit",
+      };
+    },
+    killToastMessage: (enemy, points) =>
+      `${enemy.isLargeSphere ? "Large sphere" : "Sphere enemy"} destroyed! +${points} points`,
+    nonKillShake: { intensity: 5, duration: 500 },
+    killShake: null,
+    isLargeSphereSource: (enemy) => !!enemy.isLargeSphere,
+  },
+  crossBall: {
+    killPoints: () => 250,
+    maxPreKillHits: () => 1,
+    nonKillToast: () => ({ level: "warning", message: "CrossBall is angry!", key: "crossball_hit" }),
+    killToastMessage: () => "CrossBall destroyed! +250 points",
+    nonKillShake: { intensity: 5, duration: 500 },
+    killShake: null,
+    isLargeSphereSource: () => false,
+  },
+  star: {
+    killPoints: () => 150,
+    maxPreKillHits: () => 0,
+    nonKillToast: null,
+    killToastMessage: () => "Star destroyed! +150 points",
+    nonKillShake: null,
+    killShake: null,
+    isLargeSphereSource: () => false,
+  },
+  cube: {
+    killPoints: () => 100,
+    maxPreKillHits: () => 0,
+    nonKillToast: null,
+    killToastMessage: () => "Cube enemy destroyed! +100 points",
+    nonKillShake: null,
+    killShake: { intensity: 3, duration: 300 },
+    isLargeSphereSource: () => false,
+  },
+};
+
 // ─── Types ───
 
 export interface PhysicsConfig {
@@ -848,10 +930,16 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
                 });
               }
 
-              // Enemy type-specific multi-hit logic
-              if (enemy.type === "pyramid") {
+              // Enemy type-specific multi-hit logic (config-driven)
+              {
+                const cfg = ENEMY_HIT_CONFIG[enemy.type];
                 const currentHits = enemy.hits || 0;
-                if (currentHits < 2) {
+                const maxPreKillHits = cfg.maxPreKillHits(enemy);
+                const cx = enemy.x + enemy.width / 2;
+                const cy = enemy.y + enemy.height / 2;
+
+                if (currentHits < maxPreKillHits) {
+                  // Non-killing hit
                   result.soundsToPlay.push({ type: "bounce" });
                   enemiesToUpdate.set(enemy.id!, {
                     hits: currentHits + 1,
@@ -860,176 +948,37 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
                     dx: enemy.dx * 1.3,
                     dy: enemy.dy * 1.3,
                   });
-                  result.toastEvents.push({
-                    level: "warning",
-                    message: currentHits === 0 ? "Pyramid hit! 2 more hits needed" : "Pyramid is angry! 1 more hit!",
-                    key: "pyramid_hit",
-                  });
-                  result.screenShakes.push({ intensity: 5, duration: 500 });
-                  result.enemyHitBallIds.push(ccdResult.ball.id); // Count non-killing pyramid hit for streak
+                  if (cfg.nonKillToast) {
+                    result.toastEvents.push(cfg.nonKillToast(enemy, currentHits));
+                  }
+                  if (cfg.nonKillShake) {
+                    result.screenShakes.push(cfg.nonKillShake);
+                  }
+                  result.enemyHitBallIds.push(ccdResult.ball.id);
                 } else {
+                  // Killing hit
+                  const points = cfg.killPoints(enemy);
                   enemiesToDestroy.add(enemyIndex);
                   result.enemyHitBallIds.push(ccdResult.ball.id);
-                  result.explosionsToCreate.push({
-                    x: enemy.x + enemy.width / 2,
-                    y: enemy.y + enemy.height / 2,
-                    type: enemy.type,
-                  });
-                  scoreIncrease += 300;
-                  spawnScorePopup(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, 300, "+300");
-                  result.toastEvents.push({
-                    level: "success",
-                    message: "Pyramid destroyed! +300 points",
-                    key: "enemy_destroyed",
-                  });
-                  result.soundsToPlay.push({ type: "explosion" });
-                  enemiesKilledIncrease++;
-                  result.bonusLetterDrops.push({
-                    x: enemy.x + enemy.width / 2,
-                    y: enemy.y + enemy.height / 2,
-                  });
-                  if (enemy.id !== undefined) result.bombIntervalsToClean.push(enemy.id);
-                }
-              } else if (enemy.type === "sphere") {
-                const currentHits = enemy.hits || 0;
-                const maxHits = enemy.isLargeSphere ? 2 : 1;
-                if (currentHits < maxHits) {
-                  result.soundsToPlay.push({ type: "bounce" });
-                  enemiesToUpdate.set(enemy.id!, {
-                    hits: currentHits + 1,
-                    isAngry: true,
-                    speed: enemy.speed * 1.3,
-                    dx: enemy.dx * 1.3,
-                    dy: enemy.dy * 1.3,
-                  });
-                  const hitsLeft = maxHits - currentHits;
-                  result.toastEvents.push({
-                    level: "warning",
-                    message: enemy.isLargeSphere
-                      ? `Large sphere hit! ${hitsLeft} more hits!`
-                      : "Sphere enemy is angry!",
-                    key: "sphere_hit",
-                  });
-                  result.screenShakes.push({ intensity: 5, duration: 500 });
-                  result.enemyHitBallIds.push(ccdResult.ball.id); // Count first hit for streak
-                } else {
-                  enemiesToDestroy.add(enemyIndex);
-                  result.enemyHitBallIds.push(ccdResult.ball.id);
-                  result.explosionsToCreate.push({
-                    x: enemy.x + enemy.width / 2,
-                    y: enemy.y + enemy.height / 2,
-                    type: enemy.type,
-                  });
-                  const points = enemy.isLargeSphere ? 400 : 200;
+                  result.explosionsToCreate.push({ x: cx, y: cy, type: enemy.type });
                   scoreIncrease += points;
-                  spawnScorePopup(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, points, `+${points}`);
+                  spawnScorePopup(cx, cy, points, `+${points}`);
                   result.toastEvents.push({
                     level: "success",
-                    message: `${enemy.isLargeSphere ? "Large sphere" : "Sphere enemy"} destroyed! +${points} points`,
+                    message: cfg.killToastMessage(enemy, points),
                     key: "enemy_destroyed",
                   });
                   result.soundsToPlay.push({ type: "explosion" });
                   enemiesKilledIncrease++;
-                  result.bonusLetterDrops.push({
-                    x: enemy.x + enemy.width / 2,
-                    y: enemy.y + enemy.height / 2,
-                  });
-                  if (enemy.isLargeSphere) {
-                    result.largeSphereDrops.push({
-                      x: enemy.x + enemy.width / 2,
-                      y: enemy.y + enemy.height / 2,
-                    });
+                  if (cfg.killShake) {
+                    result.screenShakes.push(cfg.killShake);
+                  }
+                  result.bonusLetterDrops.push({ x: cx, y: cy });
+                  if (cfg.isLargeSphereSource(enemy)) {
+                    result.largeSphereDrops.push({ x: cx, y: cy });
                   }
                   if (enemy.id !== undefined) result.bombIntervalsToClean.push(enemy.id);
                 }
-              } else if (enemy.type === "crossBall") {
-                const currentHits = enemy.hits || 0;
-                if (currentHits === 0) {
-                  result.soundsToPlay.push({ type: "bounce" });
-                  enemiesToUpdate.set(enemy.id!, {
-                    hits: 1,
-                    isAngry: true,
-                    speed: enemy.speed * 1.3,
-                    dx: enemy.dx * 1.3,
-                    dy: enemy.dy * 1.3,
-                  });
-                  result.toastEvents.push({
-                    level: "warning",
-                    message: "CrossBall is angry!",
-                    key: "crossball_hit",
-                  });
-                  result.screenShakes.push({ intensity: 5, duration: 500 });
-                  result.enemyHitBallIds.push(ccdResult.ball.id);
-                } else {
-                  enemiesToDestroy.add(enemyIndex);
-                  result.enemyHitBallIds.push(ccdResult.ball.id);
-                  result.explosionsToCreate.push({
-                    x: enemy.x + enemy.width / 2,
-                    y: enemy.y + enemy.height / 2,
-                    type: enemy.type,
-                  });
-                  scoreIncrease += 250;
-                  spawnScorePopup(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, 250, "+250");
-                  result.toastEvents.push({
-                    level: "success",
-                    message: "CrossBall destroyed! +250 points",
-                    key: "enemy_destroyed",
-                  });
-                  result.soundsToPlay.push({ type: "explosion" });
-                  enemiesKilledIncrease++;
-                  result.bonusLetterDrops.push({
-                    x: enemy.x + enemy.width / 2,
-                    y: enemy.y + enemy.height / 2,
-                  });
-                  if (enemy.id !== undefined) result.bombIntervalsToClean.push(enemy.id);
-                }
-              } else if (enemy.type === "star") {
-                // Star enemy: 1 hit to destroy, 150 points
-                enemiesToDestroy.add(enemyIndex);
-                result.enemyHitBallIds.push(ccdResult.ball.id);
-                result.explosionsToCreate.push({
-                  x: enemy.x + enemy.width / 2,
-                  y: enemy.y + enemy.height / 2,
-                  type: enemy.type,
-                });
-                scoreIncrease += 150;
-                spawnScorePopup(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, 150, "+150");
-                result.toastEvents.push({
-                  level: "success",
-                  message: "Star destroyed! +150 points",
-                  key: "enemy_destroyed",
-                });
-                result.soundsToPlay.push({ type: "explosion" });
-                enemiesKilledIncrease++;
-                result.bonusLetterDrops.push({
-                  x: enemy.x + enemy.width / 2,
-                  y: enemy.y + enemy.height / 2,
-                });
-                if (enemy.id !== undefined) result.bombIntervalsToClean.push(enemy.id);
-              } else {
-                // Cube enemy — one hit kill
-                enemiesToDestroy.add(enemyIndex);
-                result.enemyHitBallIds.push(ccdResult.ball.id);
-                result.explosionsToCreate.push({
-                  x: enemy.x + enemy.width / 2,
-                  y: enemy.y + enemy.height / 2,
-                  type: enemy.type,
-                });
-                scoreIncrease += 100;
-                spawnScorePopup(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, 100, "+100");
-                result.toastEvents.push({
-                  level: "success",
-                  message: "Cube enemy destroyed! +100 points",
-                  key: "enemy_destroyed",
-                });
-                result.soundsToPlay.push({ type: "explosion" });
-                enemiesKilledIncrease++;
-                result.screenShakes.push({ intensity: 3, duration: 300 });
-                result.bonusLetterDrops.push({
-                  x: enemy.x + enemy.width / 2,
-                  y: enemy.y + enemy.height / 2,
-                });
-                if (enemy.id !== undefined) result.bombIntervalsToClean.push(enemy.id);
               }
             }
             if (enemy) break;
