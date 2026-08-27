@@ -1341,15 +1341,16 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
 
   if (gameState === "playing" && !BOSS_LEVELS.includes(level)) {
     const remainingBricks: Brick[] = [];
+    let hasMoreThanThreeBricks = false;
     for (const brick of bricks) {
       if (!brick.visible || brick.isIndestructible) continue;
       if (remainingBricks.length === 3) {
-        remainingBricks.length = 0;
+        hasMoreThanThreeBricks = true;
         break;
       }
       remainingBricks.push(brick);
     }
-    if (remainingBricks.length > 0 && remainingBricks.length <= 3) {
+    if (!hasMoreThanThreeBricks && remainingBricks.length > 0) {
       for (const r of ballResults) {
         if (!r.ball || r.ball.waitingToLaunch) continue;
 

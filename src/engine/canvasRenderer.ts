@@ -31,12 +31,16 @@ function drawEndgameBrickOverlay(
   if (atMostLow(qualityLevel)) return;
 
   const remainingBricks: Brick[] = [];
+  let hasMoreThanThreeBricks = false;
   for (const brick of bricks) {
     if (!brick.visible || brick.isIndestructible) continue;
-    if (remainingBricks.length === 3) return;
+    if (remainingBricks.length === 3) {
+      hasMoreThanThreeBricks = true;
+      break;
+    }
     remainingBricks.push(brick);
   }
-  if (remainingBricks.length === 0) return;
+  if (hasMoreThanThreeBricks || remainingBricks.length === 0) return;
 
   const pulse = 0.5 + 0.5 * Math.sin(now * 0.01);
   ctx.save();

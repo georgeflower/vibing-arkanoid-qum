@@ -133,7 +133,7 @@ const physicsFpsForQuality = (level: QualityLevel): number => {
     case "low": return 60;
     case "medium": return IS_MOBILE_DEVICE ? 60 : 90;
     default: return IS_MOBILE_DEVICE ? 60 : 120;
-  }
+  } // end hitstop gameplay freeze block
 };
 import { assignPowerUpsToBricks, reassignPowerUpsToBricks } from "@/utils/powerUpAssignment";
 import { MEGA_BOSS_LEVEL, MEGA_BOSS_CONFIG } from "@/constants/megaBossConfig";
