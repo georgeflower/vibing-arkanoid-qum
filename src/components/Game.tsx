@@ -6493,7 +6493,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
               // Trigger highlight flash for enemy kill (levels 1-4)
               triggerHighlightFlash(0.7, 200);
 
-              soundManager.playCrackedBrickBreakSound();
+              soundManager.playBrickHit("cracked", 1);
               if (ENABLE_DEBUG_FEATURES) {
                 toast.success("Reflected attack destroyed enemy!");
               }
@@ -7144,7 +7144,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
           // Trigger highlight flash for enemy kill (levels 1-4)
           triggerHighlightFlash(0.7, 200);
 
-          soundManager.playCrackedBrickBreakSound();
+          soundManager.playBrickHit("cracked", 1);
           toast.success("Reflected shot destroyed enemy!");
           // Remove bomb by ID
           bombPool.release(bomb);
