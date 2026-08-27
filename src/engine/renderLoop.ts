@@ -53,16 +53,28 @@ function computeFrameDivider(): number {
   return Math.max(1, Math.ceil(refreshFps / currentTargetFps - 0.05)); // -0.05 tolerance for 60.1Hz-style jitter
 }
 
+// ─── Render-frame statistics ───
+let renderedFrameCount = 0;
+let renderFpsWindowStart = 0;
+let measuredRenderFps = 0;
+
+export function getRenderStats(): { fps: number; targetFps: number; refreshFps: number } {
+  return {
+    fps: measuredRenderFps,
+    targetFps: currentTargetFps,
+    refreshFps: 1000 / refreshEstimateMs,
+  };
+}
+
 /** Update the render target FPS based on quality level */
 export function setRenderTargetFps(qualityLevel: "potato" | "low" | "medium" | "high"): void {
-  const TARGET_FPS_POTATO = 30;
   let newTarget: number;
-  if (qualityLevel === "potato") {
-    newTarget = TARGET_FPS_POTATO;
+  if (IS_MOBILE) {
+    newTarget = 0; // all mobile tiers: native refresh rate
+  } else if (qualityLevel === "potato") {
+    newTarget = 30;
   } else if (qualityLevel === "low") {
     newTarget = TARGET_FPS_LOW;
-  } else if (IS_MOBILE) {
-    newTarget = 0; // medium/high on mobile: render every vsync tick (native rate)
   } else {
     newTarget = TARGET_FPS_HIGH;
   }
@@ -102,6 +114,8 @@ export function startRenderLoop(canvas: HTMLCanvasElement, assets: AssetRefs): (
   let running = true;
   lastTickTimestamp = 0;
   tickCounter = 0;
+  renderedFrameCount = 0;
+  renderFpsWindowStart = performance.now();
 
 
   // Offscreen canvas for resolution scaling.
@@ -133,8 +147,16 @@ export function startRenderLoop(canvas: HTMLCanvasElement, assets: AssetRefs): (
     frameDivider = computeFrameDivider();
     if (tickCounter % frameDivider !== 0) return;
 
-
+    // Count rendered frames and measure render FPS ~once per second
+    renderedFrameCount++;
     const now = performance.now();
+    const windowElapsed = now - renderFpsWindowStart;
+    if (windowElapsed >= 1000) {
+      measuredRenderFps = renderedFrameCount * 1000 / windowElapsed;
+      renderedFrameCount = 0;
+      renderFpsWindowStart = now;
+    }
+
     const scale = renderState.qualitySettings.resolutionScale;
 
     if (scale < 1.0) {
@@ -142,9 +164,14 @@ export function startRenderLoop(canvas: HTMLCanvasElement, assets: AssetRefs): (
       const scaledW = Math.round(renderState.width * scale);
       const scaledH = Math.round(renderState.height * scale);
 
-      // Re-create offscreen canvas when quality changes the resolution scale
-      if (!offCanvas || offW !== scaledW || offH !== scaledH) {
-        offCanvas = document.createElement("canvas");
+      // Resize offscreen canvas when quality changes the resolution scale.
+      // Reuse the existing element (reassign width/height) to avoid reallocating
+      // GPU textures on every mobile viewport resize (e.g. Safari toolbar toggle).
+      // Ignore sub-2px changes to prevent thrashing on fractional-pixel reflows.
+      if (!offCanvas || Math.abs(offW - scaledW) > 1 || Math.abs(offH - scaledH) > 1) {
+        if (!offCanvas) {
+          offCanvas = document.createElement("canvas");
+        }
         offCanvas.width = scaledW;
         offCanvas.height = scaledH;
         offCtx = offCanvas.getContext("2d", { alpha: false });
