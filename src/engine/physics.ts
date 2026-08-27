@@ -1245,6 +1245,7 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
         const b = brickById.get(id);
         if (b) {
           result.lastBrickPos = { x: b.x + b.width / 2, y: b.y + b.height / 2 };
+          break;
         }
       }
     }

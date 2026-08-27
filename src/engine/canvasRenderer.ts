@@ -2270,7 +2270,9 @@ export function renderFrame(
     ctx.restore();
   }
 
-  // Restore context after shake
+  // Restore shake/zoom context — HUD elements below are drawn in stable screen space
+  ctx.restore();
+
   // ═══ Floating score popups ═══
   if (!isPotato) {
     const nowMs = now;
@@ -2294,7 +2296,7 @@ export function renderFrame(
       // Double-text (avoid shadowBlur in hot-path)
       ctx.fillStyle = "rgba(0,0,0,0.6)";
       ctx.fillText(p.text, p.x + 1, p.y - rise + 1);
-      ctx.fillStyle = p.value === 0 ? "hsl(60,100%,70%)" : "hsl(48,100%,65%)";
+      ctx.fillStyle = p.text.startsWith("+") ? "hsl(48,100%,65%)" : "hsl(60,100%,70%)";
       ctx.fillText(p.text, p.x, p.y - rise);
     }
     ctx.globalAlpha = 1;
@@ -2343,8 +2345,6 @@ export function renderFrame(
       ctx.restore();
     }
   }
-
-  ctx.restore();
 }
 
 // ─── Enemy Drawing ───────────────────────────────────────────
