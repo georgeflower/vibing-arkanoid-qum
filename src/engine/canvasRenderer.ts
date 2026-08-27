@@ -2697,7 +2697,7 @@ function drawEnemies(
 
       let hue = 50;
       const saturation = 90;
-      const lightness = 50;
+      let lightness = 50;
 
       if (singleEnemy.isAngry) {
         const bp = Math.floor(now / 100) % 2;
