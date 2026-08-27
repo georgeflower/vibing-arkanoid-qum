@@ -18,6 +18,11 @@ import { particlePool } from "@/utils/particlePool";
 // Defensive helper for canvas arc calls (prevents DOMException on negative/non-finite radius)
 const safeArcRadius = (r: number): number => (Number.isFinite(r) ? Math.max(0.001, r) : 0.001);
 
+// Quality ranking so "potato" always takes the cheapest branch (never heavier than "low")
+const QUALITY_RANK: Record<string, number> = { potato: 0, low: 1, medium: 2, high: 3 };
+const atMostLow = (level: string) => (QUALITY_RANK[level] ?? 3) <= 1;
+
+
 // ─── Module-level animation state (previously useRef) ────────
 
 let dashOffset = 0;
