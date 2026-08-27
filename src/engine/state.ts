@@ -71,6 +71,17 @@ function createPopupPool(): ScorePopup[] {
   return pool;
 }
 
+export interface PendingPowerUpDrop {
+  brickId: number;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  powerUps: PowerUp[];
+  createdAtSimMs: number;
+  spawnAtSimMs: number;
+}
+
 // ─── The World ───────────────────────────────────────────────────
 
 export interface GameWorld {
@@ -82,6 +93,7 @@ export interface GameWorld {
   bombs: Bomb[];
   explosions: Explosion[];
   powerUps: PowerUp[];
+  pendingPowerUpDrops: PendingPowerUpDrop[];
   bullets: Bullet[];
   bonusLetters: BonusLetter[];
   boss: Boss | null;
@@ -125,6 +137,11 @@ export interface GameWorld {
   score: number;
   lives: number;
   levelStartDestructibleCount: number;
+  bricksSinceLastPowerUp: number;
+  guaranteeNextEligiblePowerUpDrop: boolean;
+  halfwayEventTriggered: boolean;
+  levelOneOpeningGuaranteedDropPending: boolean;
+  levelOneOpeningDropDeadlineMs: number;
 
   // Hitstop: simulation is frozen for entity movement until simTimeMs reaches this value
   hitstopUntilSimMs: number;
@@ -142,6 +159,7 @@ const WORLD_DEFAULTS: Readonly<GameWorld> = Object.freeze({
   bombs: [],
   explosions: [],
   powerUps: [],
+  pendingPowerUpDrops: [],
   bullets: [],
   bonusLetters: [],
   boss: null,
@@ -178,6 +196,11 @@ const WORLD_DEFAULTS: Readonly<GameWorld> = Object.freeze({
   score: 0,
   lives: 3,
   levelStartDestructibleCount: 0,
+  bricksSinceLastPowerUp: 0,
+  guaranteeNextEligiblePowerUpDrop: false,
+  halfwayEventTriggered: false,
+  levelOneOpeningGuaranteedDropPending: false,
+  levelOneOpeningDropDeadlineMs: 0,
 
   hitstopUntilSimMs: 0,
 
@@ -201,6 +224,7 @@ function freshArrays(): void {
   world.bombs = [];
   world.explosions = [];
   world.powerUps = [];
+  world.pendingPowerUpDrops = [];
   world.bullets = [];
   world.bonusLetters = [];
   world.boss = null;
@@ -246,6 +270,11 @@ export function resetWorld(overrides?: Partial<GameWorld>): void {
   world.score = WORLD_DEFAULTS.score;
   world.lives = WORLD_DEFAULTS.lives;
   world.levelStartDestructibleCount = WORLD_DEFAULTS.levelStartDestructibleCount;
+  world.bricksSinceLastPowerUp = WORLD_DEFAULTS.bricksSinceLastPowerUp;
+  world.guaranteeNextEligiblePowerUpDrop = WORLD_DEFAULTS.guaranteeNextEligiblePowerUpDrop;
+  world.halfwayEventTriggered = WORLD_DEFAULTS.halfwayEventTriggered;
+  world.levelOneOpeningGuaranteedDropPending = WORLD_DEFAULTS.levelOneOpeningGuaranteedDropPending;
+  world.levelOneOpeningDropDeadlineMs = WORLD_DEFAULTS.levelOneOpeningDropDeadlineMs;
   world.hitstopUntilSimMs = WORLD_DEFAULTS.hitstopUntilSimMs;
 
   // Fresh mutable arrays

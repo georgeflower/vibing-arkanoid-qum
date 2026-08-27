@@ -514,6 +514,36 @@ class SoundManager {
     sub.stop(ctx.currentTime + 0.15);
   }
 
+  playHalfwayPulseSound() {
+    if (!this.sfxEnabled) return;
+    const ctx = this.getAudioContext();
+    const lead = ctx.createOscillator();
+    const leadGain = ctx.createGain();
+    lead.connect(leadGain);
+    leadGain.connect(this.sfxOut);
+    lead.type = "triangle";
+    lead.frequency.setValueAtTime(420, ctx.currentTime);
+    lead.frequency.exponentialRampToValueAtTime(900, ctx.currentTime + 0.22);
+    leadGain.gain.setValueAtTime(0.001, ctx.currentTime);
+    leadGain.gain.linearRampToValueAtTime(0.18, ctx.currentTime + 0.03);
+    leadGain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.26);
+    lead.start(ctx.currentTime);
+    lead.stop(ctx.currentTime + 0.27);
+
+    const harmony = ctx.createOscillator();
+    const harmonyGain = ctx.createGain();
+    harmony.connect(harmonyGain);
+    harmonyGain.connect(this.sfxOut);
+    harmony.type = "sine";
+    harmony.frequency.setValueAtTime(630, ctx.currentTime + 0.04);
+    harmony.frequency.exponentialRampToValueAtTime(1180, ctx.currentTime + 0.24);
+    harmonyGain.gain.setValueAtTime(0.001, ctx.currentTime + 0.04);
+    harmonyGain.gain.linearRampToValueAtTime(0.1, ctx.currentTime + 0.08);
+    harmonyGain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.28);
+    harmony.start(ctx.currentTime + 0.04);
+    harmony.stop(ctx.currentTime + 0.29);
+  }
+
   playPhaseCompleteJingle() {
     if (!this.sfxEnabled) return;
     const ctx = this.getAudioContext();

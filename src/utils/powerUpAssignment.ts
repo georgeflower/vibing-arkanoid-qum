@@ -9,17 +9,17 @@ import {
 const DUAL_CHOICE_CHANCE = 0.15;
 
 /**
- * Pre-assigns power-ups to 8% of destructible bricks at level initialization
- * Uses weighted random selection with diminishing returns based on drop history
- * 
- * Also marks ~25% of those as dual-choice bricks and assigns a second power-up type.
+ * Pre-assigns power-up types to destructible bricks at level initialization.
+ * Runtime drop chance is handled separately, but using per-brick assignments keeps
+ * the existing weighted-selection and re-assignment architecture intact.
  */
 export const assignPowerUpsToBricks = (
   bricks: Brick[],
   extraLifeUsedLevels: number[],
   currentLevel: number,
   difficulty: Difficulty,
-  dropCounts: Partial<Record<PowerUpType, number>> = {}
+  dropCounts: Partial<Record<PowerUpType, number>> = {},
+  excludeLife: boolean = false,
 ): { assignments: Map<number, PowerUpType>; dualChoiceAssignments: Map<number, PowerUpType> } => {
   const assignments = new Map<number, PowerUpType>();
   const dualChoiceAssignments = new Map<number, PowerUpType>();
@@ -30,13 +30,6 @@ export const assignPowerUpsToBricks = (
   );
 
   if (destructibleBricks.length === 0) return { assignments, dualChoiceAssignments };
-
-  // Calculate 8% of destructible bricks
-  const powerUpCount = Math.max(1, Math.floor(destructibleBricks.length * 0.08));
-
-  // Shuffle and select random bricks
-  const shuffled = [...destructibleBricks].sort(() => Math.random() - 0.5);
-  const selectedBricks = shuffled.slice(0, powerUpCount);
 
   // Calculate current weights based on drop history
   const currentWeights = calculateCurrentWeights(
@@ -52,9 +45,12 @@ export const assignPowerUpsToBricks = (
   
   // Create a mutable copy of weights to update during assignment
   const mutableWeights = { ...currentWeights };
+  if (excludeLife && mutableWeights.life !== undefined) {
+    delete mutableWeights.life;
+  }
 
-  // Assign weighted random power-up types to selected bricks
-  selectedBricks.forEach((brick) => {
+  // Assign weighted random power-up types to all destructible bricks.
+  destructibleBricks.forEach((brick) => {
     // If extra life was just assigned, remove it from available weights
     if (extraLifeAssigned && mutableWeights.life !== undefined) {
       delete mutableWeights.life;
@@ -85,7 +81,7 @@ export const assignPowerUpsToBricks = (
 };
 
 /**
- * Re-assigns power-ups to remaining visible bricks after a power-up is collected
+ * Re-assigns power-up types to remaining visible bricks after a power-up is collected.
  */
 export const reassignPowerUpsToBricks = (
   currentAssignments: Map<number, PowerUpType>,
@@ -93,7 +89,8 @@ export const reassignPowerUpsToBricks = (
   extraLifeUsedLevels: number[],
   currentLevel: number,
   difficulty: Difficulty,
-  dropCounts: Partial<Record<PowerUpType, number>>
+  dropCounts: Partial<Record<PowerUpType, number>>,
+  excludeLife: boolean = false,
 ): { assignments: Map<number, PowerUpType>; dualChoiceAssignments: Map<number, PowerUpType> } => {
   const dualChoiceAssignments = new Map<number, PowerUpType>();
 
@@ -122,6 +119,9 @@ export const reassignPowerUpsToBricks = (
   const newAssignments = new Map<number, PowerUpType>();
   let extraLifeAssigned = false;
   const mutableWeights = { ...currentWeights };
+  if (excludeLife && mutableWeights.life !== undefined) {
+    delete mutableWeights.life;
+  }
 
   // Re-assign power-ups to remaining bricks
   remainingBricksWithPowerUps.forEach((brick) => {
