@@ -194,6 +194,7 @@ const HEALTH_RATIO_MEDIUM = 0.88;
 const HEALTH_RATIO_HIGH = 0.95;
 
 
+interface PerformanceLogEntry {
   timestamp: number;
   fps: number;
   quality: QualityLevel;
