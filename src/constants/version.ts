@@ -1,6 +1,18 @@
-export const GAME_VERSION = "0.9.982";
+export const GAME_VERSION = "0.9.983";
 
 export const CHANGELOG = [
+  {
+    version: "0.9.983",
+    changes: [
+      "Refactor: Consolidated mobile/iOS device detection into a single shared util (deviceDetect.ts)",
+      "Refactor: Enemy-hit handling in physics engine rewritten as a config-driven table",
+      "Improved: What's New screen now shows current changelog content and remembers when you've seen it",
+      "Improved: Particle spawn counts now scale with quality setting, reducing update work on low/potato quality",
+      "Fix: Timer leak on locked-level message timeout resolved on component unmount",
+      "Cleanup: Removed orphaned CRT feature references (crtEnabled migration guards)",
+      "Cleanup: Added DAILY_CHALLENGE_LEVEL constant; fixed stale POWERUP_SIZE comment",
+    ],
+  },
   {
     version: "0.9.982",
     changes: [

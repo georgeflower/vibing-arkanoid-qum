@@ -2,6 +2,7 @@ import { useRef, useEffect } from "react";
 import { X } from "lucide-react";
 import { CHANGELOG } from "@/constants/version";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
+import { isMobileDevice } from "@/utils/deviceDetect";
 
 interface ChangelogProps {
   onClose: () => void;
@@ -11,8 +12,7 @@ export const Changelog = ({ onClose }: ChangelogProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   
   // Swipe gesture for mobile back navigation
-  const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
-    ("ontouchstart" in window && window.matchMedia("(max-width: 768px)").matches);
+  // isMobileDevice imported from @/utils/deviceDetect
   
   useSwipeGesture(containerRef, onClose, { enabled: isMobileDevice });
 

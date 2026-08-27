@@ -5,6 +5,7 @@ import { useHighScores, type LeaderboardType, type DifficultyFilter } from "@/ho
 import { useBossRushScores } from "@/hooks/useBossRushScores";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { X } from "lucide-react";
+import { isMobileDevice } from "@/utils/deviceDetect";
 
 type TabType = 'normal' | 'bossRush';
 
@@ -22,8 +23,7 @@ export const HighScoreDisplay = ({ onClose, leaderboardType = 'all-time', initia
   const { scores: bossRushScores, isLoading: bossRushLoading, formatTime } = useBossRushScores();
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
-    ("ontouchstart" in window && window.matchMedia("(max-width: 768px)").matches);
+  // isMobileDevice imported from @/utils/deviceDetect
   
   useSwipeGesture(containerRef, onClose, { enabled: isMobileDevice });
 

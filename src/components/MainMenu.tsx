@@ -21,9 +21,11 @@ import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { TopScoresDisplay } from "./TopScoresDisplay";
 import { X, ChevronUp, ChevronDown } from "lucide-react";
 import { useLevelProgress } from "@/hooks/useLevelProgress";
-import { FINAL_LEVEL, ENABLE_DEBUG_FEATURES } from "@/constants/game";
+import { FINAL_LEVEL, ENABLE_DEBUG_FEATURES, DAILY_CHALLENGE_LEVEL } from "@/constants/game";
 import { BOSS_RUSH_CONFIG } from "@/constants/bossRushConfig";
 import { SettingsDialog } from "./SettingsDialog";
+import { isMobileDevice, isIOSDevice } from "@/utils/deviceDetect";
+import { CHANGELOG } from "@/constants/version";
 import bmcIcon from "@/assets/buymeacoffee.png";
 
 
@@ -47,6 +49,9 @@ export const MainMenu = ({ onStartGame, difficulty, setDifficulty, gameMode, set
   const [showAbout, setShowAbout] = useState(false);
   const [showChangelog, setShowChangelog] = useState(false);
   const [showWhatsNew, setShowWhatsNew] = useState(false);
+  const [lastSeenWhatsNewVersion, setLastSeenWhatsNewVersion] = useState<string>(() => {
+    try { return localStorage.getItem("lastSeenWhatsNewVersion") ?? ""; } catch { return ""; }
+  });
   const [showDailyChallenge, setShowDailyChallenge] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [dailyChallengeStreak, setDailyChallengeStreak] = useState(0);
@@ -80,6 +85,9 @@ export const MainMenu = ({ onStartGame, difficulty, setDifficulty, gameMode, set
   // Starting level state
   const [showLockedMessage, setShowLockedMessage] = useState(false);
   const lockedMessageTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => {
+    if (lockedMessageTimeoutRef.current) clearTimeout(lockedMessageTimeoutRef.current);
+  }, []);
   const { maxLevelReached, isLevelUnlocked } = useLevelProgress();
 
   // Refs for swipe gesture detection
@@ -88,10 +96,6 @@ export const MainMenu = ({ onStartGame, difficulty, setDifficulty, gameMode, set
   const whatsNewRef = useRef<HTMLDivElement>(null);
   const aboutRef = useRef<HTMLDivElement>(null);
   const instructionsRef = useRef<HTMLDivElement>(null);
-
-  const isIOSDevice =
-    /iPhone|iPad|iPod/i.test(navigator.userAgent) ||
-    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 
 
   // Hidden developer feature: Press TAB to open level editor
@@ -147,7 +151,7 @@ export const MainMenu = ({ onStartGame, difficulty, setDifficulty, gameMode, set
     const settings: GameSettings = {
       startingLives: challenge.startingLives,
       difficulty,
-      startingLevel: 21,
+      startingLevel: DAILY_CHALLENGE_LEVEL,
       gameMode: "dailyChallenge",
       dailyChallengeConfig: config,
     };
@@ -182,9 +186,7 @@ export const MainMenu = ({ onStartGame, difficulty, setDifficulty, gameMode, set
   };
 
   // Swipe gesture handlers for all sub-screens
-  const isMobileDevice =
-    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
-    ("ontouchstart" in window && window.matchMedia("(max-width: 768px)").matches);
+  // isMobileDevice is imported from @/utils/deviceDetect
 
   useSwipeGesture(highScoresRef, () => setShowHighScores(false), { enabled: showHighScores && isMobileDevice });
   useSwipeGesture(changelogRef, () => setShowChangelog(false), { enabled: showChangelog && isMobileDevice });
@@ -277,75 +279,11 @@ export const MainMenu = ({ onStartGame, difficulty, setDifficulty, gameMode, set
           </h2>
 
           <div className="space-y-1.5 sm:space-y-3 text-white">
-            {/* Faster, Smoother Engine */}
-            <div className="bg-gradient-to-r from-[hsl(45,100%,50%)]/20 to-[hsl(30,100%,60%)]/20 p-1.5 sm:p-3 rounded-lg border-2 border-[hsl(45,100%,50%)]/50">
-              <h3 className="font-bold text-[10px] sm:text-sm mb-0.5 sm:mb-1 text-[hsl(45,100%,50%)]">⚡ Faster, Smoother Engine</h3>
-              <ul className="list-disc list-inside space-y-0.5 text-[9px] sm:text-xs">
-                <li>
-                  The game now runs on a{" "}
-                  <span className="text-[hsl(45,100%,50%)] font-bold">fixed‑timestep simulation</span>, keeping gameplay
-                  speed identical on all devices — no more “fast PC = fast game”.
-                </li>
-                <li>Unified timing system removes jitter and cooldown drift for rock‑solid consistency.</li>
-                <li>
-                  Pause/resume is now perfectly stable —{" "}
-                  <span className="text-[hsl(120,60%,50%)] font-bold">no more cooldown jumps</span>.
-                </li>
-                <li>timeScale finally behaves correctly across all movement and logic.</li>
-              </ul>
-            </div>
-
-            {/* Boss Hit Streak System */}
-            <div className="bg-gradient-to-r from-[hsl(270,80%,60%)]/20 to-[hsl(290,80%,60%)]/20 p-1.5 sm:p-3 rounded-lg border-2 border-[hsl(280,80%,60%)]/50">
-              <h3 className="font-bold text-[10px] sm:text-sm mb-0.5 sm:mb-1 text-[hsl(280,80%,60%)]">
-                🔥 New Boss Hit Streak System
-              </h3>
-              <ul className="list-disc list-inside space-y-0.5 text-[9px] sm:text-xs">
-                <li>A brand‑new streak mechanic lets you push for even higher scores.</li>
-                <li>Consecutive hits on bosses and minions award 100 pts + streak bonus (e.g., x5 = +5% bonus).</li>
-                <li>Reach x10+ to activate music‑reactive background hue blinking on all boss levels.</li>
-              </ul>
-            </div>
-
-            {/* Performance Boost */}
-            <div className="bg-gradient-to-r from-[hsl(200,70%,50%)]/20 to-[hsl(120,60%,50%)]/20 p-1.5 sm:p-3 rounded-lg border-2 border-[hsl(120,60%,50%)]/50">
-              <h3 className="font-bold text-[10px] sm:text-sm mb-0.5 sm:mb-1 text-[hsl(120,60%,50%)]">🚀 Performance Boost</h3>
-              <ul className="list-disc list-inside space-y-0.5 text-[9px] sm:text-xs">
-                <li>Batched particle rendering and fewer heavy arc draws = smoother FPS.</li>
-                <li>Gradients and shaders now pre‑warm to eliminate first‑use GPU stalls.</li>
-                <li>Improved GPU detection for mobile + integrated GPUs.</li>
-                <li>Rendering math is now crash‑proofed with new safety guards.</li>
-              </ul>
-            </div>
-
-            {/* Player Profile System */}
-            <div className="bg-gradient-to-r from-[hsl(330,100%,65%)]/20 to-[hsl(200,70%,50%)]/20 p-1.5 sm:p-3 rounded-lg border-2 border-[hsl(330,100%,65%)]/50">
-              <div className="flex items-center gap-1.5 sm:gap-2 mb-0.5 sm:mb-1">
-                <h3 className="font-bold text-[10px] sm:text-sm text-[hsl(330,100%,65%)]">👤 Player Profile System</h3>
-                <span className="text-[7px] sm:text-[9px] font-bold px-1 sm:px-1.5 py-0.5 rounded" style={{ background: "hsl(45,100%,50%)", color: "hsl(220,30%,10%)" }}>
-                  BETA
-                </span>
+            {(CHANGELOG[0]?.changes ?? []).map((change) => (
+              <div key={change} className="bg-[hsl(220,20%,18%)] p-1.5 sm:p-3 rounded-lg border border-[hsl(200,70%,50%)]/30">
+                <p className="text-[10px] sm:text-xs font-mono text-slate-200">• {change}</p>
               </div>
-              <ul className="list-disc list-inside space-y-0.5 text-[9px] sm:text-xs">
-                <li>Create an account with a unique <span className="text-[hsl(200,70%,50%)] font-bold">username</span> and leaderboard initials.</li>
-                <li>Upload a custom <span className="text-[hsl(30,100%,60%)] font-bold">avatar</span> (256×256) to personalize your profile.</li>
-                <li>Track lifetime stats, achievements, and power-up usage across all sessions.</li>
-                <li>Public profiles are <span className="text-[hsl(120,60%,50%)] font-bold">linked from the leaderboard</span> — click any player to view their stats.</li>
-                <li>Full account deletion available — your scores remain on the board (unlinked).</li>
-              </ul>
-            </div>
-
-            {/* Daily Challenge Mode */}
-            <div className="bg-gradient-to-r from-[hsl(45,100%,50%)]/20 to-[hsl(0,85%,55%)]/20 p-1.5 sm:p-3 rounded-lg border-2 border-[hsl(45,100%,50%)]/50">
-              <h3 className="font-bold text-[10px] sm:text-sm mb-0.5 sm:mb-1 text-[hsl(45,100%,50%)]">📅 Daily Challenge Mode</h3>
-              <ul className="list-disc list-inside space-y-0.5 text-[9px] sm:text-xs">
-                <li>A <span className="text-[hsl(45,100%,50%)] font-bold">new challenge every day</span> with a unique procedural brick layout.</li>
-                <li>Special modifiers: 125% speed, enemy spawns every 10s, music-reactive backgrounds, no extra lives.</li>
-                <li>Complete objectives like No Deaths, Speed Run, Score Hunter, or Combo Master.</li>
-                <li>Build a <span className="text-[hsl(330,100%,65%)] font-bold">daily streak</span> by completing challenges on consecutive days.</li>
-                <li>Unlock exclusive daily challenge achievements!</li>
-              </ul>
-            </div>
+            ))}
           </div>
 
           <Button
@@ -987,14 +925,18 @@ export const MainMenu = ({ onStartGame, difficulty, setDifficulty, gameMode, set
             onClick={() => {
               soundManager.playMenuClick();
               setShowWhatsNew(true);
+              try { localStorage.setItem("lastSeenWhatsNewVersion", GAME_VERSION); } catch {}
+              setLastSeenWhatsNewVersion(GAME_VERSION);
             }}
             onMouseEnter={() => soundManager.playMenuHover()}
             variant="outline"
             className="w-full relative border-[hsl(330,100%,65%)] text-[hsl(330,100%,65%)] hover:bg-[hsl(330,100%,65%)] hover:text-white"
           >
-            <span className="absolute -top-2 -right-2 bg-[hsl(0,85%,55%)] text-white text-xs px-2 py-0.5 rounded-full animate-pulse">
-              NEW
-            </span>
+            {lastSeenWhatsNewVersion !== GAME_VERSION && (
+              <span className="absolute -top-2 -right-2 bg-[hsl(0,85%,55%)] text-white text-xs px-2 py-0.5 rounded-full animate-pulse">
+                NEW
+              </span>
+            )}
             What's New
           </Button>
 
