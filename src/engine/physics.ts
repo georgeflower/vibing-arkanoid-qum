@@ -1340,6 +1340,22 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
   }
 
   if (gameState === "playing" && !BOSS_LEVELS.includes(level)) {
+    // ── Endgame last-brick attraction constants ──────────────────────────────
+    // Triggers when ≤3 destructible bricks remain.  The nudge is intentionally
+    // gentle: it slightly biases an upward-travelling ball that is already
+    // near the target, without sharply redirecting it.
+    //
+    // ENDGAME_ATTRACT_STRENGTH – fraction of the angular difference applied per
+    //   frame.  Keep this small (≪ 0.05) to feel like a nudge, not a magnet.
+    const ENDGAME_ATTRACT_STRENGTH = 0.008;
+    // ENDGAME_ATTRACT_MAX_TURN – hard cap on rotation (radians) per frame.
+    const ENDGAME_ATTRACT_MAX_TURN = 0.06;
+    // ENDGAME_ATTRACT_RANGE_PX – only attract when the ball is within this
+    //   screen-pixel radius of the target brick's centre.
+    const ENDGAME_ATTRACT_RANGE_PX = 320;
+    const ENDGAME_ATTRACT_RANGE_SQ = ENDGAME_ATTRACT_RANGE_PX * ENDGAME_ATTRACT_RANGE_PX;
+    // ────────────────────────────────────────────────────────────────────────
+
     const remainingBricks: Brick[] = [];
     let hasMoreThanThreeBricks = false;
     for (const brick of bricks) {
@@ -1354,6 +1370,10 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
       for (const r of ballResults) {
         if (!r.ball || r.ball.waitingToLaunch) continue;
 
+        // Only nudge when the ball is travelling upward (dy < 0 in screen
+        // coordinates where y increases downward).
+        if (r.ball.dy >= 0) continue;
+
         let nearestBrick: Brick | null = null;
         let nearestDistSq = Infinity;
         for (const brick of remainingBricks) {
@@ -1366,13 +1386,15 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
           }
         }
 
-        if (!nearestBrick) continue;
+        // Only attract when the ball is within the proximity range.
+        if (!nearestBrick || nearestDistSq > ENDGAME_ATTRACT_RANGE_SQ) continue;
+
         steerBallVelocityTowards(
           r.ball,
           nearestBrick.x + nearestBrick.width / 2,
           nearestBrick.y + nearestBrick.height / 2,
-          0.1,
-          0.05,
+          ENDGAME_ATTRACT_MAX_TURN,
+          ENDGAME_ATTRACT_STRENGTH,
         );
       }
     }
