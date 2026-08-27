@@ -13,6 +13,11 @@ export const getBrickHits = (level: number, row: number): number => {
   return row < 3 ? 6 : row < 5 ? 5 : row < 7 ? 4 : row < 9 ? 3 : row < 11 ? 2 : 1;
 };
 
+// Visible brick counts after pacing rebalance:
+// L1 26, L2 55, L3 56, L4 58, L5 82 (boss unchanged),
+// L6 85, L7 86, L8 89, L9 87, L10 143 (boss unchanged),
+// L11 76, L12 67, L13 86, L14 86, L15 92 (boss unchanged),
+// L16 85, L17 75, L18 78, L19 88, L20 169 (boss unchanged).
 export const levelLayouts: (boolean | number)[][][] = [
   // Level 1
   [

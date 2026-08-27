@@ -699,6 +699,48 @@ const MODIFIER_POOL: DailyChallengeModifier[] = [
 const ROWS = 14;
 const COLS = 13;
 
+function countVisibleBricks(layout: (boolean | number)[][]): number {
+  return layout.reduce((count, row) => count + row.filter((cell) => cell !== false).length, 0);
+}
+
+function trimDenseLayout(layout: (boolean | number)[][], maxVisibleBricks: number): (boolean | number)[][] {
+  const trimmed = layout.map((row) => [...row]);
+  let visibleCount = countVisibleBricks(trimmed);
+  if (visibleCount <= maxVisibleBricks) return trimmed;
+
+  const centerCol = Math.floor(COLS / 2);
+  const candidates: Array<{ row: number; col: number; priority: number }> = [];
+  for (let row = 1; row < ROWS - 1; row++) {
+    for (let col = 1; col < COLS - 1; col++) {
+      if (trimmed[row][col] === false) continue;
+
+      const left = trimmed[row][col - 1] !== false;
+      const right = trimmed[row][col + 1] !== false;
+      const up = trimmed[row - 1][col] !== false;
+      const down = trimmed[row + 1][col] !== false;
+      const neighborCount = Number(left) + Number(right) + Number(up) + Number(down);
+      if (neighborCount < 2) continue;
+
+      let priority = neighborCount;
+      if (left && right) priority += 3;
+      if (up && down) priority += 3;
+      if (Math.abs(col - centerCol) <= 1) priority += 4;
+      if (row >= 2 && row <= ROWS - 3 && (row + col) % 2 === 0) priority += 2;
+      candidates.push({ row, col, priority });
+    }
+  }
+
+  candidates.sort((a, b) => b.priority - a.priority || a.row - b.row || a.col - b.col);
+  for (const candidate of candidates) {
+    if (visibleCount <= maxVisibleBricks) break;
+    if (trimmed[candidate.row][candidate.col] === false) continue;
+    trimmed[candidate.row][candidate.col] = false;
+    visibleCount--;
+  }
+
+  return trimmed;
+}
+
 function generateLayout(rng: () => number, modifier: DailyChallengeModifier, shape: ShapeTemplate): (boolean | number)[][] {
   const metalChance = 0.05 + rng() * 0.08;
   const explosiveChance = 0.03 + rng() * 0.05;
@@ -734,12 +776,12 @@ function generateLayout(rng: () => number, modifier: DailyChallengeModifier, sha
   if (modifier.id === "dense_bricks") {
     for (let row = 0; row < ROWS; row++) {
       for (let col = 0; col < COLS; col++) {
-        if (layout[row][col] === false && rng() < 0.25) {
+        if (layout[row][col] === false && rng() < 0.12) {
           // Check if adjacent to a shape brick
-          const hasNeighbor = [
+          const neighborCount = [
             [row - 1, col], [row + 1, col], [row, col - 1], [row, col + 1],
-          ].some(([r, c]) => r >= 0 && r < ROWS && c >= 0 && c < COLS && layout[r][c] !== false);
-          if (hasNeighbor) {
+          ].filter(([r, c]) => r >= 0 && r < ROWS && c >= 0 && c < COLS && layout[r][c] !== false).length;
+          if (neighborCount >= 2 && Math.abs(col - Math.floor(COLS / 2)) > 1) {
             layout[row][col] = true;
           }
         }
@@ -747,7 +789,7 @@ function generateLayout(rng: () => number, modifier: DailyChallengeModifier, sha
     }
   }
 
-  return layout;
+  return trimDenseLayout(layout, 90);
 }
 
 // ── Boss challenge types for Saturday ────────────────────────

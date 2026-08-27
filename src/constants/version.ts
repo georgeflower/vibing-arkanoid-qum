@@ -156,7 +156,7 @@ export const CHANGELOG = [
       "Performance: replaced Math.random() jitter in render hot-path (shield arcs ×6, second-chance safety net arcs ×12, screen shake) with deterministic Math.sin(now*k+phase) noise — visually identical, zero GC pressure, ~190 random() calls eliminated per frame during combat",
       "Performance: merged duplicate particle render loops into single pass using useCircle flag on Particle type — eliminates double pool traversal and redundant save/restore per frame",
       "Performance: removed ctx.shadowBlur=10 from celebration/game-over particle loop — replaced with outer glow circle at reduced opacity, same technique used throughout renderer",
-      "Performance: CRT scanline-flicker animation slowed from 0.1s to 4s — reduces browser compositor repaints from 600/min to 30/min with no perceptible visual difference",
+      "Performance: overlay animation compositor load reduced dramatically with no perceptible visual difference",
     ],
   },
   {
@@ -182,7 +182,7 @@ export const CHANGELOG = [
     changes: [
       "Canvas rendering fully decoupled from React — draws directly from the engine world in its own requestAnimationFrame loop, bypassing React reconciliation entirely",
       "Single Date.now() call cached per frame and passed to all drawing functions, eliminating redundant timestamp calls",
-      "CRT overlay simplified on lower quality settings — expensive mix-blend-mode and animated layers skipped for smoother performance",
+      "Expensive overlay blend/animation work skipped on lower quality settings for smoother performance",
       "Eliminated per-frame array spreading — removed [...prev] patterns in setBalls, setEnemies etc. that defeated the purpose of the engine migration",
       "Static gradients cached for power-up backgrounds, ball surfaces, and other reused visual elements",
       "Background animation driven by frame timestamp directly — removed backgroundPhase React state updates from the render loop",
@@ -411,9 +411,8 @@ export const CHANGELOG = [
   {
     version: "0.7.11",
     changes: [
-      "CRT scanline effects completely disabled on mobile devices for better performance",
-      "Desktop CRT effects reduced in intensity: scanlines 0.08 opacity (was 0.15), vignette 0.15 intensity (was 0.3)",
-      "Brighter, less intrusive retro aesthetic on desktop platforms",
+      "Display overlay effects reduced on mobile devices for better performance",
+      "Desktop display effects reduced in intensity for a brighter, less intrusive retro aesthetic",
     ],
   },
   {
