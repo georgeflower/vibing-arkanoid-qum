@@ -4,6 +4,7 @@ import { CHANGELOG } from "@/constants/version";
 import CRTOverlay from "./CRTOverlay";
 import type { QualityLevel } from "@/hooks/useAdaptiveQuality";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
+import { useGameSettings } from "@/hooks/useGameSettings";
 
 interface ChangelogProps {
   onClose: () => void;
@@ -13,6 +14,7 @@ interface ChangelogProps {
 
 export const Changelog = ({ onClose, quality, qualitySettings = { backgroundEffects: true } }: ChangelogProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const { settings: gameSettings } = useGameSettings();
   
   // Swipe gesture for mobile back navigation
   const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
@@ -33,7 +35,7 @@ export const Changelog = ({ onClose, quality, qualitySettings = { backgroundEffe
 
   return (
     <div ref={containerRef} className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 swipe-container animate-fade-in">
-      {qualitySettings.backgroundEffects && <CRTOverlay quality={quality} />}
+      {qualitySettings.backgroundEffects && <CRTOverlay quality={quality} crtEnabled={gameSettings.crtEnabled} />}
       <div className="bg-slate-900/95 rounded-lg border-2 border-cyan-500/30 p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto animate-scale-in">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-3xl font-bold text-cyan-400 font-mono">CHANGELOG</h2>

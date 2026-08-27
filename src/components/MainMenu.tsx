@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
@@ -32,18 +32,23 @@ import bmcIcon from "@/assets/buymeacoffee.png";
 
 interface MainMenuProps {
   onStartGame: (settings: GameSettings) => void;
+  difficulty: Difficulty;
+  setDifficulty: React.Dispatch<React.SetStateAction<Difficulty>>;
+  gameMode: GameMode;
+  setGameMode: React.Dispatch<React.SetStateAction<GameMode>>;
+  startingLevel: number;
+  setStartingLevel: React.Dispatch<React.SetStateAction<number>>;
+  hasStartedOnce: boolean;
+  setHasStartedOnce: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export const MainMenu = ({ onStartGame }: MainMenuProps) => {
+export const MainMenu = ({ onStartGame, difficulty, setDifficulty, gameMode, setGameMode, startingLevel, setStartingLevel, hasStartedOnce, setHasStartedOnce }: MainMenuProps) => {
   const navigate = useNavigate();
-  const [difficulty, setDifficulty] = useState<Difficulty>("normal");
-  const [gameMode, setGameMode] = useState<GameMode>("normal");
   const { settings: gameSettings } = useGameSettings();
   const [showSettings, setShowSettings] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
   const [showHighScores, setShowHighScores] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
-  const [showPressToStart, setShowPressToStart] = useState(true);
   const [showChangelog, setShowChangelog] = useState(false);
   const [showWhatsNew, setShowWhatsNew] = useState(false);
   const [showDailyChallenge, setShowDailyChallenge] = useState(false);
@@ -57,7 +62,6 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
   }, []);
 
   // Starting level state
-  const [startingLevel, setStartingLevel] = useState(1);
   const [showLockedMessage, setShowLockedMessage] = useState(false);
   const lockedMessageTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { maxLevelReached, isLevelUnlocked } = useLevelProgress();
@@ -70,10 +74,17 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
   const instructionsRef = useRef<HTMLDivElement>(null);
 
   // Use adaptive quality hook for CRT effects — initialize from saved settings
-  const { quality, qualitySettings, setQuality } = useAdaptiveQuality({
+  const { quality, qualitySettings, applyQualitySilently } = useAdaptiveQuality({
     initialQuality: gameSettings.qualityLevel || (ENABLE_HIGH_QUALITY ? "high" : "medium"),
     autoAdjust: false,
   });
+
+  // Reactively sync manual quality from persisted settings (mirrors Game.tsx pattern)
+  useEffect(() => {
+    if (gameSettings.qualityMode === "manual" && gameSettings.qualityLevel) {
+      applyQualitySilently(gameSettings.qualityLevel);
+    }
+  }, [gameSettings.qualityMode, gameSettings.qualityLevel, applyQualitySilently]);
 
   const isIOSDevice =
     /iPhone|iPad|iPod/i.test(navigator.userAgent) ||
@@ -84,13 +95,14 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (
+        ENABLE_DEBUG_FEATURES &&
         e.key === "Tab" &&
         !showInstructions &&
         !showHighScores &&
         !showAbout &&
         !showChangelog &&
         !showWhatsNew &&
-        !showPressToStart &&
+        hasStartedOnce &&
         !showDailyChallenge
       ) {
         e.preventDefault();
@@ -101,7 +113,7 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [navigate, showInstructions, showHighScores, showAbout, showChangelog, showWhatsNew, showPressToStart, showDailyChallenge]);
+  }, [navigate, showInstructions, showHighScores, showAbout, showChangelog, showWhatsNew, hasStartedOnce, showDailyChallenge]);
 
   const handleStart = () => {
     const settings: GameSettings = {
@@ -179,7 +191,7 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
 
   useEffect(() => {
     if (window.location.hash === "#highscores") {
-      setShowPressToStart(false);
+      setHasStartedOnce(true);
       setShowHighScores(true);
       const cleanUrl = `${window.location.pathname}${window.location.search}`;
       window.history.replaceState(window.history.state, "", cleanUrl);
@@ -230,7 +242,7 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
         ref={highScoresRef}
         className="fixed inset-0 w-full h-screen flex flex-col items-center justify-center bg-gradient-to-b from-[hsl(220,25%,12%)] to-[hsl(220,30%,8%)] swipe-container animate-fade-in"
       >
-        {qualitySettings.backgroundEffects && <CRTOverlay quality={quality} />}
+        {qualitySettings.backgroundEffects && <CRTOverlay quality={quality} crtEnabled={gameSettings.crtEnabled} />}
         <HighScoreDisplay onClose={() => setShowHighScores(false)} />
       </div>
     );
@@ -246,7 +258,7 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
         ref={whatsNewRef}
         className="fixed inset-0 w-full h-screen bg-gradient-to-b from-[hsl(220,25%,12%)] to-[hsl(220,30%,8%)] flex items-center justify-center p-2 sm:p-4 overflow-y-auto swipe-container animate-fade-in"
       >
-        {qualitySettings.backgroundEffects && <CRTOverlay quality={quality} />}
+        {qualitySettings.backgroundEffects && <CRTOverlay quality={quality} crtEnabled={gameSettings.crtEnabled} />}
         <Card className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6 md:p-8 bg-[hsl(220,20%,15%)] border-[hsl(200,70%,50%)] animate-scale-in">
           <button
             onClick={() => {
@@ -368,7 +380,7 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
         ref={aboutRef}
         className="fixed inset-0 w-full h-screen bg-gradient-to-b from-[hsl(220,25%,12%)] to-[hsl(220,30%,8%)] flex items-center justify-center p-2 sm:p-4 overflow-y-auto swipe-container animate-fade-in"
       >
-        {qualitySettings.backgroundEffects && <CRTOverlay quality={quality} />}
+        {qualitySettings.backgroundEffects && <CRTOverlay quality={quality} crtEnabled={gameSettings.crtEnabled} />}
         <Card className="relative w-full max-w-5xl max-h-[90vh] overflow-y-auto p-3 sm:p-6 md:p-8 bg-[hsl(220,20%,15%)] border-[hsl(200,70%,50%)] animate-scale-in">
           <button
             onClick={() => {
@@ -505,25 +517,21 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
     );
   }
 
-  if (showPressToStart) {
+  if (!hasStartedOnce) {
+    const handleFirstStart = () => {
+      soundManager.playMenuClick();
+      soundManager.initializeRandomTrack();
+      soundManager.playBackgroundMusic();
+      setHasStartedOnce(true);
+    };
     return (
       <div
         className="min-h-screen w-full flex items-center justify-center relative bg-[hsl(220,25%,12%)] cursor-pointer"
-        onClick={() => {
-          soundManager.playMenuClick();
-          soundManager.initializeRandomTrack();
-          soundManager.playBackgroundMusic();
-          setShowPressToStart(false);
-        }}
-        onKeyDown={() => {
-          soundManager.playMenuClick();
-          soundManager.initializeRandomTrack();
-          soundManager.playBackgroundMusic();
-          setShowPressToStart(false);
-        }}
+        onClick={handleFirstStart}
+        onKeyDown={handleFirstStart}
         tabIndex={0}
       >
-        {qualitySettings.backgroundEffects && <CRTOverlay quality={quality} />}
+        {qualitySettings.backgroundEffects && <CRTOverlay quality={quality} crtEnabled={gameSettings.crtEnabled} />}
         <picture className="absolute inset-0 w-full h-full pointer-events-none">
           <source srcSet={startScreenWebp} type="image/webp" />
           <img src={startScreenImg} alt="Game start screen" className="w-full h-full object-contain" />
@@ -541,7 +549,7 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
         ref={instructionsRef}
         className="fixed inset-0 w-full h-screen bg-gradient-to-b from-[hsl(220,25%,12%)] to-[hsl(220,30%,8%)] flex items-center justify-center p-2 sm:p-4 overflow-y-auto swipe-container animate-fade-in"
       >
-        {qualitySettings.backgroundEffects && <CRTOverlay quality={quality} />}
+        {qualitySettings.backgroundEffects && <CRTOverlay quality={quality} crtEnabled={gameSettings.crtEnabled} />}
         <Card className="relative w-full max-w-5xl max-h-[90vh] overflow-y-auto p-3 sm:p-6 md:p-8 bg-[hsl(220,20%,15%)] border-[hsl(200,70%,50%)] animate-scale-in">
           <button
             onClick={() => {
@@ -1010,8 +1018,8 @@ export const MainMenu = ({ onStartGame }: MainMenuProps) => {
             open={showSettings}
             onOpenChange={setShowSettings}
             hideTrigger
-            onSettingsSaved={(s) => {
-              setQuality(s.qualityLevel);
+            onSettingsSaved={() => {
+              // Quality is handled reactively via the useEffect above
             }}
           />
 
