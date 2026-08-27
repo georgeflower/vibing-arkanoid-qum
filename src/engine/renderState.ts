@@ -54,6 +54,7 @@ export interface RenderState {
 
   // Zoom pulse for last-brick moment (performance.now() based)
   zoomPulseStartTime: number; // 0 = inactive
+  halfwayPulseStartTime: number; // 0 = inactive
 }
 
 // ─── Asset References ────────────────────────────────────────
@@ -113,6 +114,7 @@ export const renderState: RenderState = {
   hitStreakLastHitTime: 0,
 
   zoomPulseStartTime: 0,
+  halfwayPulseStartTime: 0,
 };
 
 /**

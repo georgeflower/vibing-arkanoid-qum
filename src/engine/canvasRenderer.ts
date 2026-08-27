@@ -8,7 +8,7 @@
  * NO React dependency. NO per-frame allocations beyond canvas API internals.
  */
 
-import type { GameWorld } from "@/engine/state";
+import { world, type GameWorld } from "@/engine/state";
 import type { RenderState, AssetRefs } from "@/engine/renderState";
 import type { Brick, BonusLetterType, Particle } from "@/types/game";
 import { isMegaBoss, type MegaBoss } from "@/utils/megaBossUtils";
@@ -52,6 +52,53 @@ function drawEndgameBrickOverlay(
     ctx.shadowColor = `rgba(255, 220, 120, ${0.4 + pulse * 0.35})`;
     ctx.shadowBlur = glowWidth * 3;
     ctx.strokeRect(brick.x - glowWidth / 2, brick.y - glowWidth / 2, brick.width + glowWidth, brick.height + glowWidth);
+  }
+  ctx.restore();
+}
+
+function drawPendingPowerUpTelegraphs(
+  ctx: CanvasRenderingContext2D,
+  pendingDrops: GameWorld["pendingPowerUpDrops"],
+  qualityLevel: string,
+): void {
+  if (pendingDrops.length === 0) return;
+
+  const nowSimMs = world.simTimeMs;
+  ctx.save();
+  for (const drop of pendingDrops) {
+    if (nowSimMs >= drop.spawnAtSimMs) continue;
+    const duration = Math.max(1, drop.spawnAtSimMs - drop.createdAtSimMs);
+    const progress = Math.min(1, Math.max(0, (nowSimMs - drop.createdAtSimMs) / duration));
+    const pulse = 0.55 + 0.45 * Math.sin(progress * Math.PI * 4);
+    const alpha = 0.4 + (1 - progress) * 0.5;
+    const inset = 2 + pulse * 4;
+    const centerX = drop.x + drop.width / 2;
+    const centerY = drop.y + drop.height / 2;
+
+    if (atMostLow(qualityLevel)) {
+      ctx.globalAlpha = alpha;
+      ctx.strokeStyle = "rgba(255, 255, 210, 0.95)";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(drop.x - 1, drop.y - 1, drop.width + 2, drop.height + 2);
+    } else {
+      const gradient = ctx.createRadialGradient(centerX, centerY, 2, centerX, centerY, Math.max(drop.width, drop.height) * 0.8);
+      gradient.addColorStop(0, `rgba(255, 255, 255, ${0.9 * alpha})`);
+      gradient.addColorStop(0.45, `rgba(255, 240, 120, ${0.55 * alpha})`);
+      gradient.addColorStop(1, "rgba(255, 220, 80, 0)");
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = gradient;
+      ctx.fillRect(drop.x - inset, drop.y - inset, drop.width + inset * 2, drop.height + inset * 2);
+    }
+
+    ctx.globalAlpha = alpha;
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.95)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(centerX - drop.width * 0.35, centerY);
+    ctx.lineTo(centerX + drop.width * 0.35, centerY);
+    ctx.moveTo(centerX, centerY - drop.height * 0.35);
+    ctx.lineTo(centerX, centerY + drop.height * 0.35);
+    ctx.stroke();
   }
   ctx.restore();
 }
@@ -655,6 +702,7 @@ export function renderFrame(
     });
   }
   drawEndgameBrickOverlay(ctx, bricks, qualitySettings.level, now);
+  drawPendingPowerUpTelegraphs(ctx, world.pendingPowerUpDrops, qualitySettings.level);
 
   // ═══ Draw paddle ═══
   if (paddle) {
@@ -2378,6 +2426,31 @@ export function renderFrame(
       ctx.fillText(`×${hitStreak}`, width / 2, 32);
       ctx.restore();
     }
+  }
+
+  const halfwayAge = renderState.halfwayPulseStartTime > 0 ? now - renderState.halfwayPulseStartTime : Infinity;
+  if (halfwayAge < 1000) {
+    const t = halfwayAge / 1000;
+    const alpha = Math.max(0, 1 - t);
+    const scale = 1 + Math.sin(t * Math.PI) * 0.35;
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    if (atMostLow(qualitySettings.level)) {
+      ctx.font = "bold 28px monospace";
+      ctx.fillStyle = "rgba(255, 240, 120, 0.95)";
+      ctx.fillText("HALFWAY", width / 2, height * 0.28);
+    } else {
+      ctx.font = `bold ${Math.round(34 * scale)}px monospace`;
+      ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+      ctx.fillText("HALFWAY", width / 2 + 2, height * 0.28 + 2);
+      ctx.fillStyle = "rgba(255, 245, 150, 0.98)";
+      ctx.fillText("HALFWAY", width / 2, height * 0.28);
+    }
+    ctx.restore();
+  } else if (renderState.halfwayPulseStartTime !== 0) {
+    renderState.halfwayPulseStartTime = 0;
   }
 }
 

@@ -49,11 +49,31 @@ export const MainMenu = ({ onStartGame, difficulty, setDifficulty, gameMode, set
   const [showWhatsNew, setShowWhatsNew] = useState(false);
   const [showDailyChallenge, setShowDailyChallenge] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [dailyChallengeStreak, setDailyChallengeStreak] = useState(0);
 
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => setIsLoggedIn(!!session));
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => setIsLoggedIn(!!session));
+    const syncSessionState = async (session: Awaited<ReturnType<typeof supabase.auth.getSession>>["data"]["session"]) => {
+      setIsLoggedIn(!!session);
+      if (!session) {
+        setDailyChallengeStreak(0);
+        return;
+      }
+
+      const { data: profile } = await supabase
+        .from("player_profiles")
+        .select("daily_challenge_streak")
+        .eq("user_id", session.user.id)
+        .maybeSingle();
+      setDailyChallengeStreak(profile?.daily_challenge_streak ?? 0);
+    };
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      void syncSessionState(session);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
+      void syncSessionState(session);
+    });
     return () => subscription.unsubscribe();
   }, []);
 
@@ -925,6 +945,18 @@ export const MainMenu = ({ onStartGame, difficulty, setDifficulty, gameMode, set
             style={{ textShadow: "0 1px 2px rgba(0,0,0,0.5)" }}
           >
             ⚡ Daily Challenge <span className="text-[hsl(0,100%,60%)] font-bold ml-2">BETA</span>
+            {dailyChallengeStreak > 0 && (
+              <span
+                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full px-2 py-0.5 text-xs font-bold"
+                style={{
+                  background: "hsl(0,0%,12%)",
+                  border: "1px solid hsl(30,100%,55%)",
+                  color: "hsl(30,100%,60%)",
+                }}
+              >
+                🔥 {dailyChallengeStreak}
+              </span>
+            )}
           </Button>
 
           <Button

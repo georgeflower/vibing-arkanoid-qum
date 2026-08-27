@@ -135,6 +135,18 @@ const physicsFpsForQuality = (level: QualityLevel): number => {
     default: return IS_MOBILE_DEVICE ? 60 : 120;
   } // end hitstop gameplay freeze block
 };
+
+const POWERUP_TELEGRAPH_DELAY_MS = 250;
+const POWERUP_PITY_INCREMENT = 0.012;
+const POWERUP_PITY_MAX_CHANCE = 0.6;
+const QUMRAN_SEQUENCE: BonusLetterType[] = ["Q", "U", "M", "R", "A", "N"];
+
+type LevelCompletePrompt =
+  | { kind: "boss"; headline: string; detail: string }
+  | { kind: "qumran"; headline: string; detail: string }
+  | { kind: "best"; headline: string; detail: string }
+  | { kind: "fallback"; headline: string; detail: string };
+
 import { assignPowerUpsToBricks, reassignPowerUpsToBricks } from "@/utils/powerUpAssignment";
 import { MEGA_BOSS_LEVEL, MEGA_BOSS_CONFIG } from "@/constants/megaBossConfig";
 import {
@@ -472,6 +484,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     weekly: boolean;
     allTime: boolean;
   } | null>(null);
+  const [allTimeBestScore, setAllTimeBestScore] = useState<number | null>(null);
   const [beatLevel50Completed, setBeatLevel50Completed] = useState(false);
   const [timer, setTimer] = useState(0);
   const [totalPlayTime, setTotalPlayTimeRaw] = useState(0);
@@ -1707,7 +1720,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     [],
   );
 
-  const { isHighScore, addHighScore, getQualifiedLeaderboards } = useHighScores();
+  const { isHighScore, addHighScore, getQualifiedLeaderboards, fetchTopScores } = useHighScores();
   const { powerUps, createPowerUp, updatePowerUps, checkPowerUpCollision, setPowerUps, extraLifeUsedLevels } =
     usePowerUps(
       level,
@@ -1753,6 +1766,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
               level,
               settings.difficulty,
               newCounts,
+              Boolean(isDailyChallenge && settings.dailyChallengeConfig?.noExtraLives),
             );
             setPowerUpAssignments(result.assignments);
             setDualChoiceAssignments(result.dualChoiceAssignments);
@@ -1778,6 +1792,82 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       handleSecondChance,
       dualChoiceAssignments,
     );
+
+  const resetLevelRewardState = useCallback((targetLevel: number, isFreshRun: boolean = false) => {
+    world.bricksSinceLastPowerUp = 0;
+    world.guaranteeNextEligiblePowerUpDrop = false;
+    world.halfwayEventTriggered = false;
+    world.pendingPowerUpDrops = [];
+    world.levelOneOpeningGuaranteedDropPending = isFreshRun && targetLevel === 1 && settings.gameMode === "normal";
+    world.levelOneOpeningDropDeadlineMs = world.levelOneOpeningGuaranteedDropPending ? 10000 : 0;
+    renderState.halfwayPulseStartTime = 0;
+  }, [settings.gameMode]);
+
+  const finalizeSpawnedPowerUps = useCallback((spawnedPowerUps: PowerUp[]) => {
+    if (spawnedPowerUps.length === 0) return;
+
+    setPowerUps((prev) => [...prev, ...spawnedPowerUps]);
+
+    if (tutorialEnabled && !powerUpTutorialTriggeredRef.current) {
+      powerUpTutorialTriggeredRef.current = true;
+      setTimeout(() => {
+        const { shouldPause } = triggerTutorial("power_up_drop", level);
+        if (shouldPause) {
+          setGameState("paused");
+          if (gameLoopRef.current) gameLoopRef.current.pause();
+        }
+      }, 1000);
+    }
+
+    const hasBossPowerUp = spawnedPowerUps.some((p) =>
+      ["bossStunner", "reflectShield", "homingBall"].includes(p.type),
+    );
+    if (tutorialEnabled && hasBossPowerUp && !bossPowerUpTutorialTriggeredRef.current) {
+      bossPowerUpTutorialTriggeredRef.current = true;
+      const { shouldPause } = triggerTutorial("boss_power_up_drop", level);
+      if (shouldPause) {
+        setGameState("paused");
+        if (gameLoopRef.current) gameLoopRef.current.pause();
+      }
+    }
+  }, [level, setPowerUps, triggerTutorial, tutorialEnabled]);
+
+  const queueOrSpawnBrickPowerUps = useCallback((brick: Brick, selectedPowerUps: PowerUp[]) => {
+    if (selectedPowerUps.length === 0) return;
+
+    if (qualitySettings.level === "potato") {
+      finalizeSpawnedPowerUps(selectedPowerUps);
+      return;
+    }
+
+    world.pendingPowerUpDrops.push({
+      brickId: brick.id,
+      x: brick.x,
+      y: brick.y,
+      width: brick.width,
+      height: brick.height,
+      powerUps: selectedPowerUps,
+      createdAtSimMs: world.simTimeMs,
+      spawnAtSimMs: world.simTimeMs + POWERUP_TELEGRAPH_DELAY_MS,
+    });
+  }, [finalizeSpawnedPowerUps, qualitySettings.level]);
+
+  const processPendingPowerUpDrops = useCallback(() => {
+    if (world.pendingPowerUpDrops.length === 0) return;
+
+    const readyPowerUps: PowerUp[] = [];
+    const remainingDrops: typeof world.pendingPowerUpDrops = [];
+    for (const pendingDrop of world.pendingPowerUpDrops) {
+      if (world.simTimeMs >= pendingDrop.spawnAtSimMs) {
+        readyPowerUps.push(...pendingDrop.powerUps);
+      } else {
+        remainingDrops.push(pendingDrop);
+      }
+    }
+    world.pendingPowerUpDrops = remainingDrops;
+    finalizeSpawnedPowerUps(readyPowerUps);
+  }, [finalizeSpawnedPowerUps]);
+
   const { fireBullets, updateBullets } = useBullets(
     setScore,
     setBricks,
@@ -2406,7 +2496,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
             brickType = "cracked";
           }
 
-          const hasPowerUp = isIndestructible ? false : Math.random() < POWERUP_DROP_CHANCE;
+          const hasPowerUp = false;
           const brickHitLevel = isDailyChallenge ? 10 : currentLevel;
           const maxHits = isIndestructible ? 1 : brickType === "cracked" ? 3 : getBrickHits(brickHitLevel, row);
 
@@ -2462,16 +2552,14 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   // Initialize power-up assignments for bricks
   const initPowerUpAssignments = useCallback(
     (bricks: Brick[], targetLevel: number, dropCounts: Partial<Record<PowerUpType, number>> = {}) => {
-      const result = assignPowerUpsToBricks(bricks, extraLifeUsedLevels, targetLevel, settings.difficulty, dropCounts);
-      // Daily challenge: filter out life power-ups if noExtraLives
-      if (isDailyChallenge && settings.dailyChallengeConfig?.noExtraLives) {
-        for (const [id, type] of result.assignments) {
-          if (type === "life") result.assignments.delete(id);
-        }
-        for (const [id, type] of result.dualChoiceAssignments) {
-          if (type === "life") result.dualChoiceAssignments.delete(id);
-        }
-      }
+      const result = assignPowerUpsToBricks(
+        bricks,
+        extraLifeUsedLevels,
+        targetLevel,
+        settings.difficulty,
+        dropCounts,
+        Boolean(isDailyChallenge && settings.dailyChallengeConfig?.noExtraLives),
+      );
       setPowerUpAssignments(result.assignments);
       setDualChoiceAssignments(result.dualChoiceAssignments);
       if (ENABLE_DEBUG_FEATURES && debugSettings.enablePowerUpLogging) {
@@ -2535,6 +2623,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
     // Initialize bricks for starting level (startLevel already declared above)
     const initialBricks = initBricksForLevel(startLevel);
+    resetLevelRewardState(startLevel, true);
     setBricks(initialBricks);
     // Reset power-up drop counts for new game
     setPowerUpDropCounts({});
@@ -2708,6 +2797,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
       // Initialize boss for next Boss Rush level
       const newLevelBricks = initBricksForLevel(nextBossLevel);
+      resetLevelRewardState(nextBossLevel);
       setBricks(newLevelBricks);
       setPowerUpDropCounts({});
       initPowerUpAssignments(newLevelBricks, nextBossLevel, {});
@@ -2804,6 +2894,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
     // Initialize bricks for new level
     const newLevelBricks = initBricksForLevel(newLevel);
+    resetLevelRewardState(newLevel);
     setBricks(newLevelBricks);
     // Reset power-up drop counts for new level
     setPowerUpDropCounts({});
@@ -2896,6 +2987,9 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     void hasDestructible;
 
     soundManager.playLevelClearFanfare();
+    world.pendingPowerUpDrops = [];
+    world.guaranteeNextEligiblePowerUpDrop = false;
+    world.levelOneOpeningGuaranteedDropPending = false;
 
     // Daily Challenge mode: evaluate objectives and show result
     if (isDailyChallenge && dailyChallengeData) {
@@ -4209,57 +4303,57 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
     // ═══ Power-up creation from destroyed bricks ═══
     if (result.powerUpBricks.length > 0) {
-      const createdPowerUps: PowerUp[] = [];
       for (const brick of result.powerUpBricks) {
         bricksDestroyedThisLevelRef.current += 1;
 
-        if (level === 1 && bricksDestroyedThisLevelRef.current === 3) {
-          createdPowerUps.push({
-            x: brick.x + brick.width / 2 - POWERUP_SIZE / 2,
-            y: brick.y,
-            width: POWERUP_SIZE,
-            height: POWERUP_SIZE,
-            type: "multiball",
-            speed: POWERUP_FALL_SPEED * (gameLoopRef.current?.getTimeScale() ?? 1.0),
-            active: true,
-          });
-        } else {
-          const result = createPowerUp(brick, false, false, gameLoopRef.current?.getTimeScale() ?? 1.0);
-          if (result) {
-            if (Array.isArray(result)) {
-              createdPowerUps.push(...result);
-            } else {
-              createdPowerUps.push(result);
-            }
-          }
-        }
-      }
-
-      if (createdPowerUps.length > 0) {
-        setPowerUps((prev) => [...prev, ...createdPowerUps]);
-
-        if (tutorialEnabled && !powerUpTutorialTriggeredRef.current) {
-          powerUpTutorialTriggeredRef.current = true;
-          setTimeout(() => {
-            const { shouldPause } = triggerTutorial("power_up_drop", level);
-            if (shouldPause) {
-              setGameState("paused");
-              if (gameLoopRef.current) gameLoopRef.current.pause();
-            }
-          }, 1000);
-        }
-
-        const hasBossPowerUp = createdPowerUps.some((p) =>
-          ["bossStunner", "reflectShield", "homingBall"].includes(p.type),
+        const forcedOpeningDrop =
+          world.levelOneOpeningGuaranteedDropPending &&
+          level === 1 &&
+          world.simTimeMs <= world.levelOneOpeningDropDeadlineMs;
+        const forcedGuaranteedDrop = forcedOpeningDrop || world.guaranteeNextEligiblePowerUpDrop;
+        const dropChance = Math.min(
+          POWERUP_PITY_MAX_CHANCE,
+          POWERUP_DROP_CHANCE + world.bricksSinceLastPowerUp * POWERUP_PITY_INCREMENT,
         );
-        if (tutorialEnabled && hasBossPowerUp && !bossPowerUpTutorialTriggeredRef.current) {
-          bossPowerUpTutorialTriggeredRef.current = true;
-          const { shouldPause } = triggerTutorial("boss_power_up_drop", level);
-          if (shouldPause) {
-            setGameState("paused");
-            if (gameLoopRef.current) gameLoopRef.current.pause();
-          }
+        const shouldDrop = forcedGuaranteedDrop || Math.random() < dropChance;
+
+        if (!shouldDrop) {
+          world.bricksSinceLastPowerUp += 1;
+          continue;
         }
+
+        const created = createPowerUp(brick, false, false, gameLoopRef.current?.getTimeScale() ?? 1.0);
+        if (!created) {
+          world.bricksSinceLastPowerUp += 1;
+          continue;
+        }
+
+        const selectedPowerUps = Array.isArray(created) ? created : [created];
+        world.bricksSinceLastPowerUp = 0;
+        world.guaranteeNextEligiblePowerUpDrop = false;
+        if (forcedOpeningDrop) {
+          world.levelOneOpeningGuaranteedDropPending = false;
+        }
+        queueOrSpawnBrickPowerUps(brick, selectedPowerUps);
+      }
+    }
+
+    if (
+      !world.halfwayEventTriggered &&
+      world.levelStartDestructibleCount > 0 &&
+      result.bricksDestroyedCount > 0
+    ) {
+      const remainingDestructible = world.bricks.reduce(
+        (count, brick) => count + (!brick.isIndestructible && brick.visible ? 1 : 0),
+        0,
+      );
+      if (remainingDestructible < world.levelStartDestructibleCount / 2) {
+        world.halfwayEventTriggered = true;
+        world.guaranteeNextEligiblePowerUpDrop = true;
+        renderState.halfwayPulseStartTime = performance.now();
+        soundManager.playHalfwayPulseSound();
+        setBackgroundFlash(0.9);
+        setTimeout(() => setBackgroundFlash(0), 180);
       }
     }
 
@@ -4474,6 +4568,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     frameCountRef.current++;
   }, [
     createPowerUp,
+    queueOrSpawnBrickPowerUps,
     setPowerUps,
     nextLevel,
     level,
@@ -7266,6 +7361,12 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     // Power-ups and bullets already use delta time (fixed in the previous PR),
     // so consistency across frame rates is maintained without the accumulator.
     if (profilerEnabled) frameProfiler.startTiming("physics");
+    if (
+      world.levelOneOpeningGuaranteedDropPending &&
+      world.simTimeMs > world.levelOneOpeningDropDeadlineMs
+    ) {
+      world.levelOneOpeningGuaranteedDropPending = false;
+    }
     if (!hitstopActive) {
       updatePowerUps(dtSecondsRef.current);
       updateBullets(bricks, dtSecondsRef.current);
@@ -7422,6 +7523,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     checkCollision();
     if (profilerEnabled) frameProfiler.endTiming("physics");
 
+    processPendingPowerUpDrops();
+
     // Check power-up collision
     if (paddle) {
       checkPowerUpCollision(paddle, balls, setBalls, setPaddle, setSpeedMultiplier);
@@ -7454,6 +7557,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   }, [
     gameState,
     checkCollision,
+    processPendingPowerUpDrops,
     updatePowerUps,
     updateBullets,
     checkPowerUpCollision,
@@ -8178,6 +8282,66 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     }
   };
 
+  const isLevelCompleteReadyState = gameState === "ready" && bricks.length > 0 && bricks.every((brick) => !brick.visible);
+
+  useEffect(() => {
+    if (!isLevelCompleteReadyState || isDailyChallenge || isBossRush) return;
+
+    let cancelled = false;
+    fetchTopScores().then((topScores) => {
+      if (cancelled) return;
+      setAllTimeBestScore(topScores.allTime?.score ?? null);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isBossRush, isDailyChallenge, isLevelCompleteReadyState]);
+
+  const levelCompletePrompt = useMemo<LevelCompletePrompt>(() => {
+    const nextBossLevel = BOSS_LEVELS.find((bossLevel) => bossLevel > level);
+    if (nextBossLevel) {
+      const levelsAway = nextBossLevel - level;
+      if (levelsAway <= 3) {
+        return {
+          kind: "boss",
+          headline: `BOSS IN ${levelsAway} LEVEL${levelsAway === 1 ? "" : "S"}`,
+          detail: "The next fight is close — keep the run alive.",
+        };
+      }
+    }
+
+    if (collectedLetters.size < QUMRAN_SEQUENCE.length) {
+      const remainingLetters = QUMRAN_SEQUENCE.length - collectedLetters.size;
+      return {
+        kind: "qumran",
+        headline: "QUMRAN PROGRESS",
+        detail: `${remainingLetters} MORE FOR +5 LIVES & 125,000`,
+      };
+    }
+
+    if (allTimeBestScore !== null) {
+      const delta = allTimeBestScore - score;
+      return delta > 0
+        ? {
+            kind: "best",
+            headline: `BEST: ${allTimeBestScore.toLocaleString()}`,
+            detail: `YOU'RE ${delta.toLocaleString()} AWAY`,
+          }
+        : {
+            kind: "best",
+            headline: `BEST: ${allTimeBestScore.toLocaleString()}`,
+            detail: `YOU'RE AHEAD BY ${Math.abs(delta).toLocaleString()}`,
+          };
+    }
+
+    return {
+      kind: "fallback",
+      headline: "NEXT LEVEL, MORE HEAT",
+      detail: "Keep the run alive and cash in the next wave.",
+    };
+  }, [allTimeBestScore, collectedLetters, level, score]);
+
   const handleRetryLevel = useCallback(() => {
     // Stop all music first
     soundManager.stopHighScoreMusic();
@@ -8246,6 +8410,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
     // Reset bricks for current level
     setBricks(initBricksForLevel(currentLevel));
+    resetLevelRewardState(currentLevel);
 
     // Reset all stats and score
     setScore(0);
@@ -9791,15 +9956,49 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
               >
                 <div className="flex gap-4 justify-center items-center">
                   {gameState === "ready" && (
-                    <button
-                      onClick={handleStart}
-                      className="amiga-box px-8 py-3 retro-pixel-text hover:bg-muted/50 transition-all text-sm"
-                      style={{
-                        color: "hsl(0, 0%, 85%)",
-                      }}
-                    >
-                      {bricks.every((brick) => !brick.visible) && level > 0 ? "NEXT LEVEL" : "START GAME"}
-                    </button>
+                    <div className="flex flex-col items-center gap-3">
+                      {isLevelCompleteReadyState && (
+                        <div
+                          className="amiga-box px-4 py-3 text-center max-w-[420px]"
+                          style={{ color: "hsl(0, 0%, 85%)" }}
+                        >
+                          <div
+                            className="retro-pixel-text text-xs mb-2"
+                            style={{ color: levelCompletePrompt.kind === "boss" ? "hsl(0, 85%, 65%)" : "hsl(45, 100%, 60%)" }}
+                          >
+                            {levelCompletePrompt.headline}
+                          </div>
+                          {levelCompletePrompt.kind === "qumran" && (
+                            <div className="flex justify-center gap-2 mb-2">
+                              {QUMRAN_SEQUENCE.map((letter) => (
+                                <span
+                                  key={letter}
+                                  className="retro-pixel-text text-xs"
+                                  style={{
+                                    color: collectedLetters.has(letter) ? "hsl(45, 100%, 65%)" : "hsl(0, 0%, 40%)",
+                                    opacity: collectedLetters.has(letter) ? 1 : 0.45,
+                                  }}
+                                >
+                                  {letter}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                          <div className="retro-pixel-text text-[10px]" style={{ color: "hsl(0, 0%, 68%)" }}>
+                            {levelCompletePrompt.detail}
+                          </div>
+                        </div>
+                      )}
+                      <button
+                        onClick={handleStart}
+                        className="amiga-box px-8 py-3 retro-pixel-text hover:bg-muted/50 transition-all text-sm"
+                        style={{
+                          color: "hsl(0, 0%, 85%)",
+                        }}
+                      >
+                        {isLevelCompleteReadyState ? "NEXT LEVEL" : "START GAME"}
+                      </button>
+                    </div>
                   )}
                   {(gameState === "gameOver" || gameState === "won") && (
                     <button

@@ -7,6 +7,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { getDailyChallenge, getTodayString, getShapeIcon, type DailyChallenge } from "@/utils/dailyChallenge";
 import { DailyChallengeArchive } from "./DailyChallengeArchive";
 
+const DAILY_STREAK_REWARDS = [
+  { days: 1, name: "Daily Warrior" },
+  { days: 3, name: "3-Day Streak" },
+  { days: 7, name: "Weekly Warrior" },
+  { days: 30, name: "Monthly Legend" },
+] as const;
+
 interface DailyChallengeOverlayProps {
   onPlay: (challenge: DailyChallenge) => void;
   onClose: () => void;
@@ -25,7 +32,7 @@ export const DailyChallengeOverlay = ({ onPlay, onClose }: DailyChallengeOverlay
 
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        const { data: completion } = await (supabase as any)
+        const { data: completion } = await supabase
           .from("daily_challenge_completions")
           .select("id")
           .eq("user_id", session.user.id)
@@ -34,13 +41,13 @@ export const DailyChallengeOverlay = ({ onPlay, onClose }: DailyChallengeOverlay
 
         if (completion) setAlreadyCompleted(true);
 
-        const { data: profile } = await (supabase as any)
+        const { data: profile } = await supabase
           .from("player_profiles")
           .select("daily_challenge_streak")
           .eq("user_id", session.user.id)
           .single();
 
-        if (profile) setStreak((profile as any).daily_challenge_streak || 0);
+        if (profile) setStreak(profile.daily_challenge_streak || 0);
       }
       setLoading(false);
     };
@@ -57,6 +64,18 @@ export const DailyChallengeOverlay = ({ onPlay, onClose }: DailyChallengeOverlay
   }
 
   const shapeIcon = getShapeIcon(challenge.shapeName);
+  const earnedRewards = DAILY_STREAK_REWARDS.filter((reward) => streak >= reward.days);
+  const nextReward = DAILY_STREAK_REWARDS.find((reward) => streak < reward.days);
+  const streakEarnsText = streak <= 0
+    ? "Start a streak to earn Daily Warrior on your first completion."
+    : nextReward
+      ? `This streak is ${nextReward.days - streak} day${nextReward.days - streak === 1 ? "" : "s"} away from ${nextReward.name}.`
+      : "This streak has already cleared every current streak achievement milestone.";
+  const streakBreakText = streak <= 0
+    ? "If you miss tomorrow, you simply stay at 0 until you start a run of consecutive clears."
+    : nextReward
+      ? `If the streak breaks, your consecutive-day progress resets and you lose momentum toward ${nextReward.name}.`
+      : "If the streak breaks, your consecutive-day count resets and future monthly progress starts over.";
 
   return (
     <div className="fixed inset-0 w-full h-screen bg-gradient-to-b from-[hsl(220,25%,12%)] to-[hsl(220,30%,8%)] flex items-center justify-center p-2 sm:p-4 overflow-y-auto animate-fade-in z-50">
@@ -111,6 +130,25 @@ export const DailyChallengeOverlay = ({ onPlay, onClose }: DailyChallengeOverlay
             <span className="retro-pixel-text text-sm" style={{ color: "hsl(30,100%,60%)" }}>
               🔥 {streak} Day Streak
             </span>
+          </div>
+        )}
+
+        {!loading && (
+          <div className="mb-4 p-3 rounded" style={{ background: "hsl(220,20%,20%)", border: "1px solid hsl(330,100%,35%)" }}>
+            <p className="text-xs font-bold mb-1" style={{ color: "hsl(330,100%,65%)", letterSpacing: "1px" }}>
+              STREAK REWARDS
+            </p>
+            {earnedRewards.length > 0 && (
+              <p className="text-xs mb-1" style={{ color: "hsl(0,0%,78%)" }}>
+                Earned: {earnedRewards.map((reward) => reward.name).join(" • ")}
+              </p>
+            )}
+            <p className="text-xs" style={{ color: "hsl(0,0%,88%)" }}>
+              {streakEarnsText}
+            </p>
+            <p className="text-xs mt-2" style={{ color: "hsl(0,0%,55%)" }}>
+              {streakBreakText}
+            </p>
           </div>
         )}
 

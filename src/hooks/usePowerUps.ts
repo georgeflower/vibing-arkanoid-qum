@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from "react";
 import type { PowerUp, PowerUpType, Ball, Paddle, Brick, Difficulty } from "@/types/game";
-import { POWERUP_SIZE, POWERUP_FALL_SPEED, POWERUP_DROP_CHANCE, CANVAS_HEIGHT, CANVAS_WIDTH, PADDLE_WIDTH, FIREBALL_DURATION } from "@/constants/game";
+import { POWERUP_SIZE, POWERUP_FALL_SPEED, CANVAS_HEIGHT, CANVAS_WIDTH, PADDLE_WIDTH, FIREBALL_DURATION } from "@/constants/game";
 import { debugToast as toast } from "@/utils/debugToast";
 import { soundManager } from "@/utils/sounds";
 import { powerUpPool, getNextPowerUpId } from "@/utils/entityPool";
