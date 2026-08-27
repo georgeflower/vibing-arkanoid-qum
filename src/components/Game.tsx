@@ -485,6 +485,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     allTime: boolean;
   } | null>(null);
   const [allTimeBestScore, setAllTimeBestScore] = useState<number | null>(null);
+  const [allTimeBestScoreLoaded, setAllTimeBestScoreLoaded] = useState(false);
   const [beatLevel50Completed, setBeatLevel50Completed] = useState(false);
   const [timer, setTimer] = useState(0);
   const [totalPlayTime, setTotalPlayTimeRaw] = useState(0);
@@ -8285,20 +8286,25 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   const isLevelCompleteReadyState = gameState === "ready" && bricks.length > 0 && bricks.every((brick) => !brick.visible);
 
   useEffect(() => {
-    if (!isLevelCompleteReadyState || isDailyChallenge || isBossRush) return;
+    if (!isLevelCompleteReadyState || isDailyChallenge || isBossRush) {
+      setAllTimeBestScoreLoaded(false);
+      return;
+    }
 
     let cancelled = false;
+    setAllTimeBestScoreLoaded(false);
     fetchTopScores().then((topScores) => {
       if (cancelled) return;
       setAllTimeBestScore(topScores.allTime?.score ?? null);
+      setAllTimeBestScoreLoaded(true);
     });
 
     return () => {
       cancelled = true;
     };
-  }, [isBossRush, isDailyChallenge, isLevelCompleteReadyState]);
+  }, [fetchTopScores, isBossRush, isDailyChallenge, isLevelCompleteReadyState]);
 
-  const levelCompletePrompt = useMemo<LevelCompletePrompt>(() => {
+  const levelCompletePrompt = useMemo<LevelCompletePrompt | null>(() => {
     const nextBossLevel = BOSS_LEVELS.find((bossLevel) => bossLevel > level);
     if (nextBossLevel) {
       const levelsAway = nextBossLevel - level;
@@ -8318,6 +8324,10 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         headline: "QUMRAN PROGRESS",
         detail: `${remainingLetters} MORE FOR +5 LIVES & 125,000`,
       };
+    }
+
+    if (!allTimeBestScoreLoaded) {
+      return null;
     }
 
     if (allTimeBestScore !== null) {
@@ -8340,7 +8350,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       headline: "NEXT LEVEL, MORE HEAT",
       detail: "Keep the run alive and cash in the next wave.",
     };
-  }, [allTimeBestScore, collectedLetters, level, score]);
+  }, [allTimeBestScore, allTimeBestScoreLoaded, collectedLetters, level, score]);
 
   const handleRetryLevel = useCallback(() => {
     // Stop all music first
@@ -9957,7 +9967,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                 <div className="flex gap-4 justify-center items-center">
                   {gameState === "ready" && (
                     <div className="flex flex-col items-center gap-3">
-                      {isLevelCompleteReadyState && (
+                      {isLevelCompleteReadyState && levelCompletePrompt && (
                         <div
                           className="amiga-box px-4 py-3 text-center max-w-[420px]"
                           style={{ color: "hsl(0, 0%, 85%)" }}
@@ -9996,7 +10006,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                           color: "hsl(0, 0%, 85%)",
                         }}
                       >
-                        {isLevelCompleteReadyState ? "NEXT LEVEL" : "START GAME"}
+                        {bricks.every((brick) => !brick.visible) && level > 0 ? "NEXT LEVEL" : "START GAME"}
                       </button>
                     </div>
                   )}

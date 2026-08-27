@@ -8,7 +8,7 @@
  * NO React dependency. NO per-frame allocations beyond canvas API internals.
  */
 
-import { world, type GameWorld } from "@/engine/state";
+import type { GameWorld } from "@/engine/state";
 import type { RenderState, AssetRefs } from "@/engine/renderState";
 import type { Brick, BonusLetterType, Particle } from "@/types/game";
 import { isMegaBoss, type MegaBoss } from "@/utils/megaBossUtils";
@@ -59,16 +59,16 @@ function drawEndgameBrickOverlay(
 function drawPendingPowerUpTelegraphs(
   ctx: CanvasRenderingContext2D,
   pendingDrops: GameWorld["pendingPowerUpDrops"],
+  simTimeMs: number,
   qualityLevel: string,
 ): void {
   if (pendingDrops.length === 0) return;
 
-  const nowSimMs = world.simTimeMs;
   ctx.save();
   for (const drop of pendingDrops) {
-    if (nowSimMs >= drop.spawnAtSimMs) continue;
+    if (simTimeMs >= drop.spawnAtSimMs) continue;
     const duration = Math.max(1, drop.spawnAtSimMs - drop.createdAtSimMs);
-    const progress = Math.min(1, Math.max(0, (nowSimMs - drop.createdAtSimMs) / duration));
+    const progress = Math.min(1, Math.max(0, (simTimeMs - drop.createdAtSimMs) / duration));
     const pulse = 0.55 + 0.45 * Math.sin(progress * Math.PI * 4);
     const alpha = 0.4 + (1 - progress) * 0.5;
     const inset = 2 + pulse * 4;
@@ -702,7 +702,7 @@ export function renderFrame(
     });
   }
   drawEndgameBrickOverlay(ctx, bricks, qualitySettings.level, now);
-  drawPendingPowerUpTelegraphs(ctx, world.pendingPowerUpDrops, qualitySettings.level);
+  drawPendingPowerUpTelegraphs(ctx, world.pendingPowerUpDrops, world.simTimeMs, qualitySettings.level);
 
   // ═══ Draw paddle ═══
   if (paddle) {

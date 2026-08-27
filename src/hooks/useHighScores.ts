@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -231,7 +231,7 @@ export const useHighScores = (leaderboardType: LeaderboardType = 'all-time', dif
     }
   };
 
-  const fetchTopScores = async (): Promise<TopScores> => {
+  const fetchTopScores = useCallback(async (): Promise<TopScores> => {
     try {
       const now = new Date();
       const today = new Date(now);
@@ -270,7 +270,7 @@ export const useHighScores = (leaderboardType: LeaderboardType = 'all-time', dif
       console.error('Failed to fetch top scores:', err);
       return { daily: null, weekly: null, allTime: null };
     }
-  };
+  }, []);
 
   const addHighScore = async (
     name: string,
