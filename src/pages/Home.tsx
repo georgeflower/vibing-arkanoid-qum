@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import CRTOverlay from "@/components/CRTOverlay";
 import { GAME_VERSION } from "@/constants/version";
 import { CHANGELOG } from "@/constants/version";
 import startScreen from "@/assets/start-screen-new.webp";
@@ -170,8 +169,6 @@ const Home = () => {
         zIndex: 50,
       }}
     >
-      <CRTOverlay quality="medium" />
-
       {/* Scrollable content */}
       <div className="relative z-10 max-w-4xl mx-auto px-4 py-8 sm:px-6 lg:px-8" style={{ minHeight: "100vh" }}>
         {/* ===== HERO ===== */}

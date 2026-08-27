@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-import CRTOverlay from "@/components/CRTOverlay";
 
 const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
   <div className="mb-6">
@@ -10,7 +9,6 @@ const Section = ({ title, children }: { title: string; children: React.ReactNode
 
 const PrivacyPolicy = () => (
   <div className="min-h-screen" style={{ background: "linear-gradient(180deg, hsl(220,25%,12%) 0%, hsl(220,30%,8%) 100%)", overflowY: "auto", height: "100vh", position: "fixed", inset: 0 }}>
-    <CRTOverlay quality="medium" />
     <div className="relative z-10 max-w-2xl mx-auto px-4 py-8">
       <div className="amiga-box rounded-lg p-6 sm:p-8">
         <h1 className="retro-pixel-text text-center mb-8" style={{ fontSize: "24px", color: "hsl(200, 70%, 50%)", textShadow: "0 0 10px hsl(200,70%,50%,0.5)" }}>

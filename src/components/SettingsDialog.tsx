@@ -8,7 +8,6 @@ import { Slider } from "@/components/ui/slider";
 import { Settings, Volume2, Monitor, RotateCcw, Save } from "lucide-react";
 import { soundManager } from "@/utils/sounds";
 import type { GameState } from "@/types/game";
-import type { QualityLevel } from "@/hooks/useAdaptiveQuality";
 import {
   useGameSettings,
   loadSettings,
@@ -38,9 +37,6 @@ interface SettingsDialogProps {
 
 
 type TabId = "video" | "sound";
-
-// CRT is disabled for potato and low quality
-const CRT_DISABLED_QUALITIES: QualityLevel[] = ["potato", "low"];
 
 const QUALITY_LEVELS: { value: QualityLevel; label: string; description: string }[] = [
   {
@@ -81,10 +77,6 @@ export const SettingsDialog = ({
   const updateDraft = (partial: Partial<GameSettingsType>) => {
     setDraft((prev) => {
       const next = { ...prev, ...partial };
-      // Auto-uncheck CRT when selecting quality that doesn't support it
-      if (partial.qualityLevel && CRT_DISABLED_QUALITIES.includes(partial.qualityLevel)) {
-        next.crtEnabled = false;
-      }
       // Auto-derive resolution from quality
       if (partial.qualityLevel) {
         next.canvasResolution = getResolutionForQuality(partial.qualityLevel);
@@ -198,23 +190,6 @@ export const SettingsDialog = ({
         </p>
       </div>
 
-
-      {/* CRT */}
-      <div className="flex items-center justify-between">
-        <Label className="retro-pixel-text text-xs" style={{ color: "hsl(0, 0%, 85%)" }}>
-          CRT Scanline Effect
-        </Label>
-        <Switch
-          checked={draft.crtEnabled}
-          onCheckedChange={(v) => updateDraft({ crtEnabled: v })}
-          disabled={CRT_DISABLED_QUALITIES.includes(draft.qualityLevel)}
-        />
-      </div>
-      {CRT_DISABLED_QUALITIES.includes(draft.qualityLevel) && (
-        <p className="retro-pixel-text text-[8px]" style={{ color: "hsl(0, 60%, 55%)" }}>
-          CRT is disabled at this quality level
-        </p>
-      )}
 
       {/* FPS Overlay */}
       <div className="flex items-center justify-between">

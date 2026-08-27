@@ -15,7 +15,7 @@ import { MEGA_BOSS_LEVEL } from "@/constants/megaBossConfig";
 import { BOSS_LEVELS } from "@/constants/bossConfig";
 import { collisionHistory } from "@/utils/collisionHistory";
 import { startBallTracking } from "@/utils/ballTracker";
-import type { Ball, Brick, Boss, Enemy, EnemyType } from "@/types/game";
+import type { Ball, Brick, Boss, Enemy, EnemyType, GameState } from "@/types/game";
 import type { CCDPerformanceData } from "@/components/CCDPerformanceOverlay";
 
 // ─── Exported Constants (used by Game.tsx debug info getter too) ───
@@ -33,6 +33,7 @@ export interface PhysicsConfig {
   dtSeconds: number;
   frameTick: number;
   level: number;
+  gameState: GameState;
   canvasSize: { w: number; h: number };
   minBrickDimension: number;
   qualityLevel: "potato" | "low" | "medium" | "high";
@@ -107,9 +108,6 @@ export interface PhysicsFrameResult {
 
   /** Position of the last brick destroyed (only set when allBricksCleared is true). */
   lastBrickPos: { x: number; y: number } | null;
-
-  /** Brick destruction score events (for floating score popups). */
-  brickScoreEvents: Array<{ x: number; y: number; points: number }>;
 }
 
 // ─── Reusable result object (zero-alloc per frame) ───
@@ -141,7 +139,6 @@ const _reusableResult: PhysicsFrameResult = {
   ccdPerformance: null,
   secondChanceSaves: [],
   lastBrickPos: null,
-  brickScoreEvents: [],
 };
 
 function createEmptyResult(): PhysicsFrameResult {
@@ -173,13 +170,34 @@ function createEmptyResult(): PhysicsFrameResult {
   _reusableResult.enemyHitBallIds.length = 0;
   _reusableResult.secondChanceSaves.length = 0;
   _reusableResult.lastBrickPos = null;
-  _reusableResult.brickScoreEvents.length = 0;
 
   return _reusableResult;
 }
 
 // Module-level scratch sample ball for performBossFirstSweep (zero-alloc per sample)
 const _sampleBall = { x: 0, y: 0, dx: 0, dy: 0, radius: 0 };
+
+function steerBallVelocityTowards(
+  ball: Ball,
+  targetX: number,
+  targetY: number,
+  maxTurn: number,
+  strength: number,
+): void {
+  const currentAngle = Math.atan2(ball.dy, ball.dx);
+  const targetAngle = Math.atan2(targetY - ball.y, targetX - ball.x);
+
+  let angleDiff = targetAngle - currentAngle;
+  while (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
+  while (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
+
+  const turnAmount = Math.sign(angleDiff) * Math.min(Math.abs(angleDiff), maxTurn);
+  const newAngle = currentAngle + turnAmount * strength;
+  const speed = Math.hypot(ball.dx, ball.dy);
+
+  ball.dx = Math.cos(newAngle) * speed;
+  ball.dy = Math.sin(newAngle) * speed;
+}
 
 
 // ─── Boss-First Swept Collision ───
@@ -507,7 +525,7 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
   const brickById = new Map<number, Brick>();
   for (let i = 0; i < bricks.length; i++) brickById.set(bricks[i].id, bricks[i]);
 
-  const { dtSeconds, frameTick, level, debugSettings, maxTotalSpeed, isBossRush } = config;
+  const { dtSeconds, frameTick, level, gameState, debugSettings, maxTotalSpeed, isBossRush } = config;
 
   // ═══ Advance simulation clock ═══
   world.simTimeSeconds += dtSeconds;
@@ -516,6 +534,10 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
   // ═══ Hitstop: freeze entity movement while in hitstop window ═══
   // Clock still advances; particles/animations continue unaffected.
   if (world.simTimeMs < world.hitstopUntilSimMs) {
+    for (const ball of balls) {
+      ball.renderPrevX = ball.x;
+      ball.renderPrevY = ball.y;
+    }
     return result;
   }
 
@@ -854,6 +876,7 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
                     type: enemy.type,
                   });
                   scoreIncrease += 300;
+                  spawnScorePopup(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, 300, "+300");
                   result.toastEvents.push({
                     level: "success",
                     message: "Pyramid destroyed! +300 points",
@@ -899,6 +922,7 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
                   });
                   const points = enemy.isLargeSphere ? 400 : 200;
                   scoreIncrease += points;
+                  spawnScorePopup(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, points, `+${points}`);
                   result.toastEvents.push({
                     level: "success",
                     message: `${enemy.isLargeSphere ? "Large sphere" : "Sphere enemy"} destroyed! +${points} points`,
@@ -945,6 +969,7 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
                     type: enemy.type,
                   });
                   scoreIncrease += 250;
+                  spawnScorePopup(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, 250, "+250");
                   result.toastEvents.push({
                     level: "success",
                     message: "CrossBall destroyed! +250 points",
@@ -968,6 +993,7 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
                   type: enemy.type,
                 });
                 scoreIncrease += 150;
+                spawnScorePopup(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, 150, "+150");
                 result.toastEvents.push({
                   level: "success",
                   message: "Star destroyed! +150 points",
@@ -990,6 +1016,7 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
                   type: enemy.type,
                 });
                 scoreIncrease += 100;
+                spawnScorePopup(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, 100, "+100");
                 result.toastEvents.push({
                   level: "success",
                   message: "Cube enemy destroyed! +100 points",
@@ -1120,9 +1147,11 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
                   if (upd && !upd.visible) continue;
                   remainingBrickCount++;
                 }
-                let baseSpeedIncrease = 0.006;
-                if (remainingBrickCount <= 10) {
-                  baseSpeedIncrease = 0.013 + (10 - remainingBrickCount) * 0.0028;
+                const endgameThreshold = Math.max(6, Math.round(world.levelStartDestructibleCount * 0.12));
+                let baseSpeedIncrease = 0.012;
+                if (endgameThreshold > 0 && remainingBrickCount <= endgameThreshold) {
+                  const t = (endgameThreshold - remainingBrickCount) / endgameThreshold;
+                  baseSpeedIncrease = 0.02 + t * 0.02;
                 }
                 const speedIncrease = Math.min(baseSpeedIncrease, speedBudget - ballAccumulated);
                 ccdResult.ball.speedBoostAccumulated = ballAccumulated + speedIncrease;
@@ -1166,6 +1195,7 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
 
     result.explosiveBrickExplosions.push({ x: brickCenterX, y: brickCenterY });
     result.highlightFlashCount++;
+    let collateralBrickPopupCount = 0;
 
     // Destroy nearby bricks
     for (const otherBrick of bricks) {
@@ -1186,6 +1216,15 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
             brickUpdates.set(otherBrick.id, { visible: false, hitsRemaining: 0 });
             scoreIncrease += otherBrick.points;
             bricksDestroyedCount++;
+            if (collateralBrickPopupCount < 6) {
+              spawnScorePopup(
+                otherBrick.x + otherBrick.width / 2,
+                otherBrick.y + otherBrick.height / 2,
+                otherBrick.points,
+                `+${otherBrick.points}`,
+              );
+              collateralBrickPopupCount++;
+            }
           }
         }
       }
@@ -1207,6 +1246,7 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
           type: enemy.type,
         });
         scoreIncrease += 150;
+        spawnScorePopup(enemyCenterX, enemyCenterY, 150, "+150");
         result.toastEvents.push({
           level: "success",
           message: `${enemy.type} enemy caught in explosion! +150`,
@@ -1290,25 +1330,52 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
     const targetBoss = boss || resurrectedBosses[0];
     if (!targetBoss) continue;
 
-    const bossCenterX = targetBoss.x + targetBoss.width / 2;
-    const bossCenterY = targetBoss.y + targetBoss.height / 2;
-    const toBossX = bossCenterX - r.ball.x;
-    const toBossY = bossCenterY - r.ball.y;
-    const currentAngle = Math.atan2(r.ball.dy, r.ball.dx);
-    const targetAngle = Math.atan2(toBossY, toBossX);
+    steerBallVelocityTowards(
+      r.ball,
+      targetBoss.x + targetBoss.width / 2,
+      targetBoss.y + targetBoss.height / 2,
+      0.1,
+      0.15,
+    );
+  }
 
-    let angleDiff = targetAngle - currentAngle;
-    while (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
-    while (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
+  if (gameState === "playing" && !BOSS_LEVELS.includes(level)) {
+    const remainingBricks: Brick[] = [];
+    let hasMoreThanThreeBricks = false;
+    for (const brick of bricks) {
+      if (!brick.visible || brick.isIndestructible) continue;
+      if (remainingBricks.length === 3) {
+        hasMoreThanThreeBricks = true;
+        break;
+      }
+      remainingBricks.push(brick);
+    }
+    if (!hasMoreThanThreeBricks && remainingBricks.length > 0) {
+      for (const r of ballResults) {
+        if (!r.ball || r.ball.waitingToLaunch) continue;
 
-    const HOMING_MAX_TURN = 0.1;
-    const HOMING_STRENGTH = 0.15;
-    const turnAmount = Math.sign(angleDiff) * Math.min(Math.abs(angleDiff), HOMING_MAX_TURN);
-    const newAngle = currentAngle + turnAmount * HOMING_STRENGTH;
+        let nearestBrick: Brick | null = null;
+        let nearestDistSq = Infinity;
+        for (const brick of remainingBricks) {
+          const dx = brick.x + brick.width / 2 - r.ball.x;
+          const dy = brick.y + brick.height / 2 - r.ball.y;
+          const distSq = dx * dx + dy * dy;
+          if (distSq < nearestDistSq) {
+            nearestDistSq = distSq;
+            nearestBrick = brick;
+          }
+        }
 
-    const speed = Math.sqrt(r.ball.dx * r.ball.dx + r.ball.dy * r.ball.dy);
-    r.ball.dx = Math.cos(newAngle) * speed;
-    r.ball.dy = Math.sin(newAngle) * speed;
+        if (!nearestBrick) continue;
+        steerBallVelocityTowards(
+          r.ball,
+          nearestBrick.x + nearestBrick.width / 2,
+          nearestBrick.y + nearestBrick.height / 2,
+          0.1,
+          0.05,
+        );
+      }
+    }
   }
 
   // ═══ Phase 3: Gravity ═══

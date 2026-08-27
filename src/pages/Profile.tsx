@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, Link } from "react-router-dom";
-import CRTOverlay from "@/components/CRTOverlay";
 import { ACHIEVEMENTS } from "@/constants/achievements";
 import { validateUsername, validateInitials } from "@/utils/passwordValidation";
 
@@ -298,7 +297,6 @@ const Profile = () => {
 
   return (
     <div className="min-h-screen" style={{ background: "linear-gradient(180deg, hsl(220,25%,12%) 0%, hsl(220,30%,8%) 100%)", overflowY: "auto", height: "100vh", position: "fixed", inset: 0 }}>
-      <CRTOverlay quality="medium" />
       <div className="relative z-10 max-w-2xl mx-auto px-4 py-8">
         {/* Beta Status Banner */}
         <div className="mb-4 p-3 rounded-lg" style={{ background: "hsl(45,100%,50%,0.15)", border: "1px solid hsl(45,100%,50%,0.5)" }}>

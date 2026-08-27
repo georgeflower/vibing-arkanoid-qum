@@ -6,7 +6,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { PostHogProvider } from "posthog-js/react";
 import { posthog, initPostHog } from "@/lib/posthog";
-import CRTOverlay from "@/components/CRTOverlay";
 import Index from "./pages/Index";
 import Home from "./pages/Home";
 import LevelEditor from "./pages/LevelEditor";

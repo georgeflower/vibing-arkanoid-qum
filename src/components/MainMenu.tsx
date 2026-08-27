@@ -12,21 +12,18 @@ import startScreenImg from "@/assets/start-screen-new.png";
 import startScreenWebp from "@/assets/start-screen-new.webp";
 import { HighScoreDisplay } from "./HighScoreDisplay";
 import { Changelog } from "./Changelog";
-import CRTOverlay from "./CRTOverlay";
 import { soundManager } from "@/utils/sounds";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { GAME_VERSION } from "@/constants/version";
 
-import { useAdaptiveQuality } from "@/hooks/useAdaptiveQuality";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { TopScoresDisplay } from "./TopScoresDisplay";
 import { X, ChevronUp, ChevronDown } from "lucide-react";
 import { useLevelProgress } from "@/hooks/useLevelProgress";
-import { FINAL_LEVEL, ENABLE_DEBUG_FEATURES, ENABLE_HIGH_QUALITY } from "@/constants/game";
+import { FINAL_LEVEL, ENABLE_DEBUG_FEATURES } from "@/constants/game";
 import { BOSS_RUSH_CONFIG } from "@/constants/bossRushConfig";
 import { SettingsDialog } from "./SettingsDialog";
-import { useGameSettings } from "@/hooks/useGameSettings";
 import bmcIcon from "@/assets/buymeacoffee.png";
 
 
@@ -44,7 +41,6 @@ interface MainMenuProps {
 
 export const MainMenu = ({ onStartGame, difficulty, setDifficulty, gameMode, setGameMode, startingLevel, setStartingLevel, hasStartedOnce, setHasStartedOnce }: MainMenuProps) => {
   const navigate = useNavigate();
-  const { settings: gameSettings } = useGameSettings();
   const [showSettings, setShowSettings] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
   const [showHighScores, setShowHighScores] = useState(false);
@@ -72,19 +68,6 @@ export const MainMenu = ({ onStartGame, difficulty, setDifficulty, gameMode, set
   const whatsNewRef = useRef<HTMLDivElement>(null);
   const aboutRef = useRef<HTMLDivElement>(null);
   const instructionsRef = useRef<HTMLDivElement>(null);
-
-  // Use adaptive quality hook for CRT effects — initialize from saved settings
-  const { quality, qualitySettings, applyQualitySilently } = useAdaptiveQuality({
-    initialQuality: gameSettings.qualityLevel || (ENABLE_HIGH_QUALITY ? "high" : "medium"),
-    autoAdjust: false,
-  });
-
-  // Reactively sync manual quality from persisted settings (mirrors Game.tsx pattern)
-  useEffect(() => {
-    if (gameSettings.qualityMode === "manual" && gameSettings.qualityLevel) {
-      applyQualitySilently(gameSettings.qualityLevel);
-    }
-  }, [gameSettings.qualityMode, gameSettings.qualityLevel, applyQualitySilently]);
 
   const isIOSDevice =
     /iPhone|iPad|iPod/i.test(navigator.userAgent) ||
@@ -242,14 +225,13 @@ export const MainMenu = ({ onStartGame, difficulty, setDifficulty, gameMode, set
         ref={highScoresRef}
         className="fixed inset-0 w-full h-screen flex flex-col items-center justify-center bg-gradient-to-b from-[hsl(220,25%,12%)] to-[hsl(220,30%,8%)] swipe-container animate-fade-in"
       >
-        {qualitySettings.backgroundEffects && <CRTOverlay quality={quality} crtEnabled={gameSettings.crtEnabled} />}
         <HighScoreDisplay onClose={() => setShowHighScores(false)} />
       </div>
     );
   }
 
   if (showChangelog) {
-    return <Changelog onClose={() => setShowChangelog(false)} quality={quality} qualitySettings={qualitySettings} />;
+    return <Changelog onClose={() => setShowChangelog(false)} />;
   }
 
   if (showWhatsNew) {
@@ -258,7 +240,6 @@ export const MainMenu = ({ onStartGame, difficulty, setDifficulty, gameMode, set
         ref={whatsNewRef}
         className="fixed inset-0 w-full h-screen bg-gradient-to-b from-[hsl(220,25%,12%)] to-[hsl(220,30%,8%)] flex items-center justify-center p-2 sm:p-4 overflow-y-auto swipe-container animate-fade-in"
       >
-        {qualitySettings.backgroundEffects && <CRTOverlay quality={quality} crtEnabled={gameSettings.crtEnabled} />}
         <Card className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6 md:p-8 bg-[hsl(220,20%,15%)] border-[hsl(200,70%,50%)] animate-scale-in">
           <button
             onClick={() => {
@@ -380,7 +361,6 @@ export const MainMenu = ({ onStartGame, difficulty, setDifficulty, gameMode, set
         ref={aboutRef}
         className="fixed inset-0 w-full h-screen bg-gradient-to-b from-[hsl(220,25%,12%)] to-[hsl(220,30%,8%)] flex items-center justify-center p-2 sm:p-4 overflow-y-auto swipe-container animate-fade-in"
       >
-        {qualitySettings.backgroundEffects && <CRTOverlay quality={quality} crtEnabled={gameSettings.crtEnabled} />}
         <Card className="relative w-full max-w-5xl max-h-[90vh] overflow-y-auto p-3 sm:p-6 md:p-8 bg-[hsl(220,20%,15%)] border-[hsl(200,70%,50%)] animate-scale-in">
           <button
             onClick={() => {
@@ -434,8 +414,7 @@ export const MainMenu = ({ onStartGame, difficulty, setDifficulty, gameMode, set
             </div>
 
             <p className="text-[9px] sm:text-sm md:text-base leading-relaxed">
-              Featuring an authentic retro aesthetic with{" "}
-              <span className="text-[hsl(200,70%,50%)] font-bold">CRT scanline effects</span>, advanced{" "}
+              Featuring an authentic retro aesthetic, an advanced{" "}
               <span className="text-[hsl(330,100%,65%)] font-bold">CCD physics engine</span> for precise collisions,
               special brick types (metal, cracked, explosive), 12 unique power-ups, enemies that fight back, and a
               soundtrack that'll make your speakers weep with joy. Collect the legendary{" "}
@@ -531,7 +510,6 @@ export const MainMenu = ({ onStartGame, difficulty, setDifficulty, gameMode, set
         onKeyDown={handleFirstStart}
         tabIndex={0}
       >
-        {qualitySettings.backgroundEffects && <CRTOverlay quality={quality} crtEnabled={gameSettings.crtEnabled} />}
         <picture className="absolute inset-0 w-full h-full pointer-events-none">
           <source srcSet={startScreenWebp} type="image/webp" />
           <img src={startScreenImg} alt="Game start screen" className="w-full h-full object-contain" />
@@ -549,7 +527,6 @@ export const MainMenu = ({ onStartGame, difficulty, setDifficulty, gameMode, set
         ref={instructionsRef}
         className="fixed inset-0 w-full h-screen bg-gradient-to-b from-[hsl(220,25%,12%)] to-[hsl(220,30%,8%)] flex items-center justify-center p-2 sm:p-4 overflow-y-auto swipe-container animate-fade-in"
       >
-        {qualitySettings.backgroundEffects && <CRTOverlay quality={quality} crtEnabled={gameSettings.crtEnabled} />}
         <Card className="relative w-full max-w-5xl max-h-[90vh] overflow-y-auto p-3 sm:p-6 md:p-8 bg-[hsl(220,20%,15%)] border-[hsl(200,70%,50%)] animate-scale-in">
           <button
             onClick={() => {
@@ -803,7 +780,6 @@ export const MainMenu = ({ onStartGame, difficulty, setDifficulty, gameMode, set
       className="min-h-screen w-full flex items-center justify-center p-4 bg-contain bg-center bg-no-repeat bg-[hsl(220,25%,12%)] relative"
       style={{ backgroundImage: `url(${startScreenImg})` }}
     >
-      {qualitySettings.backgroundEffects && <CRTOverlay quality={quality} crtEnabled={gameSettings.crtEnabled} />}
       <Card className="max-w-sm w-full max-h-[90vh] overflow-y-auto smooth-scroll custom-scrollbar p-6 bg-black/60 backdrop-blur-sm border-[hsl(200,70%,50%)] relative">
         {/* Settings */}
         <div className="space-y-4">

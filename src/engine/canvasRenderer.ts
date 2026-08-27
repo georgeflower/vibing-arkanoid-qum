@@ -22,6 +22,40 @@ const safeArcRadius = (r: number): number => (Number.isFinite(r) ? Math.max(0.00
 const QUALITY_RANK: Record<string, number> = { potato: 0, low: 1, medium: 2, high: 3 };
 const atMostLow = (level: string) => (QUALITY_RANK[level] ?? 3) <= 1;
 
+function drawEndgameBrickOverlay(
+  ctx: CanvasRenderingContext2D,
+  bricks: Brick[],
+  qualityLevel: string,
+  now: number,
+): void {
+  if (atMostLow(qualityLevel)) return;
+
+  const remainingBricks: Brick[] = [];
+  let hasMoreThanThreeBricks = false;
+  for (const brick of bricks) {
+    if (!brick.visible || brick.isIndestructible) continue;
+    if (remainingBricks.length === 3) {
+      hasMoreThanThreeBricks = true;
+      break;
+    }
+    remainingBricks.push(brick);
+  }
+  if (hasMoreThanThreeBricks || remainingBricks.length === 0) return;
+
+  const pulse = 0.5 + 0.5 * Math.sin(now * 0.01);
+  ctx.save();
+  for (const brick of remainingBricks) {
+    const lineWidth = 2 + pulse * 1.5;
+    const glowWidth = lineWidth;
+    ctx.lineWidth = lineWidth;
+    ctx.strokeStyle = `rgba(255, 245, 170, ${0.45 + pulse * 0.35})`;
+    ctx.shadowColor = `rgba(255, 220, 120, ${0.4 + pulse * 0.35})`;
+    ctx.shadowBlur = glowWidth * 3;
+    ctx.strokeRect(brick.x - glowWidth / 2, brick.y - glowWidth / 2, brick.width + glowWidth, brick.height + glowWidth);
+  }
+  ctx.restore();
+}
+
 
 // ─── Module-level animation state (previously useRef) ────────
 
@@ -336,7 +370,6 @@ export function warmUpGradients(ctx: CanvasRenderingContext2D): void {
   _gradientCacheWarmedUp = true;
 
   if (import.meta.env.DEV) {
-    // eslint-disable-next-line no-console
     console.debug(`[GradientWarmUp] Pre-created ${Object.keys(gradientCache).length} gradient cache entries`);
   }
 }
@@ -621,6 +654,7 @@ export function renderFrame(
       }
     });
   }
+  drawEndgameBrickOverlay(ctx, bricks, qualitySettings.level, now);
 
   // ═══ Draw paddle ═══
   if (paddle) {
@@ -2365,8 +2399,8 @@ function drawEnemies(
       const radius = singleEnemy.width / 2;
       const hits = singleEnemy.hits || 0;
       let hue: number;
-      let saturation = 100;
-      let lightness = 50;
+      const saturation = 100;
+      const lightness = 50;
 
       if (hits === 0) {
         const cycleSpeed = 200;
@@ -2589,8 +2623,8 @@ function drawEnemies(
       const rotation = singleEnemy.rotationZ || 0;
 
       let hue = 50;
-      let saturation = 90;
-      let lightness = 50;
+      const saturation = 90;
+      const lightness = 50;
 
       if (singleEnemy.isAngry) {
         const bp = Math.floor(now / 100) % 2;

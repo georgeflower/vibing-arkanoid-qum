@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useParams, useNavigate, useLocation, Link } from "react-router-dom";
-import CRTOverlay from "@/components/CRTOverlay";
 import { ACHIEVEMENTS } from "@/constants/achievements";
 import { X } from "lucide-react";
 
@@ -60,7 +59,6 @@ const PublicProfile = () => {
   if (notFound) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: "linear-gradient(180deg, hsl(220,25%,12%) 0%, hsl(220,30%,8%) 100%)" }}>
-        <CRTOverlay quality="medium" />
         <div className="relative z-10 text-center">
           <h1 className="retro-pixel-text mb-4" style={{ fontSize: "28px", color: "hsl(0, 70%, 55%)" }}>PLAYER NOT FOUND</h1>
           <p className="text-sm mb-6" style={{ color: "hsl(0,0%,60%)" }}>This profile is private or doesn't exist.</p>
@@ -85,7 +83,6 @@ const PublicProfile = () => {
 
   return (
     <div className="fixed inset-0 overflow-y-auto" style={{ background: "linear-gradient(180deg, hsl(220,25%,12%) 0%, hsl(220,30%,8%) 100%)" }}>
-      <CRTOverlay quality="medium" />
       <div className="relative z-10 max-w-2xl mx-auto px-4 py-8 pb-16">
         {/* Close button */}
         <button

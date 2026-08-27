@@ -13,7 +13,6 @@ export interface GameSettings {
   // Video
   qualityLevel: QualityLevel;
   qualityMode: "auto" | "manual";
-  crtEnabled: boolean;
   showFpsOverlay: boolean;
   canvasResolution: string; // derived from qualityLevel, not user-configurable
   updatedAt?: number;
@@ -35,7 +34,6 @@ const DEFAULT_SETTINGS: GameSettings = {
   currentTrack: 0,
   qualityLevel: "high",
   qualityMode: "auto",
-  crtEnabled: true,
   showFpsOverlay: false,
   canvasResolution: "850x650",
 };
@@ -48,10 +46,9 @@ export const SOUND_DEFAULTS: Pick<GameSettings, "musicEnabled" | "sfxEnabled" | 
   currentTrack: 0,
 };
 
-export const VIDEO_DEFAULTS: Pick<GameSettings, "qualityLevel" | "qualityMode" | "crtEnabled" | "showFpsOverlay"> = {
+export const VIDEO_DEFAULTS: Pick<GameSettings, "qualityLevel" | "qualityMode" | "showFpsOverlay"> = {
   qualityLevel: "high",
   qualityMode: "auto",
-  crtEnabled: true,
   showFpsOverlay: false,
 };
 
@@ -62,7 +59,7 @@ export function loadSettings(): GameSettings {
     if (stored) {
       const parsed = JSON.parse(stored);
       // Strip removed keys
-      const { tutorialEnabled, showQualityIndicator, ...rest } = parsed;
+      const { tutorialEnabled, showQualityIndicator, crtEnabled, ...rest } = parsed;
       const merged = { ...DEFAULT_SETTINGS, ...rest };
       // Ensure resolution matches quality
       merged.canvasResolution = getResolutionForQuality(merged.qualityLevel);
@@ -104,6 +101,7 @@ async function loadSettingsFromCloud(): Promise<GameSettings | null> {
       const merged = { ...DEFAULT_SETTINGS, ...(data.settings_json as any) };
       // Strip removed keys and enforce resolution
       delete (merged as any).showQualityIndicator;
+      delete (merged as any).crtEnabled;
       merged.canvasResolution = getResolutionForQuality(merged.qualityLevel);
       return merged;
     }
