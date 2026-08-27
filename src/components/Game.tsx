@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
-import { world, type LaserWarning, type SuperWarning, type BulletImpact, triggerHitstop, spawnScorePopup } from "@/engine/state";
+import { world, type LaserWarning, type SuperWarning, type BulletImpact, triggerHitstop, spawnScorePopup, isHitstopActive } from "@/engine/state";
 import { renderState } from "@/engine/renderState";
 import { GameCanvas } from "./GameCanvas";
 import { GameUI } from "./GameUI";
@@ -21,7 +21,6 @@ import { MobileGameControls } from "./MobileGameControls";
 import { useScaledConstants } from "@/hooks/useScaledConstants";
 import { useViewportFrame } from "@/hooks/useViewportFrame";
 import { useCanvasResize } from "@/hooks/useCanvasResize";
-import CRTOverlay from "./CRTOverlay";
 import { BOSS_RUSH_CONFIG, BossRushLevel } from "@/constants/bossRushConfig";
 import { submitGameStats } from "@/utils/profileStats";
 import { AchievementNotification } from "./AchievementNotification";
@@ -2453,6 +2452,10 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         }
       }
     }
+    world.levelStartDestructibleCount = newBricks.reduce(
+      (count, brick) => count + (brick.isIndestructible ? 0 : 1),
+      0,
+    );
     return newBricks;
   }, [SCALED_CANVAS_WIDTH, SCALED_CANVAS_HEIGHT, SCALED_PADDLE_WIDTH, SCALED_PADDLE_HEIGHT, SCALED_PADDLE_START_Y, SCALED_BRICK_WIDTH, SCALED_BRICK_HEIGHT, SCALED_BRICK_PADDING, SCALED_BRICK_OFFSET_LEFT, SCALED_BRICK_OFFSET_TOP]);
 
@@ -3793,6 +3796,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       dtSeconds: dtSecondsRef.current,
       frameTick: gameLoopRef.current?.getFrameTick() || 0,
       level,
+      gameState,
       canvasSize: { w: SCALED_CANVAS_WIDTH, h: SCALED_CANVAS_HEIGHT },
       minBrickDimension: Math.min(SCALED_BRICK_WIDTH, SCALED_BRICK_HEIGHT),
       qualityLevel: qualitySettings.level,
@@ -4626,6 +4630,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     // Apply time scale to dt
     const timeScale = gameLoopRef.current?.getTimeScale() ?? 1.0;
     dtSecondsRef.current = Math.min((elapsed / 1000) * timeScale, 0.05);
+    const hitstopActive = isHitstopActive();
 
     // Track FPS (use cached frameNow)
     fpsTrackerRef.current.frameCount++;
@@ -4744,7 +4749,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     const isStunActive = bossStunnerEndTime !== null && Date.now() < bossStunnerEndTime;
 
     // Update enemies - OPTIMIZED: Direct world mutation (skip if stunned)
-    if (!isStunActive) {
+    if (!hitstopActive && !isStunActive) {
       const dtNorm = dtSecondsRef.current * 60; // normalized delta: 1.0 at 60fps
       for (const enemy of world.enemies) {
         let newX = enemy.x + enemy.dx * dtNorm;
@@ -4961,7 +4966,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     if (profilerEnabled) frameProfiler.endTiming("enemies");
 
     // ═══ Frame-based enemy projectile timers (replaces setInterval approach) ═══
-    {
+    if (!hitstopActive) {
       const projTimerNow = performance.now();
       const currentTimeScale = gameLoopRef.current?.getTimeScale() ?? 1.0;
       const newProjectilesFromTimers: Bomb[] = [];
@@ -5061,9 +5066,10 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       frameProfiler.incrementCounter("particles", poolStats.active);
     }
 
-    // Ball repels nearby enemy shots (1-5% based on proximity to paddle)
-    // This creates a safety buffer to prevent impossible death situations
-    if (paddle && balls.length > 0) {
+    if (!hitstopActive) {
+      // Ball repels nearby enemy shots (1-5% based on proximity to paddle)
+      // This creates a safety buffer to prevent impossible death situations
+      if (paddle && balls.length > 0) {
       setBombs((prevBombs) => {
         let modified = false;
         for (const bomb of prevBombs) {
@@ -5110,7 +5116,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         }
         return modified ? [...prevBombs] : prevBombs;
       });
-    }
+      }
 
     // Update bombs and rockets - OPTIMIZED: In-place mutation with backwards iteration
     // Define paddle danger zone for stun freezing
@@ -5785,7 +5791,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
             duration: 3000,
           });
 
-          // CRT scanline flash effect for phase transition
+          // Phase-transition flash effect
           triggerScreenShake(8, 500);
           setBackgroundFlash(2);
           setTimeout(() => setBackgroundFlash(0), 400);
@@ -5887,6 +5893,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       }
     }
 
+    }
+
     // ═══ Hit Streak: music-reactive hue when streak >= 10 ═══
     if (hitStreakActive && (BOSS_LEVELS.includes(level) || level === MEGA_BOSS_LEVEL)) {
       const bassEnergy = soundManager.getBassEnergy();
@@ -5907,8 +5915,9 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       }
     }
 
-    // ═══ DANGER BALL UPDATE LOOP (with reflect + homing mechanic) ═══
-    if (dangerBalls.length > 0 && paddle && boss && isMegaBoss(boss)) {
+    if (!hitstopActive) {
+      // ═══ DANGER BALL UPDATE LOOP (with reflect + homing mechanic) ═══
+      if (dangerBalls.length > 0 && paddle && boss && isMegaBoss(boss)) {
       const megaBoss = boss as MegaBoss;
 
       setDangerBalls((prev) => {
@@ -6523,7 +6532,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
               // Trigger highlight flash for enemy kill (levels 1-4)
               triggerHighlightFlash(0.7, 200);
 
-              soundManager.playBrickHit("cracked", 1);
+              soundManager.playBrickHit("cracked", 1, hitStreakRef.current);
               if (ENABLE_DEBUG_FEATURES) {
                 toast.success("Reflected attack destroyed enemy!");
               }
@@ -7176,7 +7185,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
           // Trigger highlight flash for enemy kill (levels 1-4)
           triggerHighlightFlash(0.7, 200);
 
-          soundManager.playBrickHit("cracked", 1);
+          soundManager.playBrickHit("cracked", 1, hitStreakRef.current);
           toast.success("Reflected shot destroyed enemy!");
           // Remove bomb by ID
           bombPool.release(bomb);
@@ -7232,7 +7241,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
           setBossAttacks((prev) => prev.filter((a) => a !== attack));
         }
       }
-    });
+      });
+    }
 
     // Clean up expired laser warnings (skip filter if empty)
     if (world.laserWarnings.length > 0) {
@@ -7256,8 +7266,10 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     // Power-ups and bullets already use delta time (fixed in the previous PR),
     // so consistency across frame rates is maintained without the accumulator.
     if (profilerEnabled) frameProfiler.startTiming("physics");
-    updatePowerUps(dtSecondsRef.current);
-    updateBullets(bricks, dtSecondsRef.current);
+    if (!hitstopActive) {
+      updatePowerUps(dtSecondsRef.current);
+      updateBullets(bricks, dtSecondsRef.current);
+    }
 
     // ═══ Process bullet-boss hits (in-place mutation, no setBoss spread) ═══
     if (pendingBulletBossHits.length > 0) {
@@ -8649,9 +8661,6 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
             : "h-screen overflow-hidden"
       }`}
     >
-      {/* CRT Overlay - inside fullscreen container (Phase 5: Toggle by debug setting) */}
-      {gameSettingsData.crtEnabled && debugSettings.enableCRTEffects && <CRTOverlay quality={quality} crtEnabled={gameSettingsData.crtEnabled} />}
-
       {/* Mobile fullscreen prompt overlay */}
       {showFullscreenPrompt && isMobileDevice && (
         <div

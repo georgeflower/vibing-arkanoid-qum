@@ -124,6 +124,7 @@ export interface GameWorld {
   // without setState. React reads them via hudSnapshot polling.
   score: number;
   lives: number;
+  levelStartDestructibleCount: number;
 
   // Hitstop: simulation is frozen for entity movement until simTimeMs reaches this value
   hitstopUntilSimMs: number;
@@ -176,6 +177,7 @@ const WORLD_DEFAULTS: Readonly<GameWorld> = Object.freeze({
 
   score: 0,
   lives: 3,
+  levelStartDestructibleCount: 0,
 
   hitstopUntilSimMs: 0,
 
@@ -243,6 +245,7 @@ export function resetWorld(overrides?: Partial<GameWorld>): void {
   world.lastPhysicsDtMs = WORLD_DEFAULTS.lastPhysicsDtMs;
   world.score = WORLD_DEFAULTS.score;
   world.lives = WORLD_DEFAULTS.lives;
+  world.levelStartDestructibleCount = WORLD_DEFAULTS.levelStartDestructibleCount;
   world.hitstopUntilSimMs = WORLD_DEFAULTS.hitstopUntilSimMs;
 
   // Fresh mutable arrays
@@ -272,6 +275,10 @@ export function triggerHitstop(ms: number): void {
   if (end > world.hitstopUntilSimMs) {
     world.hitstopUntilSimMs = end;
   }
+}
+
+export function isHitstopActive(): boolean {
+  return world.simTimeMs < world.hitstopUntilSimMs;
 }
 
 // ─── Score popup helpers ─────────────────────────────────────────

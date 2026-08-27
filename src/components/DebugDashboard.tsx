@@ -191,11 +191,6 @@ export const DebugDashboard = ({ isOpen, onClose, settings, onToggle, onReset }:
               checked={settings.enableExplosions}
               onChange={() => onToggle("enableExplosions")}
             />
-            <DebugToggle
-              label="CRT Effects"
-              checked={settings.enableCRTEffects}
-              onChange={() => onToggle("enableCRTEffects")}
-            />
           </div>
         </section>
 

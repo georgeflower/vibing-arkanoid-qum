@@ -25,7 +25,6 @@ export interface DebugSettings {
   enableScreenShake: boolean;
   enableParticles: boolean;
   enableExplosions: boolean;
-  enableCRTEffects: boolean;
 }
 
 const DEFAULT_SETTINGS: DebugSettings = {
@@ -53,7 +52,6 @@ const DEFAULT_SETTINGS: DebugSettings = {
   enableScreenShake: true, // Screen shake enabled by default
   enableParticles: true, // Particles enabled by default
   enableExplosions: true, // Explosions enabled by default
-  enableCRTEffects: true, // CRT effects enabled by default
 };
 
 export const useDebugSettings = () => {
@@ -70,7 +68,7 @@ export const useDebugSettings = () => {
   const isDebugModeActive = useCallback(
     (currentSettings: DebugSettings = settings): boolean => {
       // Check if any actual debug visualization or logging feature is enabled
-      // Excludes gameplay features like particles, screen shake, CRT effects
+      // Excludes gameplay features like particles and screen shake
       return (
         currentSettings.showGameLoopDebug ||
         currentSettings.showSubstepDebug ||

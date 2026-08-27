@@ -127,7 +127,7 @@ const BOOT_MESSAGES = [
   "ARKANOID OS v4.20 — INITIALIZING",
   "Checking paddle integrity... OK",
   "Brick matrix memory allocated: 640K (should be enough)",
-  "CRT phosphor warmup cycle started...",
+  "Retro display calibration started...",
   "",
 ];
 
