@@ -18,6 +18,11 @@ import { particlePool } from "@/utils/particlePool";
 // Defensive helper for canvas arc calls (prevents DOMException on negative/non-finite radius)
 const safeArcRadius = (r: number): number => (Number.isFinite(r) ? Math.max(0.001, r) : 0.001);
 
+// Quality ranking so "potato" always takes the cheapest branch (never heavier than "low")
+const QUALITY_RANK: Record<string, number> = { potato: 0, low: 1, medium: 2, high: 3 };
+const atMostLow = (level: string) => (QUALITY_RANK[level] ?? 3) <= 1;
+
+
 // ─── Module-level animation state (previously useRef) ────────
 
 let dashOffset = 0;
@@ -519,7 +524,7 @@ export function renderFrame(
   }
 
   // Music-reactive hue overlay (Phase 3 mega boss + hit streak x10+)
-  if (world.backgroundHue > 0 && qualitySettings.level !== "low") {
+  if (world.backgroundHue > 0 && !atMostLow(qualitySettings.level)) {
     ctx.save();
     ctx.globalCompositeOperation = "overlay";
     ctx.fillStyle = `hsla(${world.backgroundHue}, 80%, 50%, 0.25)`;
@@ -567,7 +572,7 @@ export function renderFrame(
   }
 
   // Highlight flash effect
-  if (highlightFlash > 0 && level >= 1 && level <= 4 && qualitySettings.level !== "low") {
+  if (highlightFlash > 0 && level >= 1 && level <= 4 && !atMostLow(qualitySettings.level)) {
     ctx.save();
     const isGolden = highlightFlash > 1.2;
     const intensity = Math.min(highlightFlash, 1.0);
@@ -1332,7 +1337,7 @@ export function renderFrame(
     ctx.fill();
     ctx.restore();
 
-    if (impact.isSuper && qualitySettings.level !== "low") {
+    if (impact.isSuper && !atMostLow(qualitySettings.level)) {
       for (let i = 0; i < 6; i++) {
         const angle = (i / 6) * Math.PI * 2 + progress * 3;
         const sparkDist = 15 + progress * 40;
@@ -1355,7 +1360,7 @@ export function renderFrame(
     const shieldWidth = paddle.width + shieldPadding * 2;
     const shieldHeight = paddle.height + shieldPadding * 2 + 5;
 
-    if (qualitySettings.level === "low") {
+    if (atMostLow(qualitySettings.level)) {
       // shadowBlur removed — yellow stroke is visible without blur
       ctx.strokeStyle = "rgba(255, 220, 0, 0.8)";
       ctx.lineWidth = 3;
@@ -1471,7 +1476,7 @@ export function renderFrame(
       const progress = elapsed / impact.duration;
       const fadeOut = 1 - progress;
       const rippleRadius = 15 + progress * 40;
-      const rippleCount = qualitySettings.level === "low" ? 1 : qualitySettings.level === "medium" ? 2 : 3;
+      const rippleCount = atMostLow(qualitySettings.level) ? 1 : qualitySettings.level === "medium" ? 2 : 3;
 
       for (let i = 0; i < rippleCount; i++) {
         const offset = i * 10;
@@ -1485,7 +1490,7 @@ export function renderFrame(
       }
 
       // Flash gradient — skip on low quality
-      if (qualitySettings.level !== "low") {
+      if (!atMostLow(qualitySettings.level)) {
         const flashSize = 8 * (1 - progress * 0.5);
         const fadeBucket = Math.floor(fadeOut * 10);
         const flashGradient = getCachedRadialGradient(
@@ -1512,7 +1517,7 @@ export function renderFrame(
         ctx.restore();
       }
 
-      if (qualitySettings.level !== "low") {
+      if (!atMostLow(qualitySettings.level)) {
         for (let i = 0; i < 6; i++) {
           const angle = (i / 6) * Math.PI * 2 + progress * Math.PI;
           const dist = 5 + progress * 25;
@@ -1536,7 +1541,7 @@ export function renderFrame(
     const time = now / 1000;
 
     ctx.save();
-    if (qualitySettings.level === "low") {
+    if (atMostLow(qualitySettings.level)) {
       // shadowBlur removed
       ctx.strokeStyle = "rgba(0, 200, 255, 0.9)";
       ctx.lineWidth = 3;
@@ -1660,7 +1665,7 @@ export function renderFrame(
       ctx.arc(secondChanceImpact.x, secondChanceImpact.y, Math.max(0, 8 * fadeOut), 0, Math.PI * 2);
       ctx.fill();
 
-      if (qualitySettings.level !== "low") {
+      if (!atMostLow(qualitySettings.level)) {
         for (let i = 0; i < 8; i++) {
           const angle = (i / 8) * Math.PI * 2 + progress * Math.PI * 2;
           const dist = 15 + progress * 40;
@@ -2305,7 +2310,7 @@ function drawEnemies(
       const lightX = Math.cos(singleEnemy.rotationY) * radius * 0.4;
       const lightY = Math.sin(singleEnemy.rotationX) * radius * 0.4;
 
-      if (qualitySettings.level === "low") {
+      if (atMostLow(qualitySettings.level)) {
         // Low quality: flat fill avoids per-frame gradient creation
         ctx.fillStyle = baseColor;
         ctx.beginPath();
@@ -2421,7 +2426,7 @@ function drawEnemies(
       if (qualitySettings.shadowsEnabled) {
         drawCircleShadow(ctx, centerX + 4, centerY + 4, radius);
       }
-      if (qualitySettings.level === "low") {
+      if (atMostLow(qualitySettings.level)) {
         // Low quality: flat fill avoids per-frame gradient creation
         ctx.fillStyle = baseColor;
         ctx.beginPath();
@@ -2459,7 +2464,7 @@ function drawEnemies(
       }
 
       // Specular — skip on low quality, use cached gradient otherwise
-      if (qualitySettings.level !== "low") {
+      if (!atMostLow(qualitySettings.level)) {
         const specR = Math.round(radius * 0.4);
         const specGrad = getCachedRadialGradient(ctx, `enemy_sphere_spec_${specR}`, 0, 0, 0, 0, 0, specR, [
           [0, "rgba(255, 255, 255, 0.8)"],

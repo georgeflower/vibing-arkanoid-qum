@@ -46,6 +46,7 @@ export interface QualitySettings {
 interface AdaptiveQualityOptions {
   initialQuality?: QualityLevel;
   autoAdjust?: boolean;
+  potatoFpsThreshold?: number;
   lowFpsThreshold?: number;
   mediumFpsThreshold?: number;
   highFpsThreshold?: number;
@@ -62,7 +63,7 @@ const QUALITY_PRESETS: Record<QualityLevel, Omit<QualitySettings, "level" | "aut
     screenShakeMultiplier: 0.25,
     explosionParticles: 3,
     backgroundEffects: false,
-    resolutionScale: 0.25,
+    resolutionScale: 0.45,
     chaosGlowEnabled: false,
     animatedDashesEnabled: false,
     shieldArcsEnabled: false,
@@ -201,6 +202,7 @@ export const useAdaptiveQuality = (options: AdaptiveQualityOptions = {}) => {
   const {
     initialQuality = ENABLE_HIGH_QUALITY ? "high" : "medium",
     autoAdjust = true,
+    potatoFpsThreshold = 32,
     lowFpsThreshold = 45,
     mediumFpsThreshold = 52,
     highFpsThreshold = 58,
@@ -346,20 +348,26 @@ export const useAdaptiveQuality = (options: AdaptiveQualityOptions = {}) => {
 
       let targetQuality: QualityLevel = quality;
 
-      if (avgFps < lowFpsThreshold) {
-        targetQuality = "low";
+      if (avgFps < potatoFpsThreshold) {
+        targetQuality = "potato";
+      } else if (avgFps < lowFpsThreshold) {
+        targetQuality = lockedToLow && quality === "potato" ? "potato" : "low";
       } else if (avgFps < mediumFpsThreshold) {
-        targetQuality = lockedToLow ? "low" : "medium";
+        targetQuality = lockedToLow ? (quality === "potato" ? "potato" : "low") : "medium";
       } else if (avgFps >= highFpsThreshold) {
-        targetQuality = lockedToLow ? "low" : ENABLE_HIGH_QUALITY ? "high" : "medium";
+        targetQuality = lockedToLow
+          ? quality === "potato"
+            ? "potato"
+            : "low"
+          : ENABLE_HIGH_QUALITY
+            ? "high"
+            : "medium";
       }
 
       if (targetQuality !== quality) {
-        const isDowngrade =
-          (quality === "high" && (targetQuality === "medium" || targetQuality === "low")) ||
-          (quality === "medium" && targetQuality === "low");
+        const isDowngrade = QUALITY_ORDER.indexOf(targetQuality) < QUALITY_ORDER.indexOf(quality);
 
-        if (targetQuality === "low" && isDowngrade) {
+        if ((targetQuality === "low" || targetQuality === "potato") && isDowngrade) {
           lowQualityDropCountRef.current++;
           console.log(`[Performance] Dropped to LOW quality (count: ${lowQualityDropCountRef.current})`);
           
@@ -392,7 +400,7 @@ export const useAdaptiveQuality = (options: AdaptiveQualityOptions = {}) => {
         }
       }
     },
-    [quality, autoAdjustEnabled, lowFpsThreshold, mediumFpsThreshold, highFpsThreshold, lockedToLow, enableLogging],
+    [quality, autoAdjustEnabled, potatoFpsThreshold, lowFpsThreshold, mediumFpsThreshold, highFpsThreshold, lockedToLow, enableLogging],
   );
 
   const setManualQuality = useCallback((newQuality: QualityLevel) => {

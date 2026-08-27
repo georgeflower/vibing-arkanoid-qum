@@ -109,7 +109,7 @@ import { TutorialOverlay } from "./TutorialOverlay";
 import { levelLayouts, getBrickHits } from "@/constants/levelLayouts";
 import { usePowerUps } from "@/hooks/usePowerUps";
 import { useBullets, pendingBulletBossHits } from "@/hooks/useBullets";
-import { useAdaptiveQuality } from "@/hooks/useAdaptiveQuality";
+import { useAdaptiveQuality, type QualityLevel } from "@/hooks/useAdaptiveQuality";
 import { useLevelProgress } from "@/hooks/useLevelProgress";
 import { soundManager } from "@/utils/sounds";
 import { FixedStepGameLoop } from "@/utils/gameLoop";
@@ -124,6 +124,18 @@ import { brickSpatialHash } from "@/utils/spatialHash";
 import { resetAllPools, enemyPool, bombPool, explosionPool, getNextExplosionId, bulletPool } from "@/utils/entityPool";
 import { brickRenderer } from "@/utils/brickLayerCache";
 import { setRenderTargetFps } from "@/engine/renderLoop";
+import { setPhysicsTargetFps } from "@/engine/physicsLoop";
+
+// Physics tick rate scales with quality so low/potato cut CPU work, not just GPU work.
+const IS_MOBILE_DEVICE = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+const physicsFpsForQuality = (level: QualityLevel): number => {
+  switch (level) {
+    case "potato": return 45;
+    case "low": return 60;
+    case "medium": return IS_MOBILE_DEVICE ? 60 : 90;
+    default: return IS_MOBILE_DEVICE ? 60 : 120;
+  }
+};
 import { assignPowerUpsToBricks, reassignPowerUpsToBricks } from "@/utils/powerUpAssignment";
 import { MEGA_BOSS_LEVEL, MEGA_BOSS_CONFIG } from "@/constants/megaBossConfig";
 import {
@@ -1831,6 +1843,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
     // Sync render loop FPS target with quality level
     setRenderTargetFps(qualitySettings.level);
+    setPhysicsTargetFps(physicsFpsForQuality(qualitySettings.level));
   }, [
     gameState,
     level,

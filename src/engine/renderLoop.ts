@@ -10,6 +10,7 @@
 import { world } from "@/engine/state";
 import { renderState, type AssetRefs } from "@/engine/renderState";
 import { renderFrame } from "@/engine/canvasRenderer";
+import { QUALITY_PRESETS } from "@/hooks/useAdaptiveQuality";
 
 /**
  * Start the render loop. Calls renderFrame every animation frame.
@@ -200,7 +201,9 @@ export function startRenderLoop(canvas: HTMLCanvasElement, assets: AssetRefs): (
  */
 export function warmUpCanvasContexts(width: number, height: number): void {
   // All resolution scales < 1.0 that appear in QUALITY_PRESETS
-  const subScales = [0.25, 0.75, 0.8];
+  const subScales = Array.from(
+    new Set(Object.values(QUALITY_PRESETS).map((p) => p.resolutionScale).filter((s) => s < 1.0)),
+  );
 
   subScales.forEach((scale) => {
     const scaledW = Math.round(width * scale);
