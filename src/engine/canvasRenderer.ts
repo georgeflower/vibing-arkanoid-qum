@@ -33,16 +33,17 @@ function drawEndgameBrickOverlay(
   const remainingBricks: Brick[] = [];
   for (const brick of bricks) {
     if (!brick.visible || brick.isIndestructible) continue;
+    if (remainingBricks.length === 3) return;
     remainingBricks.push(brick);
-    if (remainingBricks.length > 3) return;
   }
   if (remainingBricks.length === 0) return;
 
   const pulse = 0.5 + 0.5 * Math.sin(now * 0.01);
   ctx.save();
   for (const brick of remainingBricks) {
-    const glowWidth = 2 + pulse * 3;
-    ctx.lineWidth = 2 + pulse * 1.5;
+    const lineWidth = 2 + pulse * 1.5;
+    const glowWidth = lineWidth;
+    ctx.lineWidth = lineWidth;
     ctx.strokeStyle = `rgba(255, 245, 170, ${0.45 + pulse * 0.35})`;
     ctx.shadowColor = `rgba(255, 220, 120, ${0.4 + pulse * 0.35})`;
     ctx.shadowBlur = glowWidth * 3;

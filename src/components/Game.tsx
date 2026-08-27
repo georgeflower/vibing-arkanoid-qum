@@ -5070,52 +5070,52 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       // Ball repels nearby enemy shots (1-5% based on proximity to paddle)
       // This creates a safety buffer to prevent impossible death situations
       if (paddle && balls.length > 0) {
-      setBombs((prevBombs) => {
-        let modified = false;
-        for (const bomb of prevBombs) {
-          // Skip reflected bombs (they're friendly)
-          if (bomb.isReflected) continue;
+        setBombs((prevBombs) => {
+          let modified = false;
+          for (const bomb of prevBombs) {
+            // Skip reflected bombs (they're friendly)
+            if (bomb.isReflected) continue;
 
-          // Check each active ball
-          for (const ball of balls) {
-            if (ball.waitingToLaunch) continue;
+            // Check each active ball
+            for (const ball of balls) {
+              if (ball.waitingToLaunch) continue;
 
-            const ballCenterX = ball.x;
-            const ballCenterY = ball.y;
-            const bombCenterX = bomb.x + bomb.width / 2;
-            const bombCenterY = bomb.y + bomb.height / 2;
+              const ballCenterX = ball.x;
+              const ballCenterY = ball.y;
+              const bombCenterX = bomb.x + bomb.width / 2;
+              const bombCenterY = bomb.y + bomb.height / 2;
 
-            // Calculate distance between ball and bomb
-            const dx = bombCenterX - ballCenterX;
-            const dy = bombCenterY - ballCenterY;
-            const distance = Math.sqrt(dx * dx + dy * dy);
+              // Calculate distance between ball and bomb
+              const dx = bombCenterX - ballCenterX;
+              const dy = bombCenterY - ballCenterY;
+              const distance = Math.sqrt(dx * dx + dy * dy);
 
-            // Repel range: ~40 pixels from ball center
-            const repelRange = ball.radius + 40;
+              // Repel range: ~40 pixels from ball center
+              const repelRange = ball.radius + 40;
 
-            if (distance < repelRange && distance > 0) {
-              // Calculate repel strength based on ball's proximity to paddle
-              // Higher = closer to paddle = more repel (1% at top, 5% near paddle)
-              const paddleY = paddle.y;
-              const topOfScreen = 0;
-              const proximityRatio = Math.max(0, Math.min(1, (ball.y - topOfScreen) / (paddleY - topOfScreen)));
+              if (distance < repelRange && distance > 0) {
+                // Calculate repel strength based on ball's proximity to paddle
+                // Higher = closer to paddle = more repel (1% at top, 5% near paddle)
+                const paddleY = paddle.y;
+                const topOfScreen = 0;
+                const proximityRatio = Math.max(0, Math.min(1, (ball.y - topOfScreen) / (paddleY - topOfScreen)));
 
-              // Repel strength: 1% at top of screen, 5% near paddle
-              const repelStrength = 0.01 + proximityRatio * 0.04;
+                // Repel strength: 1% at top of screen, 5% near paddle
+                const repelStrength = 0.01 + proximityRatio * 0.04;
 
-              // Normalize direction and apply repel force
-              const normalizedDx = dx / distance;
-              const normalizedDy = dy / distance;
+                // Normalize direction and apply repel force
+                const normalizedDx = dx / distance;
+                const normalizedDy = dy / distance;
 
-              // Apply repel - push bomb away from ball
-              bomb.x += normalizedDx * repelStrength * bomb.speed * 10;
-              bomb.y += normalizedDy * repelStrength * bomb.speed * 10;
-              modified = true;
+                // Apply repel - push bomb away from ball
+                bomb.x += normalizedDx * repelStrength * bomb.speed * 10;
+                bomb.y += normalizedDy * repelStrength * bomb.speed * 10;
+                modified = true;
+              }
             }
           }
-        }
-        return modified ? [...prevBombs] : prevBombs;
-      });
+          return modified ? [...prevBombs] : prevBombs;
+        });
       }
 
     // Update bombs and rockets - OPTIMIZED: In-place mutation with backwards iteration

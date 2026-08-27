@@ -1343,8 +1343,11 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
     const remainingBricks: Brick[] = [];
     for (const brick of bricks) {
       if (!brick.visible || brick.isIndestructible) continue;
+      if (remainingBricks.length === 3) {
+        remainingBricks.length = 0;
+        break;
+      }
       remainingBricks.push(brick);
-      if (remainingBricks.length > 3) break;
     }
     if (remainingBricks.length > 0 && remainingBricks.length <= 3) {
       for (const r of ballResults) {
