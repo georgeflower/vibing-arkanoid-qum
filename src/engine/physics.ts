@@ -6,7 +6,7 @@
  * Returns a PhysicsFrameResult with events for Game.tsx to apply side effects.
  */
 
-import { world } from "@/engine/state";
+import { world, triggerHitstop, spawnScorePopup } from "@/engine/state";
 import { processBallWithCCD } from "@/utils/gameCCD";
 import { PHYSICS_CONFIG, ENABLE_DEBUG_FEATURES } from "@/constants/game";
 
@@ -104,6 +104,12 @@ export interface PhysicsFrameResult {
   ccdPerformance: CCDPerformanceData | null;
 
   secondChanceSaves: Array<{ x: number; y: number }>;
+
+  /** Position of the last brick destroyed (only set when allBricksCleared is true). */
+  lastBrickPos: { x: number; y: number } | null;
+
+  /** Brick destruction score events (for floating score popups). */
+  brickScoreEvents: Array<{ x: number; y: number; points: number }>;
 }
 
 // ─── Reusable result object (zero-alloc per frame) ───
@@ -134,6 +140,8 @@ const _reusableResult: PhysicsFrameResult = {
   enemyHitBallIds: [],
   ccdPerformance: null,
   secondChanceSaves: [],
+  lastBrickPos: null,
+  brickScoreEvents: [],
 };
 
 function createEmptyResult(): PhysicsFrameResult {
@@ -164,6 +172,8 @@ function createEmptyResult(): PhysicsFrameResult {
   _reusableResult.bossHitBallIds.length = 0;
   _reusableResult.enemyHitBallIds.length = 0;
   _reusableResult.secondChanceSaves.length = 0;
+  _reusableResult.lastBrickPos = null;
+  _reusableResult.brickScoreEvents.length = 0;
 
   return _reusableResult;
 }
@@ -471,6 +481,7 @@ function performBossFirstSweep(
         // Sound and screen shake
         result.soundsToPlay.push({ type: "bossHit" });
         result.screenShakes.push({ intensity: 8, duration: 400 });
+        triggerHitstop(60);
       }
 
       return true; // Collision resolved, exit sample loop
@@ -501,6 +512,12 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
   // ═══ Advance simulation clock ═══
   world.simTimeSeconds += dtSeconds;
   world.simTimeMs = Math.floor(world.simTimeSeconds * 1000);
+
+  // ═══ Hitstop: freeze entity movement while in hitstop window ═══
+  // Clock still advances; particles/animations continue unaffected.
+  if (world.simTimeMs < world.hitstopUntilSimMs) {
+    return result;
+  }
 
   // ═══ Phase 0: Store previousY ═══
   for (const ball of balls) {
@@ -1037,6 +1054,7 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
               bricksDestroyedCount++;
               powerUpBricks.push(brick);
               if (brick.type === "explosive") explosiveBricksToDetonate.push(brick);
+              spawnScorePopup(brick.x + brick.width / 2, brick.y + brick.height / 2, brick.points, `+${brick.points}`);
             }
           } else {
             // Normal brick damage
@@ -1087,6 +1105,7 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
               if (!isDuplicate) {
                 scoreIncrease += brick.points;
                 bricksDestroyedCount++;
+                spawnScorePopup(brick.x + brick.width / 2, brick.y + brick.height / 2, brick.points, `+${brick.points}`);
               }
 
               // Speed increase — per-ball cap so multiball doesn't stagnate
@@ -1138,6 +1157,7 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
       brickUpdates.set(brick.id, { visible: false, hitsRemaining: 0 });
       scoreIncrease += brick.points;
       bricksDestroyedCount++;
+      spawnScorePopup(brick.x + brick.width / 2, brick.y + brick.height / 2, brick.points, `+${brick.points}`);
     }
 
     const explosionRadius = 70;
@@ -1201,6 +1221,7 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
 
     result.soundsToPlay.push({ type: "explosiveBrick" });
     result.backgroundFlash = true;
+    triggerHitstop(50);
   }
 
   // ═══ Apply brick updates to world.bricks ═══
@@ -1218,6 +1239,15 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
     const hasDestructible = bricks.some((b) => !b.isIndestructible);
     if (hasDestructible || !BOSS_LEVELS.includes(level)) {
       result.allBricksCleared = true;
+      triggerHitstop(90);
+      // Record position of a just-destroyed brick for visual effects
+      for (const [id] of brickUpdates) {
+        const b = brickById.get(id);
+        if (b) {
+          result.lastBrickPos = { x: b.x + b.width / 2, y: b.y + b.height / 2 };
+          break;
+        }
+      }
     }
   }
 

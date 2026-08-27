@@ -47,6 +47,30 @@ export interface BulletImpact {
   isSuper: boolean;
 }
 
+// ─── Score Popup ──────────────────────────────────────────────────
+
+/** A single floating score number. Lifetime is wall-clock based so hitstop does not affect it. */
+export interface ScorePopup {
+  active: boolean;
+  x: number;
+  y: number;
+  value: number;
+  text: string;
+  startTime: number; // performance.now()
+  life: number;      // total lifetime in ms (e.g. 800)
+}
+
+const MAX_SCORE_POPUPS = 24;
+
+/** Pre-allocate the full popup pool once; no per-spawn allocation. */
+function createPopupPool(): ScorePopup[] {
+  const pool: ScorePopup[] = [];
+  for (let i = 0; i < MAX_SCORE_POPUPS; i++) {
+    pool.push({ active: false, x: 0, y: 0, value: 0, text: "", startTime: 0, life: 800 });
+  }
+  return pool;
+}
+
 // ─── The World ───────────────────────────────────────────────────
 
 export interface GameWorld {
@@ -100,6 +124,12 @@ export interface GameWorld {
   // without setState. React reads them via hudSnapshot polling.
   score: number;
   lives: number;
+
+  // Hitstop: simulation is frozen for entity movement until simTimeMs reaches this value
+  hitstopUntilSimMs: number;
+
+  // Floating score popups (preallocated pool, MAX_SCORE_POPUPS slots)
+  scorePopups: ScorePopup[];
 }
 
 /** Default values — used by resetWorld() and as initial state. */
@@ -146,7 +176,13 @@ const WORLD_DEFAULTS: Readonly<GameWorld> = Object.freeze({
 
   score: 0,
   lives: 3,
+
+  hitstopUntilSimMs: 0,
+
+  scorePopups: [], // replaced with preallocated pool in freshArrays
 });
+
+// The actual mutable world instance — below, after WORLD_DEFAULTS is defined.
 
 /**
  * The single mutable game world instance.
@@ -173,6 +209,12 @@ function freshArrays(): void {
   world.superWarnings = [];
   world.shieldImpacts = [];
   world.bulletImpacts = [];
+  // Preallocate scorePopups pool once; on subsequent calls just deactivate slots
+  if (!world.scorePopups || world.scorePopups.length === 0) {
+    world.scorePopups = createPopupPool();
+  } else {
+    for (const p of world.scorePopups) p.active = false;
+  }
 }
 
 /**
@@ -201,6 +243,7 @@ export function resetWorld(overrides?: Partial<GameWorld>): void {
   world.lastPhysicsDtMs = WORLD_DEFAULTS.lastPhysicsDtMs;
   world.score = WORLD_DEFAULTS.score;
   world.lives = WORLD_DEFAULTS.lives;
+  world.hitstopUntilSimMs = WORLD_DEFAULTS.hitstopUntilSimMs;
 
   // Fresh mutable arrays
   freshArrays();
@@ -216,3 +259,53 @@ export function resetWorld(overrides?: Partial<GameWorld>): void {
 
 // Initialise with fresh arrays on module load
 freshArrays();
+
+// ─── Hitstop helper ──────────────────────────────────────────────
+
+/**
+ * Freeze entity movement for `ms` milliseconds.
+ * The simulation clock still advances; only entity movement/collision is skipped.
+ * Safe to call multiple times — takes the longer of current and new duration.
+ */
+export function triggerHitstop(ms: number): void {
+  const end = world.simTimeMs + ms;
+  if (end > world.hitstopUntilSimMs) {
+    world.hitstopUntilSimMs = end;
+  }
+}
+
+// ─── Score popup helpers ─────────────────────────────────────────
+
+/**
+ * Spawn a floating score popup at (x, y).
+ * Uses the preallocated pool; evicts the oldest active slot if full.
+ * `text` is displayed as-is (e.g. "+250" or "+250 ×3!").
+ */
+export function spawnScorePopup(x: number, y: number, value: number, text: string): void {
+  const pool = world.scorePopups;
+  // Find an inactive slot first
+  let slot: ScorePopup | null = null;
+  let oldestSlot: ScorePopup | null = null;
+  let oldestStart = Infinity;
+  for (let i = 0; i < pool.length; i++) {
+    const p = pool[i];
+    if (!p.active) {
+      slot = p;
+      break;
+    }
+    if (p.startTime < oldestStart) {
+      oldestStart = p.startTime;
+      oldestSlot = p;
+    }
+  }
+  if (!slot) slot = oldestSlot;
+  if (!slot) return;
+
+  slot.active = true;
+  slot.x = x;
+  slot.y = y;
+  slot.value = value;
+  slot.text = text;
+  slot.startTime = performance.now();
+  slot.life = 800;
+}

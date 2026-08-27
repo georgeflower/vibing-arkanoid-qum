@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
-import { world, type LaserWarning, type SuperWarning, type BulletImpact } from "@/engine/state";
+import { world, type LaserWarning, type SuperWarning, type BulletImpact, triggerHitstop, spawnScorePopup } from "@/engine/state";
 import { renderState } from "@/engine/renderState";
 import { GameCanvas } from "./GameCanvas";
 import { GameUI } from "./GameUI";
@@ -2544,6 +2544,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     setBossFirstHitShieldDropped(false); // Reset shield drop for new game
     setHitStreak(0);
     hitStreakRef.current = 0;
+    renderState.hitStreak = 0;
     setHitStreakActive(false);
     ballHitSinceLastPaddleRef.current.clear();
     // Set speed multiplier (already calculated above)
@@ -2891,7 +2892,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     const hasDestructible = bricks.some((b) => !b.isIndestructible);
     void hasDestructible;
 
-    soundManager.playWin();
+    soundManager.playLevelClearFanfare();
 
     // Daily Challenge mode: evaluate objectives and show result
     if (isDailyChallenge && dailyChallengeData) {
@@ -3838,10 +3839,10 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
           break;
         }
         case "brick":
-          soundManager.playBrickHit();
+          soundManager.playBrickHit(undefined, undefined, hitStreakRef.current);
           break;
         case "cracked":
-          soundManager.playBrickHit("cracked", sound.param);
+          soundManager.playBrickHit("cracked", sound.param, hitStreakRef.current);
           break;
         case "explosion":
           soundManager.playExplosion();
@@ -3906,6 +3907,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
           // Ball returned to paddle without hitting boss/enemy — reset streak
           setHitStreak(0);
           hitStreakRef.current = 0;
+          renderState.hitStreak = 0;
           setHitStreakActive(false);
           world.backgroundHue = 0;
         }
@@ -3923,10 +3925,19 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         setHitStreak((prev) => {
           const newStreak = prev + 1;
           hitStreakRef.current = newStreak;
+          renderState.hitStreak = newStreak;
+          renderState.hitStreakLastHitTime = performance.now();
           // Award 100 points with streak bonus
           const bonus = Math.floor(100 * (1 + newStreak / 100));
 
           setScore((s) => s + bonus);
+          // Score popup at boss position
+          if (world.boss) {
+            const bx = world.boss.x + world.boss.width / 2;
+            const by = world.boss.y + world.boss.height / 2;
+            const text = newStreak > 1 ? `+${bonus} ×${newStreak}!` : `+${bonus}`;
+            spawnScorePopup(bx, by, bonus, text);
+          }
           // Activate hue effect at x10+
           if (newStreak >= 10 && !hitStreakActive) {
             setHitStreakActive(true);
@@ -3940,6 +3951,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         setHitStreak((prev) => {
           const newStreak = prev + 1;
           hitStreakRef.current = newStreak;
+          renderState.hitStreak = newStreak;
+          renderState.hitStreakLastHitTime = performance.now();
           const bonus = Math.floor(100 * (1 + newStreak / 100));
 
           setScore((s) => s + bonus);
@@ -4263,6 +4276,21 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
     // ═══ Win condition ═══
     if (result.allBricksCleared) {
+      // Last-brick moment effects
+      if (result.lastBrickPos) {
+        const { x: lbx, y: lby } = result.lastBrickPos;
+        // Extra explosion particles at the last-brick position
+        const extraCount = qualitySettings.level === "potato" ? 0
+          : qualitySettings.level === "low" ? 8
+          : qualitySettings.level === "medium" ? 16 : 24;
+        if (extraCount > 0) {
+          particlePool.acquireForExplosion(lbx, lby, extraCount, "brick", 1.0);
+        }
+        // Spawn a score popup for the level clear
+        spawnScorePopup(lbx, lby, 0, "LEVEL CLEAR!");
+      }
+      // Zoom pulse visual effect
+      renderState.zoomPulseStartTime = performance.now();
       handleLevelCleared();
     }
 
@@ -4411,6 +4439,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       // Reset hit streak on death
       setHitStreak(0);
       hitStreakRef.current = 0;
+      renderState.hitStreak = 0;
       setHitStreakActive(false);
       ballHitSinceLastPaddleRef.current.clear();
       world.backgroundHue = 0;
@@ -5751,6 +5780,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         } else {
           // Phase transition - not defeated yet
           soundManager.playPhaseCompleteJingle();
+          triggerHitstop(120);
           toast.success(`✨ PHASE ${megaBoss.corePhase} COMPLETE! Boss entering phase ${megaBoss.corePhase + 1}!`, {
             duration: 3000,
           });
@@ -6803,6 +6833,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
               setHitStreak((prev) => {
                 const newStreak = prev + 1;
                 hitStreakRef.current = newStreak;
+                renderState.hitStreak = newStreak;
+                renderState.hitStreakLastHitTime = performance.now();
                 const bonus = Math.floor(100 * (1 + newStreak / 100));
 
                 setScore((s) => s + bonus);
@@ -8214,6 +8246,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     // Reset hit streak
     setHitStreak(0);
     hitStreakRef.current = 0;
+    renderState.hitStreak = 0;
     setHitStreakActive(false);
     ballHitSinceLastPaddleRef.current.clear();
     world.backgroundHue = 0;
