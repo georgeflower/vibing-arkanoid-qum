@@ -1825,7 +1825,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   const queueOrSpawnBrickPowerUps = useCallback((brick: Brick, selectedPowerUps: PowerUp[]) => {
     if (selectedPowerUps.length === 0) return;
 
-    if (qualitySettings.level === "potato") {
+    if (renderState.qualitySettings.level === "potato") {
       finalizeSpawnedPowerUps(selectedPowerUps);
       return;
     }
@@ -1840,7 +1840,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       createdAtSimMs: world.simTimeMs,
       spawnAtSimMs: world.simTimeMs + POWERUP_TELEGRAPH_DELAY_MS,
     });
-  }, [finalizeSpawnedPowerUps, qualitySettings.level]);
+  }, [finalizeSpawnedPowerUps]);
 
   const processPendingPowerUpDrops = useCallback(() => {
     if (world.pendingPowerUpDrops.length === 0) return;
@@ -4372,7 +4372,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
           : qualitySettings.level === "low" ? 8
           : qualitySettings.level === "medium" ? 16 : 24;
         if (extraCount > 0) {
-          particlePool.acquireForExplosion(lbx, lby, extraCount, "brick", 1.0);
+          particlePool.acquireForExplosion(lbx, lby, extraCount, "cube", 1.0);
         }
         // Spawn a score popup for the level clear
         spawnScorePopup(lbx, lby, 0, "LEVEL CLEAR!");

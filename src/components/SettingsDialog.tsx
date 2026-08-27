@@ -8,6 +8,7 @@ import { Slider } from "@/components/ui/slider";
 import { Settings, Volume2, Monitor, RotateCcw, Save } from "lucide-react";
 import { soundManager } from "@/utils/sounds";
 import type { GameState } from "@/types/game";
+import type { QualityLevel } from "@/hooks/useAdaptiveQuality";
 import {
   useGameSettings,
   loadSettings,

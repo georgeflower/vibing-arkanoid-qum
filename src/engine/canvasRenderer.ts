@@ -2428,7 +2428,7 @@ export function renderFrame(
     }
   }
 
-  const halfwayAge = renderState.halfwayPulseStartTime > 0 ? now - renderState.halfwayPulseStartTime : Infinity;
+  const halfwayAge = rs.halfwayPulseStartTime > 0 ? now - rs.halfwayPulseStartTime : Infinity;
   if (halfwayAge < 1000) {
     const t = halfwayAge / 1000;
     const alpha = Math.max(0, 1 - t);
@@ -2449,8 +2449,8 @@ export function renderFrame(
       ctx.fillText("HALFWAY", width / 2, height * 0.28);
     }
     ctx.restore();
-  } else if (renderState.halfwayPulseStartTime !== 0) {
-    renderState.halfwayPulseStartTime = 0;
+  } else if (rs.halfwayPulseStartTime !== 0) {
+    rs.halfwayPulseStartTime = 0;
   }
 }
 
@@ -2697,7 +2697,7 @@ function drawEnemies(
 
       let hue = 50;
       const saturation = 90;
-      const lightness = 50;
+      let lightness = 50;
 
       if (singleEnemy.isAngry) {
         const bp = Math.floor(now / 100) % 2;
