@@ -47,6 +47,13 @@ export interface RenderState {
   getReadyGlow: { opacity: number } | null;
   secondChanceImpact: { x: number; y: number; startTime: number } | null;
   ballReleaseHighlight: { active: boolean; startTime: number } | null;
+
+  // Hit streak (for canvas overlay display)
+  hitStreak: number;
+  hitStreakLastHitTime: number; // performance.now() of last streak increment
+
+  // Zoom pulse for last-brick moment (performance.now() based)
+  zoomPulseStartTime: number; // 0 = inactive
 }
 
 // ─── Asset References ────────────────────────────────────────
@@ -101,6 +108,11 @@ export const renderState: RenderState = {
   getReadyGlow: null,
   secondChanceImpact: null,
   ballReleaseHighlight: null,
+
+  hitStreak: 0,
+  hitStreakLastHitTime: 0,
+
+  zoomPulseStartTime: 0,
 };
 
 /**

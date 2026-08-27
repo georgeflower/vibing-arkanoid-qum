@@ -340,7 +340,7 @@ class SoundManager {
     chirp.stop(ctx.currentTime + 0.08);
   }
 
-  playBrickHit(brickType?: string, hitsRemaining?: number) {
+  playBrickHit(brickType?: string, hitsRemaining?: number, comboLevel: number = 0) {
     if (!this.sfxEnabled) return;
     const ctx = this.getAudioContext();
     const oscillator = ctx.createOscillator();
@@ -349,11 +349,14 @@ class SoundManager {
     oscillator.connect(gainNode);
     gainNode.connect(this.sfxOut);
 
+    // Combo pitch escalation: each streak level raises pitch by ~4.5%, capped at 2×
+    const rate = Math.min(2.0, 1 + comboLevel * 0.045);
+
     // Progressive sound effects for cracked bricks
     if (brickType === "cracked" && hitsRemaining !== undefined) {
       if (hitsRemaining === 3) {
         // First hit - lower pitch, deep crack
-        oscillator.frequency.value = 500;
+        oscillator.frequency.value = 500 * rate;
         oscillator.type = 'sine';
         gainNode.gain.setValueAtTime(0.08, ctx.currentTime);
         gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.04);
@@ -361,7 +364,7 @@ class SoundManager {
         oscillator.stop(ctx.currentTime + 0.04);
       } else if (hitsRemaining === 2) {
         // Medium crack - mid pitch, slightly longer
-        oscillator.frequency.value = 700;
+        oscillator.frequency.value = 700 * rate;
         oscillator.type = 'triangle';
         gainNode.gain.setValueAtTime(0.10, ctx.currentTime);
         gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.06);
@@ -369,8 +372,8 @@ class SoundManager {
         oscillator.stop(ctx.currentTime + 0.06);
       } else if (hitsRemaining === 1) {
         // Final hit — brighter, sharper break
-        oscillator.frequency.setValueAtTime(1100, ctx.currentTime);
-        oscillator.frequency.exponentialRampToValueAtTime(300, ctx.currentTime + 0.12);
+        oscillator.frequency.setValueAtTime(1100 * rate, ctx.currentTime);
+        oscillator.frequency.exponentialRampToValueAtTime(300 * rate, ctx.currentTime + 0.12);
         oscillator.type = "triangle";
         gainNode.gain.setValueAtTime(0.13, ctx.currentTime);
         gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.12);
@@ -379,7 +382,7 @@ class SoundManager {
       }
     } else {
       // Default brick hit sound
-      oscillator.frequency.value = 800;
+      oscillator.frequency.value = 800 * rate;
       oscillator.type = 'sine';
       
       gainNode.gain.setValueAtTime(0.092, ctx.currentTime); // +15%
@@ -470,6 +473,45 @@ class SoundManager {
       oscillator.start(ctx.currentTime + time);
       oscillator.stop(ctx.currentTime + time + 0.3);
     });
+  }
+
+  /** Louder, more dramatic fanfare for clearing the last brick of a level. */
+  playLevelClearFanfare() {
+    if (!this.sfxEnabled) return;
+    const ctx = this.getAudioContext();
+    // Rising triumphant chord followed by a bright peak note
+    const notes = [
+      { freq: 523, time: 0,    dur: 0.25 }, // C5
+      { freq: 659, time: 0.1,  dur: 0.25 }, // E5
+      { freq: 784, time: 0.2,  dur: 0.25 }, // G5
+      { freq: 1047, time: 0.3, dur: 0.5  }, // C6 (held peak)
+    ];
+    notes.forEach(({ freq, time, dur }) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(this.sfxOut);
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0, ctx.currentTime + time);
+      gain.gain.linearRampToValueAtTime(0.35, ctx.currentTime + time + 0.02);
+      gain.gain.setValueAtTime(0.35, ctx.currentTime + time + dur - 0.05);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + time + dur);
+      osc.start(ctx.currentTime + time);
+      osc.stop(ctx.currentTime + time + dur + 0.01);
+    });
+    // Sub-bass thud for impact
+    const sub = ctx.createOscillator();
+    const subGain = ctx.createGain();
+    sub.connect(subGain);
+    subGain.connect(this.sfxOut);
+    sub.type = 'sine';
+    sub.frequency.setValueAtTime(120, ctx.currentTime);
+    sub.frequency.exponentialRampToValueAtTime(40, ctx.currentTime + 0.15);
+    subGain.gain.setValueAtTime(0.4, ctx.currentTime);
+    subGain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+    sub.start(ctx.currentTime);
+    sub.stop(ctx.currentTime + 0.15);
   }
 
   playPhaseCompleteJingle() {

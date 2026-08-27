@@ -493,13 +493,27 @@ export function renderFrame(
   const ballReleaseHighlight = rs.ballReleaseHighlight;
   const SHOW_BOSS_HITBOX = debugEnabled;
 
-  // ═══ Apply screen shake ═══
+  // ═══ Apply screen shake + zoom pulse ═══
   ctx.save();
   if (screenShake > 0) {
     // Deterministic noise via sin/cos — no Math.random() in render hot-path
     const shakeX = Math.sin(now * 0.073) * screenShake;
     const shakeY = Math.cos(now * 0.097) * screenShake;
     ctx.translate(shakeX, shakeY);
+  }
+  // Zoom pulse for last-brick moment: scales from 1.04 → 1.0 over 400ms
+  if (rs.zoomPulseStartTime > 0) {
+    const elapsed = now - rs.zoomPulseStartTime;
+    if (elapsed < 400) {
+      const t = elapsed / 400; // 0→1
+      const easedOut = 1 - t * t; // ease-out quad
+      const scale = 1 + 0.04 * easedOut;
+      ctx.translate(width / 2, height / 2);
+      ctx.scale(scale, scale);
+      ctx.translate(-width / 2, -height / 2);
+    } else {
+      rs.zoomPulseStartTime = 0; // deactivate
+    }
   }
 
   // ═══ Clear canvas + background ═══
@@ -2257,6 +2271,79 @@ export function renderFrame(
   }
 
   // Restore context after shake
+  // ═══ Floating score popups ═══
+  if (!isPotato) {
+    const nowMs = now;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    const popups = world.scorePopups;
+    for (let i = 0; i < popups.length; i++) {
+      const p = popups[i];
+      if (!p.active) continue;
+      const age = nowMs - p.startTime;
+      if (age >= p.life) {
+        p.active = false;
+        continue;
+      }
+      const t = age / p.life;           // 0→1
+      const alpha = Math.max(0, 1 - t);
+      const rise = t * 30;              // rises 30px over lifetime
+      const fontSize = p.value >= 500 ? 18 : p.value >= 200 ? 15 : 13;
+      ctx.globalAlpha = alpha;
+      ctx.font = `bold ${fontSize}px monospace`;
+      // Double-text (avoid shadowBlur in hot-path)
+      ctx.fillStyle = "rgba(0,0,0,0.6)";
+      ctx.fillText(p.text, p.x + 1, p.y - rise + 1);
+      ctx.fillStyle = p.value === 0 ? "hsl(60,100%,70%)" : "hsl(48,100%,65%)";
+      ctx.fillText(p.text, p.x, p.y - rise);
+    }
+    ctx.globalAlpha = 1;
+    ctx.textBaseline = "alphabetic";
+  }
+
+  // ═══ Hit streak display (Part C) ═══
+  const hitStreak = rs.hitStreak;
+  if (hitStreak >= 3) {
+    // Determine how far the streak is from timing out (~3s window)
+    const STREAK_TIMEOUT_MS = 3000;
+    const timeSinceHit = now - rs.hitStreakLastHitTime;
+    const timeoutFraction = Math.min(1, timeSinceHit / STREAK_TIMEOUT_MS);
+    const alpha = Math.max(0, 1 - timeoutFraction * timeoutFraction);
+    const scaleBonus = Math.max(0, 1 - timeoutFraction) * 0.25; // shrinks toward timeout
+
+    // Color ramp: white → yellow → orange → red
+    const streakColor =
+      hitStreak >= 15 ? `hsla(0,100%,55%,${alpha})`
+      : hitStreak >= 10 ? `hsla(20,100%,55%,${alpha})`
+      : hitStreak >= 6  ? `hsla(40,100%,55%,${alpha})`
+      : `hsla(60,100%,80%,${alpha})`;
+
+    if (atMostLow(qualitySettings.level)) {
+      // Simple plain text for low/potato
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.font = "bold 22px monospace";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillStyle = streakColor;
+      ctx.fillText(`×${hitStreak}`, width / 2, 28);
+      ctx.restore();
+    } else {
+      const fontSize = Math.round(28 + scaleBonus * 28);
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.font = `bold ${fontSize}px monospace`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      // Shadow for legibility
+      ctx.fillStyle = "rgba(0,0,0,0.55)";
+      ctx.fillText(`×${hitStreak}`, width / 2 + 2, 32 + 2);
+      ctx.fillStyle = streakColor;
+      ctx.fillText(`×${hitStreak}`, width / 2, 32);
+      ctx.restore();
+    }
+  }
+
   ctx.restore();
 }
 
