@@ -46,10 +46,6 @@ export interface QualitySettings {
 interface AdaptiveQualityOptions {
   initialQuality?: QualityLevel;
   autoAdjust?: boolean;
-  potatoFpsThreshold?: number;
-  lowFpsThreshold?: number;
-  mediumFpsThreshold?: number;
-  highFpsThreshold?: number;
   sampleWindow?: number;
   enableLogging?: boolean;
   isFullscreen?: boolean;
@@ -77,7 +73,7 @@ const QUALITY_PRESETS: Record<QualityLevel, Omit<QualitySettings, "level" | "aut
     screenShakeMultiplier: 0.25,
     explosionParticles: 3,
     backgroundEffects: false,
-    resolutionScale: 0.75,
+    resolutionScale: 1.0,
     chaosGlowEnabled: false,
     animatedDashesEnabled: false,
     shieldArcsEnabled: false,
@@ -91,7 +87,7 @@ const QUALITY_PRESETS: Record<QualityLevel, Omit<QualitySettings, "level" | "aut
     screenShakeMultiplier: 0.75,
     explosionParticles: 8,
     backgroundEffects: true,
-    resolutionScale: 0.8,
+    resolutionScale: 1.0,
     chaosGlowEnabled: false,
     animatedDashesEnabled: true,
     shieldArcsEnabled: false,
@@ -185,14 +181,19 @@ function detectIntegratedGPU(): boolean {
 }
 
 function detectLowEndDevice(): boolean {
-  const isMobileUA = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
   const lowCores = (navigator.hardwareConcurrency ?? UNKNOWN_CORE_COUNT_FALLBACK) <= DEFAULT_LOW_END_CORE_COUNT;
   const deviceMemory = (navigator as Navigator & { deviceMemory?: number }).deviceMemory;
   const lowMemory = deviceMemory !== undefined && deviceMemory <= 4;
-  return isMobileUA || lowCores || lowMemory;
+  return lowCores || lowMemory;
 }
 
-interface PerformanceLogEntry {
+// Health ratio thresholds for adaptive quality selection
+const HEALTH_RATIO_POTATO = 0.55;
+const HEALTH_RATIO_LOW = 0.72;
+const HEALTH_RATIO_MEDIUM = 0.88;
+const HEALTH_RATIO_HIGH = 0.95;
+
+
   timestamp: number;
   fps: number;
   quality: QualityLevel;
@@ -202,10 +203,6 @@ export const useAdaptiveQuality = (options: AdaptiveQualityOptions = {}) => {
   const {
     initialQuality = ENABLE_HIGH_QUALITY ? "high" : "medium",
     autoAdjust = true,
-    potatoFpsThreshold = 32,
-    lowFpsThreshold = 45,
-    mediumFpsThreshold = 52,
-    highFpsThreshold = 58,
     enableLogging = true,
   } = options;
 
@@ -222,7 +219,7 @@ export const useAdaptiveQuality = (options: AdaptiveQualityOptions = {}) => {
   const [lockedToLow, setLockedToLow] = useState(false);
   const gpuToastShown = useRef(false);
 
-  const fpsHistoryRef = useRef<number[]>([]);
+  const healthHistoryRef = useRef<number[]>([]);
   const lastAdjustmentTimeRef = useRef<number>(0);
   const adjustmentCooldownMs = 2000;
   const notificationCooldownRef = useRef<number>(0);
@@ -230,7 +227,6 @@ export const useAdaptiveQuality = (options: AdaptiveQualityOptions = {}) => {
   const lastPerformanceLogMs = useRef<number>(0);
   const lowQualityDropCountRef = useRef<number>(0);
   const lockoutEscapeCounterRef = useRef<number>(0);
-  const warningThresholdRef = useRef<number>(0);
   const qualityStatsRef = useRef<Record<QualityLevel, { min: number; max: number; samples: number; sum: number }>>({
     potato: { min: Infinity, max: 0, samples: 0, sum: 0 },
     low: { min: Infinity, max: 0, samples: 0, sum: 0 },
@@ -244,7 +240,7 @@ export const useAdaptiveQuality = (options: AdaptiveQualityOptions = {}) => {
     const capped = !ENABLE_HIGH_QUALITY && q === "high" ? "medium" : q;
     setQuality(capped);
     persistQuality(capped);
-    fpsHistoryRef.current = [];
+    healthHistoryRef.current = [];
     lastAdjustmentTimeRef.current = performance.now();
   }, []);
 
@@ -264,8 +260,11 @@ export const useAdaptiveQuality = (options: AdaptiveQualityOptions = {}) => {
   }), [quality, autoAdjustEnabled]);
 
   const updateFps = useCallback(
-    (fps: number) => {
+    (fps: number, achievableFps: number) => {
       const now = performance.now();
+
+      const effectiveTarget = achievableFps > 0 ? achievableFps : 60;
+      const healthRatio = fps / effectiveTarget;
 
       const stats = qualityStatsRef.current[quality];
       stats.min = Math.min(stats.min, fps);
@@ -279,13 +278,11 @@ export const useAdaptiveQuality = (options: AdaptiveQualityOptions = {}) => {
           performanceLogRef.current.shift();
         }
 
-        // Console log current performance (disabled on mobile for better performance)
         if (enableLogging && !(/Mobi|Android/i.test(navigator.userAgent))) {
           const avgFps = stats.samples > 0 ? (stats.sum / stats.samples).toFixed(1) : '0.0';
-          const baseLog = `[Performance Monitor] FPS: ${fps.toFixed(1)} | Quality: ${quality.toUpperCase()} | ` +
+          const baseLog = `[Performance Monitor] FPS: ${fps.toFixed(1)} | Health: ${(healthRatio * 100).toFixed(0)}% | Quality: ${quality.toUpperCase()} | ` +
             `Avg: ${avgFps} | Min: ${stats.min.toFixed(0)} | Max: ${stats.max.toFixed(0)}`;
-          
-          // If detailed metrics are available (from performance profiler), include them
+
           if (window.performanceProfiler) {
             const summary = window.performanceProfiler.getFrameSummary();
             console.log(baseLog + ` | Objects: ${summary.totalObjects}`);
@@ -293,21 +290,21 @@ export const useAdaptiveQuality = (options: AdaptiveQualityOptions = {}) => {
             console.log(baseLog);
           }
         }
-        
+
         lastPerformanceLogMs.current = now;
       }
 
       if (!autoAdjustEnabled) return;
 
-      // Lockout escape hatch: sustained good FPS while locked to LOW clears the lock.
+      // Lockout escape hatch: sustained good health ratio while locked to LOW clears the lock.
       if (lockedToLow) {
-        if (fps >= highFpsThreshold) {
+        if (healthRatio >= HEALTH_RATIO_HIGH) {
           lockoutEscapeCounterRef.current++;
           if (lockoutEscapeCounterRef.current >= 60) {
             setLockedToLow(false);
             lowQualityDropCountRef.current = 1;
             lockoutEscapeCounterRef.current = 0;
-            console.log('[Performance] LOW-quality lockout cleared after 60s of sustained good FPS');
+            console.log('[Performance] LOW-quality lockout cleared after 60s of sustained good health');
           }
         } else {
           lockoutEscapeCounterRef.current = 0;
@@ -316,45 +313,29 @@ export const useAdaptiveQuality = (options: AdaptiveQualityOptions = {}) => {
         lockoutEscapeCounterRef.current = 0;
       }
 
-      fpsHistoryRef.current.push(fps);
-      if (fpsHistoryRef.current.length > MAX_FPS_SAMPLES) {
-        fpsHistoryRef.current.shift();
+      healthHistoryRef.current.push(healthRatio);
+      if (healthHistoryRef.current.length > MAX_FPS_SAMPLES) {
+        healthHistoryRef.current.shift();
       }
 
-
-      const isWarmingUp = fpsHistoryRef.current.length < MIN_WARMUP_SAMPLES;
+      const isWarmingUp = healthHistoryRef.current.length < MIN_WARMUP_SAMPLES;
       const isCoolingDown = now - lastAdjustmentTimeRef.current < adjustmentCooldownMs;
 
       if (isWarmingUp || isCoolingDown) {
-        // Early warning system
-        if (!isWarmingUp && fpsHistoryRef.current.length === MAX_FPS_SAMPLES) {
-          const recentAvg =
-            fpsHistoryRef.current.slice(-MAX_FPS_SAMPLES).reduce((sum, f) => sum + f, 0) / MAX_FPS_SAMPLES;
-          const threshold = quality === 'high' ? mediumFpsThreshold : lowFpsThreshold;
-          
-          if (recentAvg < threshold && now - warningThresholdRef.current > 5000) {
-            const timeToDowngrade = ((adjustmentCooldownMs - (now - lastAdjustmentTimeRef.current)) / 1000).toFixed(1);
-            console.warn(
-              `[Performance Warning] FPS dropped to ${recentAvg.toFixed(1)} (threshold: ${threshold}) - ` +
-              `will downgrade in ${timeToDowngrade}s if sustained`
-            );
-            warningThresholdRef.current = now;
-          }
-        }
         return;
       }
 
-      const avgFps = fpsHistoryRef.current.reduce((sum, f) => sum + f, 0) / fpsHistoryRef.current.length;
+      const avgHealth = healthHistoryRef.current.reduce((sum, h) => sum + h, 0) / healthHistoryRef.current.length;
 
       let targetQuality: QualityLevel = quality;
 
-      if (avgFps < potatoFpsThreshold) {
+      if (avgHealth < HEALTH_RATIO_POTATO) {
         targetQuality = "potato";
-      } else if (avgFps < lowFpsThreshold) {
+      } else if (avgHealth < HEALTH_RATIO_LOW) {
         targetQuality = lockedToLow && quality === "potato" ? "potato" : "low";
-      } else if (avgFps < mediumFpsThreshold) {
+      } else if (avgHealth < HEALTH_RATIO_MEDIUM) {
         targetQuality = lockedToLow ? (quality === "potato" ? "potato" : "low") : "medium";
-      } else if (avgFps >= highFpsThreshold) {
+      } else if (avgHealth >= HEALTH_RATIO_HIGH) {
         targetQuality = lockedToLow
           ? quality === "potato"
             ? "potato"
@@ -370,7 +351,7 @@ export const useAdaptiveQuality = (options: AdaptiveQualityOptions = {}) => {
         if ((targetQuality === "low" || targetQuality === "potato") && isDowngrade) {
           lowQualityDropCountRef.current++;
           console.log(`[Performance] Dropped to LOW quality (count: ${lowQualityDropCountRef.current})`);
-          
+
           if (lowQualityDropCountRef.current >= 2 && !lockedToLow) {
             setLockedToLow(true);
             console.log('[Performance] Quality LOCKED to LOW for remainder of game session');
@@ -378,17 +359,16 @@ export const useAdaptiveQuality = (options: AdaptiveQualityOptions = {}) => {
           }
         }
 
-        // Log quality change
         const timeSinceStart = (now / 1000).toFixed(1);
         console.log(
           `[Performance] Quality: ${quality.toUpperCase()} → ${targetQuality.toUpperCase()} | ` +
-          `Avg FPS: ${avgFps.toFixed(1)} | Time: ${timeSinceStart}s`
+          `Avg health: ${(avgHealth * 100).toFixed(0)}% | Time: ${timeSinceStart}s`
         );
 
         setQuality(targetQuality);
         persistQuality(targetQuality);
         lastAdjustmentTimeRef.current = now;
-        fpsHistoryRef.current = [];
+        healthHistoryRef.current = [];
         qualityStatsRef.current[targetQuality] = { min: Infinity, max: 0, samples: 0, sum: 0 };
 
         if (now - notificationCooldownRef.current > 10000) {
@@ -400,14 +380,14 @@ export const useAdaptiveQuality = (options: AdaptiveQualityOptions = {}) => {
         }
       }
     },
-    [quality, autoAdjustEnabled, potatoFpsThreshold, lowFpsThreshold, mediumFpsThreshold, highFpsThreshold, lockedToLow, enableLogging],
+    [quality, autoAdjustEnabled, lockedToLow, enableLogging],
   );
 
   const setManualQuality = useCallback((newQuality: QualityLevel) => {
     const capped = !ENABLE_HIGH_QUALITY && newQuality === "high" ? "medium" : newQuality;
     setQuality(capped);
     persistQuality(capped);
-    fpsHistoryRef.current = [];
+    healthHistoryRef.current = [];
     lastAdjustmentTimeRef.current = performance.now();
     lowQualityDropCountRef.current = 0;
     lockoutEscapeCounterRef.current = 0;
@@ -421,7 +401,7 @@ export const useAdaptiveQuality = (options: AdaptiveQualityOptions = {}) => {
     const capped = !ENABLE_HIGH_QUALITY && newQuality === "high" ? "medium" : newQuality;
     setQuality(capped);
     persistQuality(capped);
-    fpsHistoryRef.current = [];
+    healthHistoryRef.current = [];
     lastAdjustmentTimeRef.current = performance.now();
     lowQualityDropCountRef.current = 0;
     lockoutEscapeCounterRef.current = 0;
@@ -433,7 +413,7 @@ export const useAdaptiveQuality = (options: AdaptiveQualityOptions = {}) => {
     setAutoAdjustEnabled((prev) => {
       const newValue = !prev;
       if (newValue) {
-        fpsHistoryRef.current = [];
+        healthHistoryRef.current = [];
         lastAdjustmentTimeRef.current = performance.now();
       }
       toast.success(newValue ? "Auto quality adjustment enabled" : "Auto quality adjustment disabled");
@@ -445,7 +425,7 @@ export const useAdaptiveQuality = (options: AdaptiveQualityOptions = {}) => {
     setAutoAdjustEnabled((prev) => {
       if (prev === enabled) return prev;
       if (enabled) {
-        fpsHistoryRef.current = [];
+        healthHistoryRef.current = [];
         lastAdjustmentTimeRef.current = performance.now();
       }
       return enabled;
@@ -456,7 +436,7 @@ export const useAdaptiveQuality = (options: AdaptiveQualityOptions = {}) => {
     lowQualityDropCountRef.current = 0;
     lockoutEscapeCounterRef.current = 0;
     setLockedToLow(false);
-    fpsHistoryRef.current = [];
+    healthHistoryRef.current = [];
     console.log('[Performance] Quality lockout reset for new game');
   }, []);
 

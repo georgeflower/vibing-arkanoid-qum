@@ -122,18 +122,19 @@ import { runPhysicsFrame, BALL_GRAVITY, GRAVITY_DELAY_MS } from "@/engine/physic
 import { brickSpatialHash } from "@/utils/spatialHash";
 import { resetAllPools, enemyPool, bombPool, explosionPool, getNextExplosionId, bulletPool } from "@/utils/entityPool";
 import { brickRenderer } from "@/utils/brickLayerCache";
-import { setRenderTargetFps } from "@/engine/renderLoop";
+import { setRenderTargetFps, getRenderStats } from "@/engine/renderLoop";
 import { setPhysicsTargetFps } from "@/engine/physicsLoop";
 import { isMobileDevice, isIOSDevice } from "@/utils/deviceDetect";
 
 // Physics tick rate scales with quality so low/potato cut CPU work, not just GPU work.
 const physicsFpsForQuality = (level: QualityLevel): number => {
+  if (isMobileDevice) return 60;
   switch (level) {
     case "potato": return 45;
     case "low": return 60;
-    case "medium": return isMobileDevice ? 60 : 90;
-    default: return isMobileDevice ? 60 : 120;
-  } // end hitstop gameplay freeze block
+    case "medium": return 90;
+    default: return 120;
+  }
 };
 
 const POWERUP_TELEGRAPH_DELAY_MS = 250;
@@ -1881,9 +1882,6 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     useAdaptiveQuality({
       initialQuality: ENABLE_HIGH_QUALITY ? "high" : "medium",
       autoAdjust: gameSettingsData.qualityMode !== "manual",
-      lowFpsThreshold: 50,
-      mediumFpsThreshold: 55,
-      highFpsThreshold: 55,
       sampleWindow: 3,
       enableLogging: ENABLE_DEBUG_FEATURES && debugSettings.enableFPSLogging,
       isFullscreen,
@@ -4727,9 +4725,15 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       fpsTrackerRef.current.frameCount = 0;
       fpsTrackerRef.current.lastTime = frameNow;
 
-      // Update adaptive quality system and display
-      updateFps(fps);
-      setCurrentFps(fps);
+      // Update adaptive quality system and display using render stats
+      const renderStats = getRenderStats();
+      if (renderStats.fps > 0) {
+        updateFps(
+          renderStats.fps,
+          renderStats.targetFps > 0 ? renderStats.targetFps : renderStats.refreshFps,
+        );
+      }
+      setCurrentFps(Math.round(renderStats.fps));
 
       // ========== Performance Profiling (Debug) ==========
       if (ENABLE_DEBUG_FEATURES && debugSettings.enableDetailedFrameLogging) {
