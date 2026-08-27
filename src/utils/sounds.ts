@@ -50,7 +50,8 @@ class SoundManager {
   }
 
   private get sfxOut(): AudioNode {
-    return this.masterSfxGain ?? this.getAudioContext().destination;
+    const ctx = this.audioContext ?? this.getAudioContext();
+    return this.masterSfxGain ?? ctx.destination;
   }
 
   public unlockAudio() {
