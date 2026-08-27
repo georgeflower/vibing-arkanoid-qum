@@ -14,7 +14,8 @@ class SoundManager {
   private analyser: AnalyserNode | null = null;
   private frequencyData: Uint8Array | null = null;
   private bossMusicSource: MediaElementAudioSourceNode | null = null;
-  private frequencyDataArray: Float64Array | null = null;
+  private masterSfxGain: GainNode | null = null;
+  private activeFades = new Map<HTMLAudioElement, ReturnType<typeof setInterval>>();
   private trackUrls = [
     '/Pixel_Frenzy-2.mp3',
     '/sound_2.mp3',
@@ -40,7 +41,17 @@ class SoundManager {
     if (this.audioContext && this.audioContext.state === "suspended") {
       this.audioContext.resume().catch(() => {});
     }
+    if (this.audioContext && !this.masterSfxGain) {
+      this.masterSfxGain = this.audioContext.createGain();
+      this.masterSfxGain.gain.value = this.sfxVolume;
+      this.masterSfxGain.connect(this.audioContext.destination);
+    }
     return this.audioContext;
+  }
+
+  private get sfxOut(): AudioNode {
+    const ctx = this.getAudioContext();
+    return this.masterSfxGain ?? ctx.destination;
   }
 
   public unlockAudio() {
@@ -67,7 +78,11 @@ class SoundManager {
     }
 
     // Play current track
-    this.musicTracks[this.currentTrackIndex]?.play().catch(err => console.log('Audio play failed:', err));
+    const track = this.musicTracks[this.currentTrackIndex];
+    if (track) {
+      this.cancelFade(track);
+      track.play().catch(err => console.log('Audio play failed:', err));
+    }
   }
 
   private handleTrackEnd() {
@@ -91,8 +106,15 @@ class SoundManager {
 
   private fadeOutAudio(audio: HTMLAudioElement, duration: number = 500): Promise<void> {
     return new Promise((resolve) => {
+      const existingFade = this.activeFades.get(audio);
+      if (existingFade) {
+        clearInterval(existingFade);
+        this.activeFades.delete(audio);
+      }
+
       const startVolume = audio.volume;
       if (startVolume <= 0 || audio.paused) {
+        this.activeFades.delete(audio);
         audio.pause();
         audio.currentTime = 0;
         audio.volume = this.musicVolume;
@@ -108,13 +130,24 @@ class SoundManager {
         audio.volume = Math.max(0, startVolume - volumeStep * currentStep);
         if (currentStep >= steps) {
           clearInterval(fade);
+          this.activeFades.delete(audio);
           audio.pause();
           audio.currentTime = 0;
           audio.volume = this.musicVolume;
           resolve();
         }
       }, stepTime);
+      this.activeFades.set(audio, fade);
     });
+  }
+
+  private cancelFade(audio: HTMLAudioElement) {
+    const activeFade = this.activeFades.get(audio);
+    if (activeFade) {
+      clearInterval(activeFade);
+      this.activeFades.delete(audio);
+    }
+    audio.volume = this.musicVolume;
   }
 
 
@@ -164,6 +197,7 @@ class SoundManager {
 
   setSfxVolume(volume: number) {
     this.sfxVolume = Math.max(0, Math.min(1, volume));
+    if (this.masterSfxGain) this.masterSfxGain.gain.value = this.sfxVolume;
   }
 
   getSfxVolume(): number {
@@ -232,7 +266,7 @@ class SoundManager {
     const gainNode = ctx.createGain();
 
     oscillator.connect(gainNode);
-    gainNode.connect(ctx.destination);
+    gainNode.connect(this.sfxOut);
 
     oscillator.frequency.value = 200;
     oscillator.type = 'sine';
@@ -252,7 +286,7 @@ class SoundManager {
     const thud = ctx.createOscillator();
     const thudGain = ctx.createGain();
     thud.connect(thudGain);
-    thudGain.connect(ctx.destination);
+    thudGain.connect(this.sfxOut);
     thud.type = 'square';
     thud.frequency.setValueAtTime(100, ctx.currentTime);
     thud.frequency.exponentialRampToValueAtTime(60, ctx.currentTime + 0.2);
@@ -265,7 +299,7 @@ class SoundManager {
     const sweep = ctx.createOscillator();
     const sweepGain = ctx.createGain();
     sweep.connect(sweepGain);
-    sweepGain.connect(ctx.destination);
+    sweepGain.connect(this.sfxOut);
     sweep.type = 'sawtooth';
     sweep.frequency.setValueAtTime(300, ctx.currentTime);
     sweep.frequency.exponentialRampToValueAtTime(80, ctx.currentTime + 0.18);
@@ -283,7 +317,7 @@ class SoundManager {
     const ping = ctx.createOscillator();
     const pingGain = ctx.createGain();
     ping.connect(pingGain);
-    pingGain.connect(ctx.destination);
+    pingGain.connect(this.sfxOut);
     ping.type = 'sine';
     ping.frequency.setValueAtTime(800, ctx.currentTime);
     ping.frequency.exponentialRampToValueAtTime(600, ctx.currentTime + 0.08);
@@ -296,7 +330,7 @@ class SoundManager {
     const chirp = ctx.createOscillator();
     const chirpGain = ctx.createGain();
     chirp.connect(chirpGain);
-    chirpGain.connect(ctx.destination);
+    chirpGain.connect(this.sfxOut);
     chirp.type = 'triangle';
     chirp.frequency.setValueAtTime(1200, ctx.currentTime + 0.02);
     chirp.frequency.exponentialRampToValueAtTime(900, ctx.currentTime + 0.07);
@@ -313,7 +347,7 @@ class SoundManager {
     const gainNode = ctx.createGain();
 
     oscillator.connect(gainNode);
-    gainNode.connect(ctx.destination);
+    gainNode.connect(this.sfxOut);
 
     // Progressive sound effects for cracked bricks
     if (brickType === "cracked" && hitsRemaining !== undefined) {
@@ -334,9 +368,14 @@ class SoundManager {
         oscillator.start(ctx.currentTime);
         oscillator.stop(ctx.currentTime + 0.06);
       } else if (hitsRemaining === 1) {
-        // Final hit - play glass breaking sound
-        this.playCrackedBrickBreakSound();
-        return;
+        // Final hit — brighter, sharper break
+        oscillator.frequency.setValueAtTime(1100, ctx.currentTime);
+        oscillator.frequency.exponentialRampToValueAtTime(300, ctx.currentTime + 0.12);
+        oscillator.type = "triangle";
+        gainNode.gain.setValueAtTime(0.13, ctx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.12);
+        oscillator.start(ctx.currentTime);
+        oscillator.stop(ctx.currentTime + 0.12);
       }
     } else {
       // Default brick hit sound
@@ -358,7 +397,7 @@ class SoundManager {
     const gainNode = ctx.createGain();
 
     oscillator.connect(gainNode);
-    gainNode.connect(ctx.destination);
+    gainNode.connect(this.sfxOut);
 
     oscillator.frequency.setValueAtTime(300, ctx.currentTime);
     oscillator.frequency.exponentialRampToValueAtTime(600, ctx.currentTime + 0.2);
@@ -378,7 +417,7 @@ class SoundManager {
     const gainNode = ctx.createGain();
 
     oscillator.connect(gainNode);
-    gainNode.connect(ctx.destination);
+    gainNode.connect(this.sfxOut);
 
     oscillator.frequency.setValueAtTime(800, ctx.currentTime);
     oscillator.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.1);
@@ -398,7 +437,7 @@ class SoundManager {
     const gainNode = ctx.createGain();
 
     oscillator.connect(gainNode);
-    gainNode.connect(ctx.destination);
+    gainNode.connect(this.sfxOut);
 
     oscillator.frequency.setValueAtTime(400, ctx.currentTime);
     oscillator.frequency.exponentialRampToValueAtTime(50, ctx.currentTime + 0.5);
@@ -419,7 +458,7 @@ class SoundManager {
       const gainNode = ctx.createGain();
 
       oscillator.connect(gainNode);
-      gainNode.connect(ctx.destination);
+      gainNode.connect(this.sfxOut);
 
       const freq = [262, 330, 392, 523][i]; // C, E, G, C
       oscillator.frequency.value = freq;
@@ -452,7 +491,7 @@ class SoundManager {
       const gain = ctx.createGain();
       
       osc.connect(gain);
-      gain.connect(ctx.destination);
+      gain.connect(this.sfxOut);
       
       osc.type = 'sine';
       osc.frequency.value = freq;
@@ -472,7 +511,7 @@ class SoundManager {
       const gain = ctx.createGain();
       
       osc.connect(gain);
-      gain.connect(ctx.destination);
+      gain.connect(this.sfxOut);
       
       osc.type = 'triangle';
       osc.frequency.value = i === 0 ? 196 : 392; // G3, G4 bass notes
@@ -495,7 +534,7 @@ class SoundManager {
 
     oscillator.connect(filter);
     filter.connect(gainNode);
-    gainNode.connect(ctx.destination);
+    gainNode.connect(this.sfxOut);
 
     oscillator.frequency.setValueAtTime(150, ctx.currentTime);
     oscillator.frequency.exponentialRampToValueAtTime(30, ctx.currentTime + 0.4);
@@ -520,7 +559,7 @@ class SoundManager {
     const bass = ctx.createOscillator();
     const bassGain = ctx.createGain();
     bass.connect(bassGain);
-    bassGain.connect(ctx.destination);
+    bassGain.connect(this.sfxOut);
     bass.type = 'sawtooth';
     bass.frequency.setValueAtTime(80, ctx.currentTime);
     bass.frequency.exponentialRampToValueAtTime(20, ctx.currentTime + 0.6);
@@ -533,7 +572,7 @@ class SoundManager {
     const mid = ctx.createOscillator();
     const midGain = ctx.createGain();
     mid.connect(midGain);
-    midGain.connect(ctx.destination);
+    midGain.connect(this.sfxOut);
     mid.type = 'square';
     mid.frequency.setValueAtTime(300, ctx.currentTime);
     mid.frequency.exponentialRampToValueAtTime(50, ctx.currentTime + 0.3);
@@ -548,7 +587,7 @@ class SoundManager {
     const highFilter = ctx.createBiquadFilter();
     high.connect(highFilter);
     highFilter.connect(highGain);
-    highGain.connect(ctx.destination);
+    highGain.connect(this.sfxOut);
     high.type = 'sawtooth';
     high.frequency.setValueAtTime(2000, ctx.currentTime);
     high.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.2);
@@ -569,7 +608,7 @@ class SoundManager {
     const sweep = ctx.createOscillator();
     const sweepGain = ctx.createGain();
     sweep.connect(sweepGain);
-    sweepGain.connect(ctx.destination);
+    sweepGain.connect(this.sfxOut);
     sweep.type = 'sine';
     sweep.frequency.setValueAtTime(200, ctx.currentTime);
     sweep.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 0.25);
@@ -582,7 +621,7 @@ class SoundManager {
     const sparkle = ctx.createOscillator();
     const sparkleGain = ctx.createGain();
     sparkle.connect(sparkleGain);
-    sparkleGain.connect(ctx.destination);
+    sparkleGain.connect(this.sfxOut);
     sparkle.type = 'triangle';
     sparkle.frequency.setValueAtTime(1200, ctx.currentTime);
     sparkle.frequency.exponentialRampToValueAtTime(600, ctx.currentTime + 0.2);
@@ -595,7 +634,7 @@ class SoundManager {
     const bass = ctx.createOscillator();
     const bassGain = ctx.createGain();
     bass.connect(bassGain);
-    bassGain.connect(ctx.destination);
+    bassGain.connect(this.sfxOut);
     bass.type = 'sawtooth';
     bass.frequency.setValueAtTime(100, ctx.currentTime);
     bass.frequency.exponentialRampToValueAtTime(50, ctx.currentTime + 0.15);
@@ -671,7 +710,7 @@ class SoundManager {
     const osc1 = ctx.createOscillator();
     const gain1 = ctx.createGain();
     osc1.connect(gain1);
-    gain1.connect(ctx.destination);
+    gain1.connect(this.sfxOut);
     osc1.frequency.value = 900 * rate;
     osc1.type = 'sine';
     gain1.gain.setValueAtTime(0.1, ctx.currentTime);
@@ -683,7 +722,7 @@ class SoundManager {
     const osc2 = ctx.createOscillator();
     const gain2 = ctx.createGain();
     osc2.connect(gain2);
-    gain2.connect(ctx.destination);
+    gain2.connect(this.sfxOut);
     osc2.frequency.value = 1100 * rate;
     osc2.type = 'sine';
     gain2.gain.setValueAtTime(0.15, ctx.currentTime);
@@ -704,10 +743,10 @@ class SoundManager {
     source.buffer = buffer;
     source.playbackRate.value = playbackRate;
     source.connect(gainNode);
-    gainNode.connect(ctx.destination);
+    gainNode.connect(this.sfxOut);
 
     // Apply 20% volume boost for power-up sounds
-    gainNode.gain.value = volume * 1.2 * this.sfxVolume;
+    gainNode.gain.value = volume * 1.2;
 
     source.start(0);
   }
@@ -736,10 +775,6 @@ class SoundManager {
     }
   }
 
-  playCrackedBrickBreakSound() {
-    // Empty - handled by main brick hit sound
-  }
-
   playCannonModeSound() {
     if (!this.sfxEnabled) return;
     const buffer = this.audioBuffers['/cannon_mode.mp3'];
@@ -761,7 +796,7 @@ class SoundManager {
     osc1.connect(filter);
     osc2.connect(filter);
     filter.connect(gainNode);
-    gainNode.connect(ctx.destination);
+    gainNode.connect(this.sfxOut);
     
     osc1.type = 'sawtooth';
     osc2.type = 'square';
@@ -795,7 +830,7 @@ class SoundManager {
     const gainNode = ctx.createGain();
     
     oscillator.connect(gainNode);
-    gainNode.connect(ctx.destination);
+    gainNode.connect(this.sfxOut);
     
     // Pew sound - quick descending pitch
     oscillator.frequency.setValueAtTime(800, ctx.currentTime);
@@ -816,7 +851,7 @@ class SoundManager {
     const gainNode = ctx.createGain();
     
     oscillator.connect(gainNode);
-    gainNode.connect(ctx.destination);
+    gainNode.connect(this.sfxOut);
     
     oscillator.type = 'sawtooth';
     oscillator.frequency.setValueAtTime(100, ctx.currentTime);
@@ -840,7 +875,7 @@ class SoundManager {
     const bass = ctx.createOscillator();
     const bassGain = ctx.createGain();
     bass.connect(bassGain);
-    bassGain.connect(ctx.destination);
+    bassGain.connect(this.sfxOut);
     bass.type = 'sine';
     bass.frequency.setValueAtTime(60, ctx.currentTime);
     bass.frequency.linearRampToValueAtTime(120, ctx.currentTime + 0.8);
@@ -854,7 +889,7 @@ class SoundManager {
     const siren = ctx.createOscillator();
     const sirenGain = ctx.createGain();
     siren.connect(sirenGain);
-    sirenGain.connect(ctx.destination);
+    sirenGain.connect(this.sfxOut);
     siren.type = 'square';
     siren.frequency.setValueAtTime(200, ctx.currentTime);
     siren.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.7);
@@ -870,7 +905,7 @@ class SoundManager {
     const highFilter = ctx.createBiquadFilter();
     high.connect(highFilter);
     highFilter.connect(highGain);
-    highGain.connect(ctx.destination);
+    highGain.connect(this.sfxOut);
     high.type = 'triangle';
     high.frequency.setValueAtTime(800, ctx.currentTime);
     high.frequency.exponentialRampToValueAtTime(1600, ctx.currentTime + 0.6);
@@ -894,7 +929,7 @@ class SoundManager {
     const dischargeFilter = ctx.createBiquadFilter();
     discharge.connect(dischargeFilter);
     dischargeFilter.connect(dischargeGain);
-    dischargeGain.connect(ctx.destination);
+    dischargeGain.connect(this.sfxOut);
     discharge.type = 'sawtooth';
     discharge.frequency.setValueAtTime(2000, ctx.currentTime);
     discharge.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.3);
@@ -910,7 +945,7 @@ class SoundManager {
     const hum = ctx.createOscillator();
     const humGain = ctx.createGain();
     hum.connect(humGain);
-    humGain.connect(ctx.destination);
+    humGain.connect(this.sfxOut);
     hum.type = 'sine';
     hum.frequency.setValueAtTime(120, ctx.currentTime);
     hum.frequency.exponentialRampToValueAtTime(40, ctx.currentTime + 0.5);
@@ -925,7 +960,7 @@ class SoundManager {
         const crackle = ctx.createOscillator();
         const crackleGain = ctx.createGain();
         crackle.connect(crackleGain);
-        crackleGain.connect(ctx.destination);
+        crackleGain.connect(this.sfxOut);
         crackle.type = 'square';
         crackle.frequency.setValueAtTime(800 + Math.random() * 600, ctx.currentTime);
         crackle.frequency.exponentialRampToValueAtTime(150, ctx.currentTime + 0.05);
@@ -945,7 +980,7 @@ class SoundManager {
     const gainNode = ctx.createGain();
     
     oscillator.connect(gainNode);
-    gainNode.connect(ctx.destination);
+    gainNode.connect(this.sfxOut);
     
     oscillator.type = 'square';
     oscillator.frequency.setValueAtTime(200, ctx.currentTime);
@@ -970,7 +1005,7 @@ class SoundManager {
         const gainNode = ctx.createGain();
         
         oscillator.connect(gainNode);
-        gainNode.connect(ctx.destination);
+        gainNode.connect(this.sfxOut);
         
         oscillator.type = 'sawtooth';
         oscillator.frequency.setValueAtTime(400 - i * 100, ctx.currentTime);
@@ -993,7 +1028,7 @@ class SoundManager {
     const gainNode = ctx.createGain();
     
     oscillator.connect(gainNode);
-    gainNode.connect(ctx.destination);
+    gainNode.connect(this.sfxOut);
     
     oscillator.type = 'sine';
     oscillator.frequency.setValueAtTime(300, ctx.currentTime);
@@ -1041,7 +1076,7 @@ class SoundManager {
     const gainNode = audioContext.createGain();
     
     oscillator.connect(gainNode);
-    gainNode.connect(audioContext.destination);
+    gainNode.connect(this.sfxOut);
     
     // Swooshing pew sound - sweep from high to mid with wave modulation
     oscillator.type = "sawtooth";
@@ -1105,7 +1140,7 @@ class SoundManager {
       const gainNode = ctx.createGain();
 
       oscillator.connect(gainNode);
-      gainNode.connect(ctx.destination);
+      gainNode.connect(this.sfxOut);
 
       const freq = [800, 1200, 1600][i];
       oscillator.frequency.setValueAtTime(freq, ctx.currentTime + time);
@@ -1139,7 +1174,7 @@ class SoundManager {
       const oscillator = ctx.createOscillator();
       const gainNode = ctx.createGain();
       oscillator.connect(gainNode);
-      gainNode.connect(ctx.destination);
+      gainNode.connect(this.sfxOut);
       oscillator.frequency.value = freq;
       oscillator.type = 'sine';
       gainNode.gain.setValueAtTime(0.35, ctx.currentTime + time);
@@ -1151,7 +1186,7 @@ class SoundManager {
       const osc2 = ctx.createOscillator();
       const gain2 = ctx.createGain();
       osc2.connect(gain2);
-      gain2.connect(ctx.destination);
+      gain2.connect(this.sfxOut);
       osc2.frequency.value = freq * 2;
       osc2.type = 'sine';
       gain2.gain.setValueAtTime(0.15, ctx.currentTime + time);
@@ -1210,7 +1245,7 @@ class SoundManager {
     const gainNode = ctx.createGain();
 
     oscillator.connect(gainNode);
-    gainNode.connect(ctx.destination);
+    gainNode.connect(this.sfxOut);
 
     oscillator.frequency.value = 800;
     oscillator.type = 'sine';
@@ -1229,7 +1264,7 @@ class SoundManager {
     const gainNode = ctx.createGain();
 
     oscillator.connect(gainNode);
-    gainNode.connect(ctx.destination);
+    gainNode.connect(this.sfxOut);
 
     oscillator.frequency.value = 400;
     oscillator.type = 'sine';
@@ -1248,7 +1283,7 @@ class SoundManager {
     const gainNode = ctx.createGain();
 
     oscillator.connect(gainNode);
-    gainNode.connect(ctx.destination);
+    gainNode.connect(this.sfxOut);
 
     oscillator.frequency.value = 600;
     oscillator.type = 'sine';
@@ -1421,7 +1456,7 @@ class SoundManager {
     const oscillator1 = ctx.createOscillator();
     const gain1 = ctx.createGain();
     oscillator1.connect(gain1);
-    gain1.connect(ctx.destination);
+    gain1.connect(this.sfxOut);
     oscillator1.frequency.value = 900;
     oscillator1.type = 'sine';
     gain1.gain.setValueAtTime(0.1, ctx.currentTime);
@@ -1432,7 +1467,7 @@ class SoundManager {
     const oscillator2 = ctx.createOscillator();
     const gain2 = ctx.createGain();
     oscillator2.connect(gain2);
-    gain2.connect(ctx.destination);
+    gain2.connect(this.sfxOut);
     oscillator2.frequency.value = 1100;
     oscillator2.type = 'sine';
     gain2.gain.setValueAtTime(0.15, ctx.currentTime);
@@ -1458,7 +1493,7 @@ class SoundManager {
     const zap = ctx.createOscillator();
     const zapGain = ctx.createGain();
     zap.connect(zapGain);
-    zapGain.connect(ctx.destination);
+    zapGain.connect(this.sfxOut);
     
     zap.type = 'sawtooth';
     zap.frequency.setValueAtTime(1500, ctx.currentTime);
@@ -1474,7 +1509,7 @@ class SoundManager {
     const relief = ctx.createOscillator();
     const reliefGain = ctx.createGain();
     relief.connect(reliefGain);
-    reliefGain.connect(ctx.destination);
+    reliefGain.connect(this.sfxOut);
     
     relief.type = 'sine';
     relief.frequency.setValueAtTime(400, ctx.currentTime + 0.1);
@@ -1496,7 +1531,7 @@ class SoundManager {
     const bass = ctx.createOscillator();
     const bassGain = ctx.createGain();
     bass.connect(bassGain);
-    bassGain.connect(ctx.destination);
+    bassGain.connect(this.sfxOut);
     bass.type = 'square';
     bass.frequency.setValueAtTime(50, ctx.currentTime);
     bass.frequency.exponentialRampToValueAtTime(25, ctx.currentTime + 0.4);
@@ -1509,7 +1544,7 @@ class SoundManager {
     const crunch = ctx.createOscillator();
     const crunchGain = ctx.createGain();
     crunch.connect(crunchGain);
-    crunchGain.connect(ctx.destination);
+    crunchGain.connect(this.sfxOut);
     crunch.type = 'sawtooth';
     crunch.frequency.setValueAtTime(180, ctx.currentTime);
     crunch.frequency.exponentialRampToValueAtTime(90, ctx.currentTime + 0.2);
@@ -1522,7 +1557,7 @@ class SoundManager {
     const punch = ctx.createOscillator();
     const punchGain = ctx.createGain();
     punch.connect(punchGain);
-    punchGain.connect(ctx.destination);
+    punchGain.connect(this.sfxOut);
     punch.type = 'square';
     punch.frequency.setValueAtTime(40, ctx.currentTime + 0.08);
     punch.frequency.exponentialRampToValueAtTime(20, ctx.currentTime + 0.35);
@@ -1554,7 +1589,7 @@ class SoundManager {
         const bass = ctx.createOscillator();
         const bassGain = ctx.createGain();
         bass.connect(bassGain);
-        bassGain.connect(ctx.destination);
+        bassGain.connect(this.sfxOut);
         bass.type = 'sine';
         bass.frequency.setValueAtTime(60 + Math.random() * 20, ctx.currentTime);
         bass.frequency.exponentialRampToValueAtTime(30, ctx.currentTime + 0.5);
@@ -1567,7 +1602,7 @@ class SoundManager {
         const mid = ctx.createOscillator();
         const midGain = ctx.createGain();
         mid.connect(midGain);
-        midGain.connect(ctx.destination);
+        midGain.connect(this.sfxOut);
         mid.type = 'triangle';
         mid.frequency.setValueAtTime(200 + Math.random() * 100, ctx.currentTime);
         mid.frequency.exponentialRampToValueAtTime(80, ctx.currentTime + 0.3);
@@ -1585,7 +1620,7 @@ class SoundManager {
           const note = ctx.createOscillator();
           const noteGain = ctx.createGain();
           note.connect(noteGain);
-          noteGain.connect(ctx.destination);
+          noteGain.connect(this.sfxOut);
           note.type = 'sine';
           note.frequency.value = freq;
           noteGain.gain.setValueAtTime(0.2, ctx.currentTime);
