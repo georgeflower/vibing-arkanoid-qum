@@ -8908,9 +8908,23 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                 </h1>
               </div>
 
-              {/* Mobile Timer Row - shown on mobile when frames are visible */}
+              {/* Mobile Timer + Stats Row - shown on mobile when frames are visible */}
               {isMobileDevice && framesVisible && (
-                <div className="flex justify-center py-1 pointer-events-none" style={{ textShadow: "1px 1px 2px rgba(0,0,0,0.8)" }}>
+                <div
+                  className="flex justify-center items-center gap-4 py-1 pointer-events-none"
+                  style={{ textShadow: "1px 1px 2px rgba(0,0,0,0.8)" }}
+                >
+                  <div className="retro-pixel-text text-xs" style={{ color: "hsl(180, 70%, 60%)" }}>
+                    SCORE: <span style={{ color: "hsl(0, 0%, 95%)" }}>{score.toString().padStart(6, "0")}</span>
+                  </div>
+                  {!isDailyChallenge && (
+                    <div className="retro-pixel-text text-xs" style={{ color: "hsl(30, 75%, 55%)" }}>
+                      LV: <span style={{ color: "hsl(0, 0%, 95%)" }}>{level.toString().padStart(2, "0")}</span>
+                    </div>
+                  )}
+                  <div className="retro-pixel-text text-xs" style={{ color: "hsl(0, 70%, 55%)" }}>
+                    LIVES: <span style={{ color: "hsl(0, 0%, 95%)" }}>{lives}</span>
+                  </div>
                   {isDailyChallenge && settings.dailyChallengeConfig?.timeLimit && settings.dailyChallengeConfig.timeLimit > 0 ? (
                     <div
                       className={`retro-pixel-text text-sm ${Math.max(0, settings.dailyChallengeConfig.timeLimit - totalPlayTime) <= 30 ? "animate-pulse" : ""}`}
@@ -9061,71 +9075,6 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                         })()}
                       </div>
                     )}
-
-                    {/* Mobile Power-Up Timers - Absolute overlay so appearing/expiring does NOT reflow the game area */}
-                    {isMobileDevice &&
-                      paddle &&
-                      (bossStunnerEndTime || reflectShieldEndTime || homingBallEndTime || fireballEndTime) && (
-                        <div
-                          className="absolute flex items-center gap-3 retro-pixel-text text-xs font-bold pointer-events-none"
-                          style={{
-                            bottom: "8px",
-                            left: "50%",
-                            transform: "translateX(-50%)",
-                            zIndex: 20,
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          {bossStunnerEndTime && Date.now() < bossStunnerEndTime && (
-                            <span
-                              style={{
-                                color: `hsl(${Math.max(0, 50 - (1 - (bossStunnerEndTime - Date.now()) / 5000) * 50)}, 100%, 50%)`,
-                                textShadow: "0 0 8px currentColor",
-                                transform: `scale(${1 + Math.sin(Date.now() * 0.04) * 0.1})`,
-                                display: "inline-block",
-                              }}
-                            >
-                              STUN: {((bossStunnerEndTime - Date.now()) / 1000).toFixed(1)}s
-                            </span>
-                          )}
-                          {reflectShieldEndTime && Date.now() < reflectShieldEndTime && (
-                            <span
-                              style={{
-                                color: `hsl(${Math.max(0, 50 - (1 - (reflectShieldEndTime - Date.now()) / 15000) * 50)}, 100%, 50%)`,
-                                textShadow: "0 0 8px currentColor",
-                                transform: `scale(${1 + Math.sin(Date.now() * 0.04) * 0.1})`,
-                                display: "inline-block",
-                              }}
-                            >
-                              REFLECT: {((reflectShieldEndTime - Date.now()) / 1000).toFixed(1)}s
-                            </span>
-                          )}
-                          {homingBallEndTime && Date.now() < homingBallEndTime && (
-                            <span
-                              style={{
-                                color: `hsl(${Math.max(0, 50 - (1 - (homingBallEndTime - Date.now()) / 8000) * 50)}, 100%, 50%)`,
-                                textShadow: "0 0 8px currentColor",
-                                transform: `scale(${1 + Math.sin(Date.now() * 0.04) * 0.1})`,
-                                display: "inline-block",
-                              }}
-                            >
-                              MAGNET: {((homingBallEndTime - Date.now()) / 1000).toFixed(1)}s
-                            </span>
-                          )}
-                          {fireballEndTime && Date.now() < fireballEndTime && (
-                            <span
-                              style={{
-                                color: `hsl(${Math.max(0, 30 - (1 - (fireballEndTime - Date.now()) / FIREBALL_DURATION) * 30)}, 100%, 50%)`,
-                                textShadow: "0 0 8px currentColor",
-                                transform: `scale(${1 + Math.sin(Date.now() * 0.04) * 0.1})`,
-                                display: "inline-block",
-                              }}
-                            >
-                              FIREBALL: {((fireballEndTime - Date.now()) / 1000).toFixed(1)}s
-                            </span>
-                          )}
-                        </div>
-                      )}
 
                     {/* Mobile Bonus Letter Tutorial - Absolute overlay (no layout shift) */}
                     {isMobileDevice &&
@@ -9313,6 +9262,66 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                       />
                     )}
                   </div>
+
+                  {/* Mobile Power-Up Timers - reserved-height strip below the playfield (no layout shift) */}
+                  {isMobileDevice && (
+                    <div
+                      className="flex items-center justify-center gap-3 retro-pixel-text text-xs font-bold pointer-events-none"
+                      style={{
+                        minHeight: "22px",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {paddle && bossStunnerEndTime && Date.now() < bossStunnerEndTime && (
+                        <span
+                          style={{
+                            color: `hsl(${Math.max(0, 50 - (1 - (bossStunnerEndTime - Date.now()) / 5000) * 50)}, 100%, 50%)`,
+                            textShadow: "0 0 8px currentColor",
+                            transform: `scale(${1 + Math.sin(Date.now() * 0.04) * 0.1})`,
+                            display: "inline-block",
+                          }}
+                        >
+                          STUN: {((bossStunnerEndTime - Date.now()) / 1000).toFixed(1)}s
+                        </span>
+                      )}
+                      {paddle && reflectShieldEndTime && Date.now() < reflectShieldEndTime && (
+                        <span
+                          style={{
+                            color: `hsl(${Math.max(0, 50 - (1 - (reflectShieldEndTime - Date.now()) / 15000) * 50)}, 100%, 50%)`,
+                            textShadow: "0 0 8px currentColor",
+                            transform: `scale(${1 + Math.sin(Date.now() * 0.04) * 0.1})`,
+                            display: "inline-block",
+                          }}
+                        >
+                          REFLECT: {((reflectShieldEndTime - Date.now()) / 1000).toFixed(1)}s
+                        </span>
+                      )}
+                      {paddle && homingBallEndTime && Date.now() < homingBallEndTime && (
+                        <span
+                          style={{
+                            color: `hsl(${Math.max(0, 50 - (1 - (homingBallEndTime - Date.now()) / 8000) * 50)}, 100%, 50%)`,
+                            textShadow: "0 0 8px currentColor",
+                            transform: `scale(${1 + Math.sin(Date.now() * 0.04) * 0.1})`,
+                            display: "inline-block",
+                          }}
+                        >
+                          MAGNET: {((homingBallEndTime - Date.now()) / 1000).toFixed(1)}s
+                        </span>
+                      )}
+                      {paddle && fireballEndTime && Date.now() < fireballEndTime && (
+                        <span
+                          style={{
+                            color: `hsl(${Math.max(0, 30 - (1 - (fireballEndTime - Date.now()) / FIREBALL_DURATION) * 30)}, 100%, 50%)`,
+                            textShadow: "0 0 8px currentColor",
+                            transform: `scale(${1 + Math.sin(Date.now() * 0.04) * 0.1})`,
+                            display: "inline-block",
+                          }}
+                        >
+                          FIREBALL: {((fireballEndTime - Date.now()) / 1000).toFixed(1)}s
+                        </span>
+                      )}
+                    </div>
+                  )}
 
                   {/* Boss Victory Celebration Overlay - only shown in normal mode, not Boss Rush */}
                   <BossVictoryOverlay
@@ -9846,9 +9855,11 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
               {/* Compact HUD Overlay - Shown when frames are hidden */}
               {!framesVisible && (
                 <div
-                  className="fixed top-4 left-4 z-50 flex flex-col gap-2 pointer-events-none"
+                  className="absolute top-4 left-4 z-50 flex flex-col gap-2 pointer-events-none"
                   style={{
                     textShadow: "1px 1px 2px rgba(0,0,0,0.8)",
+                    paddingTop: "env(safe-area-inset-top)",
+                    paddingLeft: "env(safe-area-inset-left)",
                   }}
                 >
                   <div className="flex gap-4 items-center bg-black/30 backdrop-blur-sm px-3 py-2 rounded">
