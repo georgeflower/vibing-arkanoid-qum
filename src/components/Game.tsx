@@ -8908,9 +8908,23 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                 </h1>
               </div>
 
-              {/* Mobile Timer Row - shown on mobile when frames are visible */}
+              {/* Mobile Timer + Stats Row - shown on mobile when frames are visible */}
               {isMobileDevice && framesVisible && (
-                <div className="flex justify-center py-1 pointer-events-none" style={{ textShadow: "1px 1px 2px rgba(0,0,0,0.8)" }}>
+                <div
+                  className="flex justify-center items-center gap-4 py-1 pointer-events-none"
+                  style={{ textShadow: "1px 1px 2px rgba(0,0,0,0.8)" }}
+                >
+                  <div className="retro-pixel-text text-xs" style={{ color: "hsl(180, 70%, 60%)" }}>
+                    SCORE: <span style={{ color: "hsl(0, 0%, 95%)" }}>{score.toString().padStart(6, "0")}</span>
+                  </div>
+                  {!isDailyChallenge && (
+                    <div className="retro-pixel-text text-xs" style={{ color: "hsl(30, 75%, 55%)" }}>
+                      LV: <span style={{ color: "hsl(0, 0%, 95%)" }}>{level.toString().padStart(2, "0")}</span>
+                    </div>
+                  )}
+                  <div className="retro-pixel-text text-xs" style={{ color: "hsl(0, 70%, 55%)" }}>
+                    LIVES: <span style={{ color: "hsl(0, 0%, 95%)" }}>{lives}</span>
+                  </div>
                   {isDailyChallenge && settings.dailyChallengeConfig?.timeLimit && settings.dailyChallengeConfig.timeLimit > 0 ? (
                     <div
                       className={`retro-pixel-text text-sm ${Math.max(0, settings.dailyChallengeConfig.timeLimit - totalPlayTime) <= 30 ? "animate-pulse" : ""}`}
