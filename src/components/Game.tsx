@@ -9249,6 +9249,66 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                     )}
                   </div>
 
+                  {/* Mobile Power-Up Timers - reserved-height strip below the playfield (no layout shift) */}
+                  {isMobileDevice && (
+                    <div
+                      className="flex items-center justify-center gap-3 retro-pixel-text text-xs font-bold pointer-events-none"
+                      style={{
+                        minHeight: "22px",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {paddle && bossStunnerEndTime && Date.now() < bossStunnerEndTime && (
+                        <span
+                          style={{
+                            color: `hsl(${Math.max(0, 50 - (1 - (bossStunnerEndTime - Date.now()) / 5000) * 50)}, 100%, 50%)`,
+                            textShadow: "0 0 8px currentColor",
+                            transform: `scale(${1 + Math.sin(Date.now() * 0.04) * 0.1})`,
+                            display: "inline-block",
+                          }}
+                        >
+                          STUN: {((bossStunnerEndTime - Date.now()) / 1000).toFixed(1)}s
+                        </span>
+                      )}
+                      {paddle && reflectShieldEndTime && Date.now() < reflectShieldEndTime && (
+                        <span
+                          style={{
+                            color: `hsl(${Math.max(0, 50 - (1 - (reflectShieldEndTime - Date.now()) / 15000) * 50)}, 100%, 50%)`,
+                            textShadow: "0 0 8px currentColor",
+                            transform: `scale(${1 + Math.sin(Date.now() * 0.04) * 0.1})`,
+                            display: "inline-block",
+                          }}
+                        >
+                          REFLECT: {((reflectShieldEndTime - Date.now()) / 1000).toFixed(1)}s
+                        </span>
+                      )}
+                      {paddle && homingBallEndTime && Date.now() < homingBallEndTime && (
+                        <span
+                          style={{
+                            color: `hsl(${Math.max(0, 50 - (1 - (homingBallEndTime - Date.now()) / 8000) * 50)}, 100%, 50%)`,
+                            textShadow: "0 0 8px currentColor",
+                            transform: `scale(${1 + Math.sin(Date.now() * 0.04) * 0.1})`,
+                            display: "inline-block",
+                          }}
+                        >
+                          MAGNET: {((homingBallEndTime - Date.now()) / 1000).toFixed(1)}s
+                        </span>
+                      )}
+                      {paddle && fireballEndTime && Date.now() < fireballEndTime && (
+                        <span
+                          style={{
+                            color: `hsl(${Math.max(0, 30 - (1 - (fireballEndTime - Date.now()) / FIREBALL_DURATION) * 30)}, 100%, 50%)`,
+                            textShadow: "0 0 8px currentColor",
+                            transform: `scale(${1 + Math.sin(Date.now() * 0.04) * 0.1})`,
+                            display: "inline-block",
+                          }}
+                        >
+                          FIREBALL: {((fireballEndTime - Date.now()) / 1000).toFixed(1)}s
+                        </span>
+                      )}
+                    </div>
+                  )}
+
                   {/* Boss Victory Celebration Overlay - only shown in normal mode, not Boss Rush */}
                   <BossVictoryOverlay
                     active={bossVictoryOverlayActive && !isBossRush}
