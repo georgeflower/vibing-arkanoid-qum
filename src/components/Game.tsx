@@ -9841,9 +9841,11 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
               {/* Compact HUD Overlay - Shown when frames are hidden */}
               {!framesVisible && (
                 <div
-                  className="fixed top-4 left-4 z-50 flex flex-col gap-2 pointer-events-none"
+                  className="absolute top-4 left-4 z-50 flex flex-col gap-2 pointer-events-none"
                   style={{
                     textShadow: "1px 1px 2px rgba(0,0,0,0.8)",
+                    paddingTop: "env(safe-area-inset-top)",
+                    paddingLeft: "env(safe-area-inset-left)",
                   }}
                 >
                   <div className="flex gap-4 items-center bg-black/30 backdrop-blur-sm px-3 py-2 rounded">
