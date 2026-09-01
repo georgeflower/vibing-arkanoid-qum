@@ -9869,8 +9869,9 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
 
 
-              {/* Compact HUD Overlay - Shown when frames are hidden */}
-              {!framesVisible && (
+              {/* Compact HUD Overlay - Desktop only (mobile uses the in-flow HUD row above) */}
+              {!framesVisible && !isMobileDevice && (
+
                 <div
                   className="absolute top-4 left-4 z-50 flex flex-col gap-2 pointer-events-none"
                   style={{
