@@ -4313,12 +4313,10 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
         const created = createPowerUp(brick, false, false, gameLoopRef.current?.getTimeScale() ?? 1.0);
         if (!created) {
-          world.bricksSinceLastPowerUp += 1;
           continue;
         }
 
         const selectedPowerUps = Array.isArray(created) ? created : [created];
-        world.bricksSinceLastPowerUp = 0;
         world.guaranteeNextEligiblePowerUpDrop = false;
         if (forcedOpeningDrop) {
           world.levelOneOpeningGuaranteedDropPending = false;
