@@ -91,17 +91,19 @@ export const MobileGameControls = ({
               gameLoopRef.current.pause();
             }
           }}
-          className="fixed left-4 top-[116px] z-[100] w-12 h-12 rounded-full bg-transparent border-2 border-white/30 flex items-center justify-center shadow-lg active:scale-95 transition-transform touch-manipulation"
+          className="fixed left-2 z-[100] w-10 h-10 rounded-full bg-transparent border-2 border-white/30 flex items-center justify-center shadow-lg active:scale-95 transition-transform touch-manipulation"
           aria-label="Pause Game"
-          style={{ touchAction: "manipulation" }}
+          style={{ touchAction: "manipulation", top: "calc(env(safe-area-inset-top) + 4px)" }}
+
         >
-          <Pause className="w-6 h-6 text-white/70" />
+          <Pause className="w-5 h-5 text-white/70" />
         </button>
       )}
 
       {/* Music Toggle Button */}
       {gameState === "playing" && (
-        <div className="fixed right-4 top-[116px] z-[100]">
+        <div className="fixed right-2 z-[100]" style={{ top: "calc(env(safe-area-inset-top) + 4px)" }}>
+
           <button
             onTouchStart={(e) => {
               e.stopPropagation();

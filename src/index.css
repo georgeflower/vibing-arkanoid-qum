@@ -547,6 +547,7 @@ All colors MUST be HSL.
   max-height: 100%;
   margin: 0;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   /* Block all browser gestures in fullscreen */
@@ -567,7 +568,9 @@ All colors MUST be HSL.
 
 .metal-frame.mobile-fullscreen-mode .metal-main-content {
   width: 100%;
-  height: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
+  height: auto;
   margin: 0;
   padding: 0;
   gap: 0;
@@ -575,6 +578,7 @@ All colors MUST be HSL.
   align-items: center;
   justify-content: center;
 }
+
 
 .metal-frame.mobile-fullscreen-mode .metal-game-area {
   background: transparent !important;
@@ -584,6 +588,7 @@ All colors MUST be HSL.
   max-width: 100%;
   width: 100%;
   height: 100%;
+  min-height: 0;
   border-radius: 0;
   display: flex;
   flex-direction: column;
@@ -592,12 +597,13 @@ All colors MUST be HSL.
   justify-content: center;
 }
 
+
 .metal-frame.mobile-fullscreen-mode .game-glow {
   box-shadow: none !important;
 }
 
 /* iOS Fullscreen Simulation */
-.ios-fullscreen-container {
+.mobile-fullscreen-container {
   position: fixed;
   top: 0;
   left: 0;
@@ -627,7 +633,7 @@ All colors MUST be HSL.
 
 /* Force minimal UI on iOS Safari */
 @supports (-webkit-touch-callout: none) {
-  .ios-fullscreen-container {
+  .mobile-fullscreen-container {
     /* Trigger minimal UI mode */
     position: fixed;
     width: 100%;
