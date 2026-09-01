@@ -139,8 +139,11 @@ const physicsFpsForQuality = (level: QualityLevel): number => {
 
 const POWERUP_TELEGRAPH_DELAY_MS = 250;
 // Drop chance ramps across a level: sparse early, generous late. Resets each level.
-const POWERUP_CHANCE_START = 0.02;
-const POWERUP_CHANCE_END = 0.14;
+const POWERUP_CHANCE_START = 0.03;
+const POWERUP_CHANCE_END = 0.16;
+// Gentle pity: a drought slowly raises the chance so dry spells self-correct.
+const POWERUP_PITY_INCREMENT = 0.004;
+const POWERUP_PITY_MAX_BONUS = 0.12;
 const QUMRAN_SEQUENCE: BonusLetterType[] = ["Q", "U", "M", "R", "A", "N"];
 
 type LevelCompletePrompt =
@@ -716,6 +719,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   }, []);
   const bossSpawnedEnemiesRef = useRef<Set<number>>(new Set());
   const firstBossMinionKilledRef = useRef(false);
+  const bricksSinceLastPowerUpRef = useRef(0);
   // Track newly reflected bombs synchronously to avoid stale closure issues
   const newlyReflectedBombIdsRef = useRef<Set<number>>(new Set());
   // Track last reflected attack hit time synchronously to prevent multi-hit in same frame
@@ -2534,6 +2538,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       (count, brick) => count + (brick.isIndestructible ? 0 : 1),
       0,
     );
+    bricksSinceLastPowerUpRef.current = 0;
     return newBricks;
   }, [SCALED_CANVAS_WIDTH, SCALED_CANVAS_HEIGHT, SCALED_PADDLE_WIDTH, SCALED_PADDLE_HEIGHT, SCALED_PADDLE_START_Y, SCALED_BRICK_WIDTH, SCALED_BRICK_HEIGHT, SCALED_BRICK_PADDING, SCALED_BRICK_OFFSET_LEFT, SCALED_BRICK_OFFSET_TOP]);
 
@@ -4303,19 +4308,24 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         let remainingDestructible = 0;
         for (const b of world.bricks) if (b.visible && !b.isIndestructible) remainingDestructible++;
         const levelProgress = Math.max(0, Math.min(1, 1 - remainingDestructible / totalDestructible));
-        const effectiveChance = POWERUP_CHANCE_START + (POWERUP_CHANCE_END - POWERUP_CHANCE_START) * levelProgress;
+        const rampChance = POWERUP_CHANCE_START + (POWERUP_CHANCE_END - POWERUP_CHANCE_START) * levelProgress;
+        const pityBonus = Math.min(POWERUP_PITY_MAX_BONUS, bricksSinceLastPowerUpRef.current * POWERUP_PITY_INCREMENT);
+        const effectiveChance = rampChance + pityBonus;
         const shouldDrop = forcedGuaranteedDrop || Math.random() < effectiveChance;
 
         if (!shouldDrop) {
+          bricksSinceLastPowerUpRef.current += 1;
           continue;
         }
 
         const created = createPowerUp(brick, false, false, gameLoopRef.current?.getTimeScale() ?? 1.0);
         if (!created) {
+          bricksSinceLastPowerUpRef.current += 1;
           continue;
         }
 
         const selectedPowerUps = Array.isArray(created) ? created : [created];
+        bricksSinceLastPowerUpRef.current = 0;
         world.guaranteeNextEligiblePowerUpDrop = false;
         if (forcedOpeningDrop) {
           world.levelOneOpeningGuaranteedDropPending = false;
