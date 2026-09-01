@@ -8909,11 +8909,16 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                 </h1>
               </div>
 
-              {/* Mobile Timer + Stats Row - shown on mobile when frames are visible */}
-              {isMobileDevice && framesVisible && (
+              {/* Unified Mobile HUD Row - in-flow above the playfield (never overlays the canvas) */}
+              {isMobileDevice && (
                 <div
-                  className="flex justify-center items-center gap-4 py-1 pointer-events-none"
-                  style={{ textShadow: "1px 1px 2px rgba(0,0,0,0.8)" }}
+                  className="w-full flex flex-wrap justify-center items-center gap-x-4 gap-y-1 px-4 py-1 pointer-events-none"
+                  style={{
+                    textShadow: "1px 1px 2px rgba(0,0,0,0.8)",
+                    paddingTop: "env(safe-area-inset-top)",
+                    paddingLeft: "env(safe-area-inset-left)",
+                    paddingRight: "env(safe-area-inset-right)",
+                  }}
                 >
                   <div className="retro-pixel-text text-xs" style={{ color: "hsl(180, 70%, 60%)" }}>
                     SCORE: <span style={{ color: "hsl(0, 0%, 95%)" }}>{score.toString().padStart(6, "0")}</span>
@@ -8928,7 +8933,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                   </div>
                   {isDailyChallenge && settings.dailyChallengeConfig?.timeLimit && settings.dailyChallengeConfig.timeLimit > 0 ? (
                     <div
-                      className={`retro-pixel-text text-sm ${Math.max(0, settings.dailyChallengeConfig.timeLimit - totalPlayTime) <= 30 ? "animate-pulse" : ""}`}
+                      className={`retro-pixel-text text-xs ${Math.max(0, settings.dailyChallengeConfig.timeLimit - totalPlayTime) <= 30 ? "animate-pulse" : ""}`}
                       style={{
                         color: Math.max(0, settings.dailyChallengeConfig.timeLimit - totalPlayTime) <= 30
                           ? "hsl(0, 80%, 65%)"
@@ -8938,15 +8943,26 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                       TIME LEFT: {Math.max(0, settings.dailyChallengeConfig.timeLimit - totalPlayTime)}s
                     </div>
                   ) : (
-                    <div
-                      className="retro-pixel-text text-sm"
-                      style={{ color: "hsl(210, 60%, 65%)" }}
-                    >
+                    <div className="retro-pixel-text text-xs" style={{ color: "hsl(210, 60%, 65%)" }}>
                       TIMER: {timer}s
+                    </div>
+                  )}
+                  {boss && bossHitCooldown > 0 && (
+                    <div className="retro-pixel-text text-xs animate-pulse" style={{ color: "hsl(0, 80%, 60%)" }}>
+                      BOSS CD: <span style={{ color: "hsl(0, 80%, 70%)" }}>{(bossHitCooldown / 1000).toFixed(1)}s</span>
+                    </div>
+                  )}
+                  {(BOSS_LEVELS.includes(level) || level === MEGA_BOSS_LEVEL) && hitStreak > 0 && (
+                    <div
+                      className={`retro-pixel-text text-xs ${hitStreak >= 5 ? "animate-pulse" : ""}`}
+                      style={{ color: "hsl(48, 100%, 60%)" }}
+                    >
+                      STREAK: x{hitStreak} (+{hitStreak}%)
                     </div>
                   )}
                 </div>
               )}
+
 
               {/* Main Content with Side Panels */}
               <div className="metal-main-content">
