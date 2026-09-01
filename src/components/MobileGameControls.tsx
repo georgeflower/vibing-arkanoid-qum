@@ -96,13 +96,14 @@ export const MobileGameControls = ({
           style={{ touchAction: "manipulation", top: "calc(env(safe-area-inset-top) + 4px)" }}
 
         >
-          <Pause className="w-6 h-6 text-white/70" />
+          <Pause className="w-5 h-5 text-white/70" />
         </button>
       )}
 
       {/* Music Toggle Button */}
       {gameState === "playing" && (
-        <div className="fixed right-4 top-[116px] z-[100]">
+        <div className="fixed right-2 z-[100]" style={{ top: "calc(env(safe-area-inset-top) + 4px)" }}>
+
           <button
             onTouchStart={(e) => {
               e.stopPropagation();
