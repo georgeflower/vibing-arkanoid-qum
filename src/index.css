@@ -547,6 +547,7 @@ All colors MUST be HSL.
   max-height: 100%;
   margin: 0;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   /* Block all browser gestures in fullscreen */
@@ -597,7 +598,7 @@ All colors MUST be HSL.
 }
 
 /* iOS Fullscreen Simulation */
-.ios-fullscreen-container {
+.mobile-fullscreen-container {
   position: fixed;
   top: 0;
   left: 0;
@@ -627,7 +628,7 @@ All colors MUST be HSL.
 
 /* Force minimal UI on iOS Safari */
 @supports (-webkit-touch-callout: none) {
-  .ios-fullscreen-container {
+  .mobile-fullscreen-container {
     /* Trigger minimal UI mode */
     position: fixed;
     width: 100%;
