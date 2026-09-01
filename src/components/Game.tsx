@@ -8888,7 +8888,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
           ) : (
             <div
               ref={gameContainerRef}
-              className={`metal-frame ${isIOSDevice ? "mobile-fullscreen-mode" : isMobileDevice && isFullscreen ? "mobile-fullscreen-mode" : ""}`}
+              className={`metal-frame ${isMobileDevice ? "mobile-fullscreen-mode" : ""}`}
             >
               {/* Title Bar - Adaptive Visibility (Desktop: only title hides, Mobile: all hides) */}
               <div
