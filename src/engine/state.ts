@@ -137,7 +137,6 @@ export interface GameWorld {
   score: number;
   lives: number;
   levelStartDestructibleCount: number;
-  bricksSinceLastPowerUp: number;
   guaranteeNextEligiblePowerUpDrop: boolean;
   halfwayEventTriggered: boolean;
   levelOneOpeningGuaranteedDropPending: boolean;
@@ -196,7 +195,6 @@ const WORLD_DEFAULTS: Readonly<GameWorld> = Object.freeze({
   score: 0,
   lives: 3,
   levelStartDestructibleCount: 0,
-  bricksSinceLastPowerUp: 0,
   guaranteeNextEligiblePowerUpDrop: false,
   halfwayEventTriggered: false,
   levelOneOpeningGuaranteedDropPending: false,
@@ -270,7 +268,6 @@ export function resetWorld(overrides?: Partial<GameWorld>): void {
   world.score = WORLD_DEFAULTS.score;
   world.lives = WORLD_DEFAULTS.lives;
   world.levelStartDestructibleCount = WORLD_DEFAULTS.levelStartDestructibleCount;
-  world.bricksSinceLastPowerUp = WORLD_DEFAULTS.bricksSinceLastPowerUp;
   world.guaranteeNextEligiblePowerUpDrop = WORLD_DEFAULTS.guaranteeNextEligiblePowerUpDrop;
   world.halfwayEventTriggered = WORLD_DEFAULTS.halfwayEventTriggered;
   world.levelOneOpeningGuaranteedDropPending = WORLD_DEFAULTS.levelOneOpeningGuaranteedDropPending;
