@@ -138,8 +138,9 @@ const physicsFpsForQuality = (level: QualityLevel): number => {
 };
 
 const POWERUP_TELEGRAPH_DELAY_MS = 250;
-const POWERUP_PITY_INCREMENT = 0.012;
-const POWERUP_PITY_MAX_CHANCE = 0.6;
+// Drop chance ramps across a level: sparse early, generous late. Resets each level.
+const POWERUP_CHANCE_START = 0.02;
+const POWERUP_CHANCE_END = 0.14;
 const QUMRAN_SEQUENCE: BonusLetterType[] = ["Q", "U", "M", "R", "A", "N"];
 
 type LevelCompletePrompt =
@@ -4299,14 +4300,14 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
           level === 1 &&
           world.simTimeMs <= world.levelOneOpeningDropDeadlineMs;
         const forcedGuaranteedDrop = forcedOpeningDrop || world.guaranteeNextEligiblePowerUpDrop;
-        const dropChance = Math.min(
-          POWERUP_PITY_MAX_CHANCE,
-          POWERUP_DROP_CHANCE + world.bricksSinceLastPowerUp * POWERUP_PITY_INCREMENT,
-        );
-        const shouldDrop = forcedGuaranteedDrop || Math.random() < dropChance;
+        const totalDestructible = world.levelStartDestructibleCount || 1;
+        let remainingDestructible = 0;
+        for (const b of world.bricks) if (b.visible && !b.isIndestructible) remainingDestructible++;
+        const levelProgress = Math.max(0, Math.min(1, 1 - remainingDestructible / totalDestructible));
+        const effectiveChance = POWERUP_CHANCE_START + (POWERUP_CHANCE_END - POWERUP_CHANCE_START) * levelProgress;
+        const shouldDrop = forcedGuaranteedDrop || Math.random() < effectiveChance;
 
         if (!shouldDrop) {
-          world.bricksSinceLastPowerUp += 1;
           continue;
         }
 
