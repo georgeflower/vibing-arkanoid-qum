@@ -92,7 +92,7 @@ import {
   BRICK_PADDING,
   BRICK_OFFSET_TOP,
   BRICK_OFFSET_LEFT,
-  POWERUP_DROP_CHANCE,
+  
   getHitColor,
   getBrickColors,
   POWERUP_SIZE,
@@ -1786,7 +1786,6 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     );
 
   const resetLevelRewardState = useCallback((targetLevel: number, isFreshRun: boolean = false) => {
-    world.bricksSinceLastPowerUp = 0;
     world.guaranteeNextEligiblePowerUpDrop = false;
     world.halfwayEventTriggered = false;
     world.pendingPowerUpDrops = [];
