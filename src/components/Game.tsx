@@ -8822,12 +8822,13 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     <div
       ref={fullscreenContainerRef}
       className={`flex items-center justify-center ${
-        isIOSDevice
-          ? "ios-fullscreen-container" // Always use iOS container on iOS devices
+        isMobileDevice
+          ? "mobile-fullscreen-container" // Same frameless container on all mobile devices
           : isFullscreen
             ? "h-screen bg-background overflow-hidden"
             : "h-screen overflow-hidden"
       }`}
+
     >
       {/* Mobile fullscreen prompt overlay */}
       {showFullscreenPrompt && isMobileDevice && (
