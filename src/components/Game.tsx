@@ -1467,6 +1467,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   const timerStartedRef = useRef(false);
   const nextLevelRef = useRef<(() => void) | null>(null);
   const handleLevelClearedRef = useRef<(() => void) | null>(null);
+  const checkHalfwayBeatRef = useRef<(() => void) | null>(null);
   const levelClearedHandledRef = useRef(false);
 
   // Fixed-step game loop
@@ -1879,6 +1880,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       }
     },
     handleBossHit,
+    () => checkHalfwayBeatRef.current?.(),
   );
 
   // Adaptive quality system
@@ -3047,6 +3049,28 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     collectedLetters,
   ]);
   handleLevelClearedRef.current = handleLevelCleared;
+
+  // Halfway beat — idempotent; callable from ball, bullet, or explosion brick destruction
+  const checkHalfwayBeat = useCallback(() => {
+    if (world.halfwayEventTriggered || world.levelStartDestructibleCount <= 0) return;
+
+    const remainingDestructible = world.bricks.reduce(
+      (count, brick) => count + (!brick.isIndestructible && brick.visible ? 1 : 0),
+      0,
+    );
+    if (remainingDestructible < world.levelStartDestructibleCount / 2) {
+      world.halfwayEventTriggered = true;
+      world.guaranteeNextEligiblePowerUpDrop = true;
+      renderState.halfwayPulseStartTime = performance.now();
+      soundManager.playHalfwayPulseSound();
+      setBackgroundFlash(0.9);
+      setTimeout(() => setBackgroundFlash(0), 180);
+    }
+  }, [setBackgroundFlash]);
+
+  useEffect(() => {
+    checkHalfwayBeatRef.current = checkHalfwayBeat;
+  }, [checkHalfwayBeat]);
 
   // Reset boss tutorial ref when level changes
   useEffect(() => {
@@ -4334,24 +4358,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       }
     }
 
-    if (
-      !world.halfwayEventTriggered &&
-      world.levelStartDestructibleCount > 0 &&
-      result.bricksDestroyedCount > 0
-    ) {
-      const remainingDestructible = world.bricks.reduce(
-        (count, brick) => count + (!brick.isIndestructible && brick.visible ? 1 : 0),
-        0,
-      );
-      if (remainingDestructible < world.levelStartDestructibleCount / 2) {
-        world.halfwayEventTriggered = true;
-        world.guaranteeNextEligiblePowerUpDrop = true;
-        renderState.halfwayPulseStartTime = performance.now();
-        soundManager.playHalfwayPulseSound();
-        setBackgroundFlash(0.9);
-        setTimeout(() => setBackgroundFlash(0), 180);
-      }
-    }
+    // Halfway beat — only scan on frames where the ball actually destroyed bricks
+    if (result.bricksDestroyedCount > 0) checkHalfwayBeat();
 
     // ═══ Explosive brick visuals ═══
     for (const exp of result.explosiveBrickExplosions) {
@@ -4565,6 +4573,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   }, [
     createPowerUp,
     queueOrSpawnBrickPowerUps,
+    checkHalfwayBeat,
     setPowerUps,
     nextLevel,
     level,
@@ -9062,81 +9071,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                         </div>
                       )}
 
-                    {/* Bonus Letter Floating Text Tutorial - Desktop only */}
-                    {!isMobileDevice && bonusLetterFloatingText?.active && bonusLetters.length > 0 && (
-                      <div className="absolute inset-0 pointer-events-none z-[150]">
-                        {(() => {
-                          const letter = bonusLetters[0];
-                          const elapsed = Date.now() - bonusLetterFloatingText.startTime;
-                          const duration = 4000;
-
-                          if (elapsed >= duration) {
-                            setTimeout(() => setBonusLetterFloatingText(null), 0);
-                            return null;
-                          }
-
-                          const zoomPhase = (elapsed / 500) * Math.PI;
-                          const zoomScale = 1 + Math.sin(zoomPhase) * 0.3;
-                          const opacity =
-                            elapsed < 500 ? elapsed / 500 : elapsed > duration - 500 ? (duration - elapsed) / 500 : 1;
-
-                          return (
-                            <div
-                              className="absolute retro-pixel-text text-center whitespace-nowrap"
-                              style={{
-                                left: `${((letter.x + letter.width / 2) / SCALED_CANVAS_WIDTH) * 100}%`,
-                                top: `${((letter.y - 35) / SCALED_CANVAS_HEIGHT) * 100}%`,
-                                transform: `translateX(-50%) scale(${zoomScale})`,
-                                color: "hsl(48, 100%, 60%)",
-                                textShadow: "0 0 10px hsl(48, 100%, 60%), 0 0 20px hsl(48, 100%, 50%)",
-                                fontSize: "14px",
-                                fontWeight: "bold",
-                                opacity,
-                              }}
-                            >
-                              Catch all letters for megabonus!
-                            </div>
-                          );
-                        })()}
-                      </div>
-                    )}
-
-                    {/* Mobile Bonus Letter Tutorial - Absolute overlay (no layout shift) */}
-                    {isMobileDevice &&
-                      bonusLetterFloatingText?.active &&
-                      bonusLetters.length > 0 &&
-                      (() => {
-                        const elapsed = Date.now() - bonusLetterFloatingText.startTime;
-                        const duration = 4000;
-
-                        if (elapsed >= duration) {
-                          setTimeout(() => setBonusLetterFloatingText(null), 0);
-                          return null;
-                        }
-
-                        const zoomPhase = (elapsed / 500) * Math.PI;
-                        const zoomScale = 1 + Math.sin(zoomPhase) * 0.3;
-                        const opacity =
-                          elapsed < 500 ? elapsed / 500 : elapsed > duration - 500 ? (duration - elapsed) / 500 : 1;
-
-                        return (
-                          <div
-                            className="absolute retro-pixel-text text-xs font-bold pointer-events-none"
-                            style={{
-                              bottom: "28px",
-                              left: "50%",
-                              transform: `translateX(-50%) scale(${zoomScale})`,
-                              zIndex: 20,
-                              color: "hsl(48, 100%, 60%)",
-                              textShadow: "0 0 10px hsl(48, 100%, 60%), 0 0 20px hsl(48, 100%, 50%)",
-                              opacity,
-                              whiteSpace: "nowrap",
-                            }}
-                          >
-                            Catch all letters for megabonus!
-                          </div>
-                        );
-                      })()}
+                    {/* Bonus Letter Hint — rendered below the playfield (see reserved strip after game-glow) */}
 
                     {/* ═══════════════════════════════════════════════════════════════
                          ████████╗ DEBUG OVERLAYS - REMOVE BEFORE PRODUCTION ████████╗
@@ -9347,6 +9282,46 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                       )}
                     </div>
                   )}
+
+                  {/* Bonus Letter Hint - reserved-height row below the power-up timers (no layout shift) */}
+                  <div
+                    className="flex items-center justify-center retro-pixel-text text-xs font-bold pointer-events-none"
+                    style={{
+                      minHeight: "18px",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {bonusLetterFloatingText?.active &&
+                      bonusLetters.length > 0 &&
+                      (() => {
+                        const elapsed = Date.now() - bonusLetterFloatingText.startTime;
+                        const duration = 4000;
+
+                        if (elapsed >= duration) {
+                          setTimeout(() => setBonusLetterFloatingText(null), 0);
+                          return null;
+                        }
+
+                        const zoomPhase = (elapsed / 500) * Math.PI;
+                        const zoomScale = 1 + Math.sin(zoomPhase) * 0.3;
+                        const opacity =
+                          elapsed < 500 ? elapsed / 500 : elapsed > duration - 500 ? (duration - elapsed) / 500 : 1;
+
+                        return (
+                          <span
+                            style={{
+                              display: "inline-block",
+                              transform: `scale(${zoomScale})`,
+                              color: "hsl(48, 100%, 60%)",
+                              textShadow: "0 0 10px hsl(48, 100%, 60%), 0 0 20px hsl(48, 100%, 50%)",
+                              opacity,
+                            }}
+                          >
+                            COLLECT Q-U-M-R-A-N FOR MEGA BONUS!
+                          </span>
+                        );
+                      })()}
+                  </div>
 
                   {/* Boss Victory Celebration Overlay - only shown in normal mode, not Boss Rush */}
                   <BossVictoryOverlay
