@@ -184,6 +184,7 @@ class SoundManager {
   private handleTrackEnd() {
     // Move to next track in sequence
     this.currentTrackIndex = (this.currentTrackIndex + 1) % this.trackUrls.length;
+    this.notifyTrackChange();
     
     // Play next song immediately if music is enabled
     if (this.musicEnabled) {
@@ -311,6 +312,7 @@ class SoundManager {
     
     this.stopBackgroundMusic();
     this.currentTrackIndex = trackIndex;
+    this.notifyTrackChange();
     
     if (wasPlaying && this.musicEnabled) {
       this.playBackgroundMusic();
@@ -322,23 +324,7 @@ class SoundManager {
   }
 
   getTrackNames(): string[] {
-    return [
-      'Pixel Frenzy',
-      'Sound 2',
-      'Level 3',
-      'Level 4',
-      'Level 5',
-      'Level 7',
-      'Turrican',
-      'Flubber Happy',
-      'Boss Chip Atari',
-      'Cave C64',
-      'Cave 2 C64',
-      'Cave Chip Atari',
-      'Cave Chip Atari 2',
-      'Desert Chip Atari 2',
-      'Desert Chip Atari 2-2'
-    ];
+    return this.tracks.map(t => t.name);
   }
 
   playHighScoreMusic() {
