@@ -10,83 +10,54 @@ interface RadioScrollerProps {
   potato?: boolean;
 }
 
+/** Scroll speed in pixels per second. */
+const SPEED = 25;
+
 /**
- * Always-rendered 18px marquee row below the play area. The height is constant
- * whether or not data has loaded so the playfield can never shift.
- * Scrolling is a pure CSS animation - no per-frame JS.
+ * Always-rendered 18px marquee row below the play area showing the last 3
+ * oneliners. The height is constant whether or not data has loaded so the
+ * playfield can never shift. Pure CSS animation - no per-frame JS.
  */
 export function RadioScroller({ enabled, potato = false }: RadioScrollerProps) {
-  const { nowPlaying, rating, timeLeft, oneliners } = useNectarineRadio(enabled);
+  const { oneliners } = useNectarineRadio(enabled);
+  const containerRef = useRef<HTMLDivElement>(null);
   const spanRef = useRef<HTMLSpanElement>(null);
   const pendingRef = useRef<number>(0);
   const [version, setVersion] = useState(0);
-  const [duration, setDuration] = useState(40);
+  const [metrics, setMetrics] = useState({ start: 0, end: 0, duration: 30 });
 
-  // Build the current content signature; new data is buffered and only swapped
-  // in when the scroll cycle completes.
+  const recent = oneliners.slice(0, 3);
+
   const parts: ReactNode[] = [];
-  if (nowPlaying) {
-    let head = `♪ ${nowPlaying.artist} — ${nowPlaying.title}`;
+  recent.forEach((o, i) => {
+    if (i > 0) {
+      parts.push(
+        <span key={`ol-sep-${i}`} style={{ color: "hsl(0, 0%, 55%)" }}>
+          {"   |   "}
+        </span>,
+      );
+    }
     parts.push(
-      <span key="np" style={{ color: "hsl(48, 100%, 60%)" }}>
-        {head}
+      <span key={`ol-user-${i}`} style={{ color: "hsl(300, 70%, 70%)" }}>
+        {`${countryCodeToFlag(o.flag)} [${o.username}] `}
       </span>,
     );
-    if (rating) {
-      parts.push(
-        <span key="rating" style={{ color: "hsl(160, 80%, 55%)" }}>
-          {`  ★${rating.rating.toFixed(2)} (${rating.votes})`}
-        </span>,
-      );
-    }
-    if (timeLeft && timeLeft !== "-") {
-      parts.push(
-        <span key="time" style={{ color: "hsl(200, 90%, 65%)" }}>
-          {`  ·  ${timeLeft} LEFT`}
-        </span>,
-      );
-    }
-  }
-  if (oneliners.length > 0) {
-    if (parts.length > 0) {
-      parts.push(
-        <span key="sep" style={{ color: "hsl(0, 0%, 55%)" }}>
-          {"   ///   "}
-        </span>,
-      );
-    }
-    oneliners.forEach((o, i) => {
-      if (i > 0) {
-        parts.push(
-          <span key={`ol-sep-${i}`} style={{ color: "hsl(0, 0%, 55%)" }}>
-            {"   |   "}
-          </span>,
-        );
-      }
-      parts.push(
-        <span key={`ol-user-${i}`} style={{ color: "hsl(300, 70%, 70%)" }}>
-          {`${countryCodeToFlag(o.flag)} [${o.username}] `}
-        </span>,
-      );
-      parts.push(
-        <span key={`ol-msg-${i}`} style={{ color: "hsl(0, 0%, 85%)" }}>
-          {renderWithSmileys(o.text, potato)}
-        </span>,
-      );
-    });
-  }
+    parts.push(
+      <span key={`ol-msg-${i}`} style={{ color: "hsl(0, 0%, 85%)" }}>
+        {renderWithSmileys(o.text, potato)}
+      </span>,
+    );
+  });
 
-  const signature =
-    (nowPlaying ? `${nowPlaying.songId}|${rating?.rating ?? ""}|${timeLeft}` : "") +
-    "|" +
-    oneliners.map((o) => `${o.username}:${o.text}`).join("~");
+  // Signature depends only on oneliner contents (never on time remaining).
+  const signature = recent.map((o) => `${o.username}:${o.text}`).join("~");
 
   const displayedRef = useRef<{ sig: string; parts: ReactNode[] }>({ sig: "", parts: [] });
   const latestRef = useRef<{ sig: string; parts: ReactNode[] }>({ sig: "", parts: [] });
   latestRef.current = { sig: signature, parts };
 
   // First content shows immediately; later updates wait for animationiteration.
-  if (displayedRef.current.sig === "" && signature.replace(/\|/g, "").length > 0) {
+  if (displayedRef.current.sig === "" && signature.length > 0) {
     displayedRef.current = latestRef.current;
   } else if (displayedRef.current.sig !== signature) {
     pendingRef.current = 1;
@@ -96,11 +67,13 @@ export function RadioScroller({ enabled, potato = false }: RadioScrollerProps) {
 
   useLayoutEffect(() => {
     const el = spanRef.current;
-    if (!el) return;
-    const width = el.scrollWidth;
-    const secs = Math.min(90, Math.max(20, width / 60));
-    setDuration(secs);
-  }, [version, content.length, potato]);
+    const container = containerRef.current;
+    if (!el || !container) return;
+    const spanWidth = el.scrollWidth;
+    const containerWidth = container.clientWidth;
+    const duration = Math.min(180, Math.max(15, (containerWidth + spanWidth) / SPEED));
+    setMetrics({ start: containerWidth, end: -spanWidth, duration });
+  }, [version, content.length, potato, enabled]);
 
   useEffect(() => {
     const el = spanRef.current;
@@ -118,6 +91,7 @@ export function RadioScroller({ enabled, potato = false }: RadioScrollerProps) {
 
   return (
     <div
+      ref={containerRef}
       className="relative overflow-hidden pointer-events-none w-full"
       style={{ height: "18px" }}
       aria-hidden="true"
@@ -128,8 +102,12 @@ export function RadioScroller({ enabled, potato = false }: RadioScrollerProps) {
           className="retro-pixel-text text-[10px] absolute left-0 top-0 whitespace-nowrap radio-marquee"
           style={
             potato
-              ? { animation: "none", maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis" }
-              : { animationDuration: `${duration}s` }
+              ? ({ animation: "none", maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis" } as React.CSSProperties)
+              : ({
+                  animationDuration: `${metrics.duration}s`,
+                  ["--marquee-start" as any]: `${metrics.start}px`,
+                  ["--marquee-end" as any]: `${metrics.end}px`,
+                } as React.CSSProperties)
           }
         >
           {content}
