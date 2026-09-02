@@ -2,7 +2,7 @@
 
 A loving tribute to the legendary **Arkanoid** (Taito, 1986) — rebuilt from scratch as a modern browser game with retro Amiga aesthetics, epic boss battles, and a high-performance canvas engine.
 
-**[▶ Play Now](https://vibing-arkanoid.lovable.app)** · **v0.9.979**
+**[▶ Play Now](https://vibing-arkanoid.lovable.app)** · **v0.9.984**
 
 ![Vibing Arkanoid](src/assets/start-screen-new.webp)
 
@@ -41,7 +41,7 @@ Key technical details:
 - **Spatial hashing** for efficient brick/entity collision lookups
 - **Object pooling** for balls, power-ups, bullets, bombs, enemies, particles, and bonus letters
 - **Cached gradients** and single `Date.now()` per frame to minimize allocations
-- **Adaptive quality system** that scales visual effects (CRT overlay, glow, shadows) based on FPS
+- **Adaptive quality system** that scales visual effects (glow, shadows, resolution) based on measured render performance
 - **Production telemetry** for anonymous performance metrics
 
 ## 🛠️ Tech Stack

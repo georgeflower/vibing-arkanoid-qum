@@ -1,3 +1,6 @@
+// Kill-switch version marker — bump on every release to guarantee byte-level change
+// so browsers re-fetch this script, clear caches, unregister, and reload clients.
+const KILLSWITCH_VERSION = "0.9.984";
 // Kill-switch service worker.
 // The app no longer uses a service worker, but devices that installed the old
 // one are stuck serving a stale cached app shell (users see v0.9.972 forever).
