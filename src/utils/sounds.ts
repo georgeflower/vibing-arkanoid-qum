@@ -1461,7 +1461,9 @@ class SoundManager {
   }
 
   playBossMusic(bossLevel: number) {
+    if (this.musicSource === "radio") return;
     if (!this.musicEnabled) return;
+
     
     // Save current background music state
     const currentTrack = this.musicTracks[this.currentTrackIndex];
