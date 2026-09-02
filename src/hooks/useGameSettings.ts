@@ -10,6 +10,7 @@ export interface GameSettings {
   musicVolume: number; // 0-100
   sfxVolume: number; // 0-100
   currentTrack: number;
+  musicSource: "radio" | "builtin";
   // Video
   qualityLevel: QualityLevel;
   qualityMode: "auto" | "manual";
@@ -32,18 +33,20 @@ const DEFAULT_SETTINGS: GameSettings = {
   musicVolume: 30,
   sfxVolume: 70,
   currentTrack: 0,
+  musicSource: "radio",
   qualityLevel: "high",
   qualityMode: "auto",
   showFpsOverlay: false,
   canvasResolution: "850x650",
 };
 
-export const SOUND_DEFAULTS: Pick<GameSettings, "musicEnabled" | "sfxEnabled" | "musicVolume" | "sfxVolume" | "currentTrack"> = {
+export const SOUND_DEFAULTS: Pick<GameSettings, "musicEnabled" | "sfxEnabled" | "musicVolume" | "sfxVolume" | "currentTrack" | "musicSource"> = {
   musicEnabled: true,
   sfxEnabled: true,
   musicVolume: 30,
   sfxVolume: 70,
   currentTrack: 0,
+  musicSource: "radio",
 };
 
 export const VIDEO_DEFAULTS: Pick<GameSettings, "qualityLevel" | "qualityMode" | "showFpsOverlay"> = {
@@ -61,6 +64,9 @@ export function loadSettings(): GameSettings {
       // Strip removed keys
       const { tutorialEnabled, showQualityIndicator, ...rest } = parsed;
       const merged = { ...DEFAULT_SETTINGS, ...rest };
+      if (merged.musicSource !== "radio" && merged.musicSource !== "builtin") {
+        merged.musicSource = "radio";
+      }
       // Ensure resolution matches quality
       merged.canvasResolution = getResolutionForQuality(merged.qualityLevel);
       return merged;
@@ -101,6 +107,9 @@ async function loadSettingsFromCloud(): Promise<GameSettings | null> {
       const merged = { ...DEFAULT_SETTINGS, ...(data.settings_json as any) };
       // Strip removed keys and enforce resolution
       delete (merged as any).showQualityIndicator;
+      if (merged.musicSource !== "radio" && merged.musicSource !== "builtin") {
+        merged.musicSource = "radio";
+      }
       merged.canvasResolution = getResolutionForQuality(merged.qualityLevel);
       return merged;
     }
@@ -164,11 +173,12 @@ export const useGameSettings = () => {
 
   // Sync sound settings to soundManager on changes
   useEffect(() => {
+    soundManager.setMusicSource(settings.musicSource);
     soundManager.setMusicEnabled(settings.musicEnabled);
     soundManager.setSfxEnabled(settings.sfxEnabled);
     soundManager.setMusicVolume(settings.musicVolume / 100);
     soundManager.setSfxVolume(settings.sfxVolume / 100);
-  }, [settings.musicEnabled, settings.sfxEnabled, settings.musicVolume, settings.sfxVolume]);
+  }, [settings.musicSource, settings.musicEnabled, settings.sfxEnabled, settings.musicVolume, settings.sfxVolume]);
 
   const resetSoundDefaults = useCallback(() => {
     updateSettings(SOUND_DEFAULTS);
