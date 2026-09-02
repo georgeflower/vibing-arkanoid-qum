@@ -20,23 +20,51 @@ class SoundManager {
   private radioAudio: HTMLAudioElement | null = null;
   private readonly radioUrl = 'https://nectarine.inversi0n.org/necta192.mp3';
 
-  private trackUrls = [
-    '/Pixel_Frenzy-2.mp3',
-    '/sound_2.mp3',
-    '/level_3.mp3',
-    '/level_4.mp3',
-    '/level_5.mp3',
-    '/level_7.mp3',
-    '/Turrican.mp3',
-    '/Flubber_Happy_Moderate_Amiga.mp3',
-    '/level_boss_chip_atari.mp3',
-    '/level_cave_c64.mp3',
-    '/level_cave_2_c64.mp3',
-    '/level_cave_chip_atari.mp3',
-    '/level_cave_chip_atari_2.mp3',
-    '/level_dessert_chip_atari_2.mp3',
-    '/level_dessert_chip_atari_2_2.mp3'
+  private tracks: { url: string; name: string }[] = [
+    { url: '/Pixel_Frenzy-2.mp3', name: 'PIXEL FRENZY' },
+    { url: '/sound_2.mp3', name: 'NEON DESCENT' },
+    { url: '/level_3.mp3', name: 'CIRCUIT BREAKER' },
+    { url: '/level_4.mp3', name: 'DEEP SPACE DRIFT' },
+    { url: '/level_5.mp3', name: 'CRYSTAL CAVERN' },
+    { url: '/level_7.mp3', name: 'PLASMA STORM' },
+    { url: '/Turrican.mp3', name: 'TURRICAN' },
+    { url: '/Flubber_Happy_Moderate_Amiga.mp3', name: 'AMIGA BOUNCE' },
+    { url: '/level_boss_chip_atari.mp3', name: 'BOSS: PYRAMID' },
+    { url: '/level_cave_c64.mp3', name: 'CAVERN C64' },
+    { url: '/level_cave_2_c64.mp3', name: 'CAVERN C64 II' },
+    { url: '/level_cave_chip_atari.mp3', name: 'CHIP CAVERN' },
+    { url: '/level_cave_chip_atari_2.mp3', name: 'CHIP CAVERN II' },
+    { url: '/level_dessert_chip_atari_2.mp3', name: 'DESERT CHIP' },
+    { url: '/level_dessert_chip_atari_2_2.mp3', name: 'DESERT CHIP II' },
   ];
+
+  private get trackUrls(): string[] {
+    return this.tracks.map(t => t.url);
+  }
+
+  private trackChangeListeners = new Set<() => void>();
+
+  onTrackChange(cb: () => void) {
+    this.trackChangeListeners.add(cb);
+  }
+
+  offTrackChange(cb: () => void) {
+    this.trackChangeListeners.delete(cb);
+  }
+
+  private notifyTrackChange() {
+    this.trackChangeListeners.forEach(cb => {
+      try { cb(); } catch {}
+    });
+  }
+
+  getTrackName(index: number): string {
+    return this.tracks[index]?.name ?? '';
+  }
+
+  getCurrentTrackName(): string {
+    return this.getTrackName(this.currentTrackIndex);
+  }
 
   private getAudioContext() {
     if (!this.audioContext) {
