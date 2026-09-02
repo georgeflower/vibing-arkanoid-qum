@@ -30,7 +30,8 @@ export const useBullets = (
   onBrickDestroyedByTurret?: () => void,
   onLevelComplete?: () => void,
   onTurretDepleted?: () => void,
-  onBossHit?: (x: number, y: number, isSuper: boolean) => void
+  onBossHit?: (x: number, y: number, isSuper: boolean) => void,
+  onBrickDestroyed?: () => void
 ) => {
   const fireBullets = useCallback((paddle: Paddle) => {
     if (!paddle.hasTurrets || !paddle.turretShots || paddle.turretShots <= 0) return;
@@ -252,6 +253,7 @@ export const useBullets = (
               updatedBrick.visible = false;
               setScore(prev => prev + brick.points);
               onBrickDestroyedByTurret?.();
+              onBrickDestroyed?.();
             }
 
             return updatedBrick;
