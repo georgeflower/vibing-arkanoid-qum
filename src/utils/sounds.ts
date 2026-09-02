@@ -1348,6 +1348,7 @@ class SoundManager {
   }
 
   nextTrack() {
+    if (this.musicSource === "radio") return;
     this.stopBackgroundMusic();
     this.currentTrackIndex = (this.currentTrackIndex + 1) % this.trackUrls.length;
     
@@ -1357,6 +1358,7 @@ class SoundManager {
   }
 
   previousTrack() {
+    if (this.musicSource === "radio") return;
     this.stopBackgroundMusic();
     this.currentTrackIndex = (this.currentTrackIndex - 1 + this.trackUrls.length) % this.trackUrls.length;
     
@@ -1367,6 +1369,14 @@ class SoundManager {
 
   toggleMute() {
     this.musicEnabled = !this.musicEnabled;
+    if (this.musicSource === "radio") {
+      if (!this.musicEnabled) {
+        this.stopRadio();
+      } else {
+        this.startRadio();
+      }
+      return this.musicEnabled;
+    }
     if (!this.musicEnabled) {
       this.pauseBackgroundMusic();
       // Also pause boss music if playing
@@ -1383,6 +1393,7 @@ class SoundManager {
     }
     return this.musicEnabled;
   }
+
 
   // Menu UI sounds
   playMenuClick() {
