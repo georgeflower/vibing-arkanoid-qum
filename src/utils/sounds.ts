@@ -60,10 +60,74 @@ class SoundManager {
 
   public unlockAudio() {
     this.getAudioContext();
+    if (this.musicEnabled && this.musicSource === "radio") {
+      this.startRadio();
+    }
+  }
+
+  // ---- Radio (Nectarine demoscene stream) ----
+
+  setMusicSource(source: "radio" | "builtin") {
+    if (source === this.musicSource) return;
+    this.musicSource = source;
+    if (source === "radio") {
+      this.stopBackgroundMusicTracks();
+      if (this.bossMusic) {
+        this.bossMusic.pause();
+        this.bossMusic.currentTime = 0;
+      }
+      if (this.highScoreMusic && !this.highScoreMusic.paused) {
+        this.highScoreMusic.pause();
+        this.highScoreMusic.currentTime = 0;
+      }
+      if (this.musicEnabled) this.startRadio();
+    } else {
+      this.stopRadio();
+      if (this.musicEnabled) this.playBackgroundMusic();
+    }
+  }
+
+  getMusicSource(): "radio" | "builtin" {
+    return this.musicSource;
+  }
+
+  private ensureRadio() {
+    if (!this.radioAudio) {
+      const audio = new Audio(this.radioUrl);
+      audio.preload = "none";
+      audio.volume = this.musicVolume;
+      this.radioAudio = audio;
+    }
+  }
+
+  startRadio() {
+    if (!this.musicEnabled || this.musicSource !== "radio") return;
+    this.ensureRadio();
+    this.radioAudio?.play().catch(() => {});
+  }
+
+  stopRadio() {
+    this.radioAudio?.pause();
+  }
+
+  private stopBackgroundMusicTracks() {
+    this.musicTracks.forEach(track => {
+      if (track && !track.paused) {
+        this.fadeOutAudio(track);
+      } else if (track) {
+        track.pause();
+        track.currentTime = 0;
+      }
+    });
   }
 
   playBackgroundMusic(level: number = 1) {
     if (!this.musicEnabled) return;
+    if (this.musicSource === "radio") {
+      this.startRadio();
+      return;
+    }
+
 
     // Stop all currently playing tracks first
     this.musicTracks.forEach((track, index) => {
