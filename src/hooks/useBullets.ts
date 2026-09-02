@@ -296,7 +296,7 @@ export const useBullets = (
       result.push(bullet);
     }
     world.bullets = result;
-  }, [setBricks, setScore, onLevelComplete, onBossHit, onBrickDestroyedByTurret]);
+  }, [setBricks, setScore, onLevelComplete, onBossHit, onBrickDestroyedByTurret, onBrickDestroyed]);
 
   return {
     fireBullets,
