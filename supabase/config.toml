@@ -11,3 +11,7 @@ verify_jwt = false
 
 [functions.delete-account]
 verify_jwt = false
+
+[functions.xml-proxy]
+verify_jwt = false
+

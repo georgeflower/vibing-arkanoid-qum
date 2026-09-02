@@ -16,6 +16,10 @@ class SoundManager {
   private bossMusicSource: MediaElementAudioSourceNode | null = null;
   private masterSfxGain: GainNode | null = null;
   private activeFades = new Map<HTMLAudioElement, ReturnType<typeof setInterval>>();
+  private musicSource: "radio" | "builtin" = "radio";
+  private radioAudio: HTMLAudioElement | null = null;
+  private readonly radioUrl = 'https://nectarine.inversi0n.org/necta192.mp3';
+
   private trackUrls = [
     '/Pixel_Frenzy-2.mp3',
     '/sound_2.mp3',
@@ -56,10 +60,74 @@ class SoundManager {
 
   public unlockAudio() {
     this.getAudioContext();
+    if (this.musicEnabled && this.musicSource === "radio") {
+      this.startRadio();
+    }
+  }
+
+  // ---- Radio (Nectarine demoscene stream) ----
+
+  setMusicSource(source: "radio" | "builtin") {
+    if (source === this.musicSource) return;
+    this.musicSource = source;
+    if (source === "radio") {
+      this.stopBackgroundMusicTracks();
+      if (this.bossMusic) {
+        this.bossMusic.pause();
+        this.bossMusic.currentTime = 0;
+      }
+      if (this.highScoreMusic && !this.highScoreMusic.paused) {
+        this.highScoreMusic.pause();
+        this.highScoreMusic.currentTime = 0;
+      }
+      if (this.musicEnabled) this.startRadio();
+    } else {
+      this.stopRadio();
+      if (this.musicEnabled) this.playBackgroundMusic();
+    }
+  }
+
+  getMusicSource(): "radio" | "builtin" {
+    return this.musicSource;
+  }
+
+  private ensureRadio() {
+    if (!this.radioAudio) {
+      const audio = new Audio(this.radioUrl);
+      audio.preload = "none";
+      audio.volume = this.musicVolume;
+      this.radioAudio = audio;
+    }
+  }
+
+  startRadio() {
+    if (!this.musicEnabled || this.musicSource !== "radio") return;
+    this.ensureRadio();
+    this.radioAudio?.play().catch(() => {});
+  }
+
+  stopRadio() {
+    this.radioAudio?.pause();
+  }
+
+  private stopBackgroundMusicTracks() {
+    this.musicTracks.forEach(track => {
+      if (track && !track.paused) {
+        this.fadeOutAudio(track);
+      } else if (track) {
+        track.pause();
+        track.currentTime = 0;
+      }
+    });
   }
 
   playBackgroundMusic(level: number = 1) {
     if (!this.musicEnabled) return;
+    if (this.musicSource === "radio") {
+      this.startRadio();
+      return;
+    }
+
 
     // Stop all currently playing tracks first
     this.musicTracks.forEach((track, index) => {
@@ -152,22 +220,23 @@ class SoundManager {
 
 
   stopBackgroundMusic() {
-    this.musicTracks.forEach(track => {
-      if (track && !track.paused) {
-        this.fadeOutAudio(track);
-      } else if (track) {
-        track.pause();
-        track.currentTime = 0;
-      }
-    });
+    if (this.musicSource === "radio") {
+      this.stopRadio();
+      return;
+    }
+    this.stopBackgroundMusicTracks();
   }
 
   setMusicEnabled(enabled: boolean) {
     this.musicEnabled = enabled;
     if (!enabled) {
+      this.stopRadio();
       this.stopBackgroundMusic();
+    } else if (this.musicSource === "radio") {
+      this.startRadio();
     }
   }
+
 
   getMusicEnabled(): boolean {
     return this.musicEnabled;
@@ -189,7 +258,9 @@ class SoundManager {
     });
     if (this.highScoreMusic) this.highScoreMusic.volume = this.musicVolume;
     if (this.bossMusic) this.bossMusic.volume = this.musicVolume;
+    if (this.radioAudio) this.radioAudio.volume = this.musicVolume;
   }
+
 
   getMusicVolume(): number {
     return this.musicVolume;
@@ -205,7 +276,9 @@ class SoundManager {
   }
 
   setCurrentTrack(trackIndex: number) {
+    if (this.musicSource === "radio") return;
     const wasPlaying = this.musicTracks[this.currentTrackIndex] && 
+
                        !this.musicTracks[this.currentTrackIndex].paused;
     
     this.stopBackgroundMusic();
@@ -241,7 +314,9 @@ class SoundManager {
   }
 
   playHighScoreMusic() {
+    if (this.musicSource === "radio") return;
     this.stopBackgroundMusic(); // Stop game music
+
     if (!this.highScoreMusic) {
       this.highScoreMusic = new Audio('/High_score.mp3');
       this.highScoreMusic.loop = true;
@@ -1122,6 +1197,9 @@ class SoundManager {
         track.volume = this.musicVolume * 0.2;
       }
     });
+    if (this.radioAudio) {
+      this.radioAudio.volume = this.musicVolume * 0.2;
+    }
 
     const audio = new Audio('/siren-alarm-boss.ogg');
     audio.volume = Math.min(1, 0.7 * this.sfxVolume);
@@ -1133,10 +1211,14 @@ class SoundManager {
           track.volume = this.musicVolume;
         }
       });
+      if (this.radioAudio) {
+        this.radioAudio.volume = this.musicVolume;
+      }
     });
 
     audio.play().catch(err => console.log('Boss intro sound failed:', err));
   }
+
 
 
   playPyramidBulletSound() {
@@ -1273,6 +1355,7 @@ class SoundManager {
   }
 
   nextTrack() {
+    if (this.musicSource === "radio") return;
     this.stopBackgroundMusic();
     this.currentTrackIndex = (this.currentTrackIndex + 1) % this.trackUrls.length;
     
@@ -1282,6 +1365,7 @@ class SoundManager {
   }
 
   previousTrack() {
+    if (this.musicSource === "radio") return;
     this.stopBackgroundMusic();
     this.currentTrackIndex = (this.currentTrackIndex - 1 + this.trackUrls.length) % this.trackUrls.length;
     
@@ -1292,6 +1376,14 @@ class SoundManager {
 
   toggleMute() {
     this.musicEnabled = !this.musicEnabled;
+    if (this.musicSource === "radio") {
+      if (!this.musicEnabled) {
+        this.stopRadio();
+      } else {
+        this.startRadio();
+      }
+      return this.musicEnabled;
+    }
     if (!this.musicEnabled) {
       this.pauseBackgroundMusic();
       // Also pause boss music if playing
@@ -1308,6 +1400,7 @@ class SoundManager {
     }
     return this.musicEnabled;
   }
+
 
   // Menu UI sounds
   playMenuClick() {
@@ -1368,7 +1461,9 @@ class SoundManager {
   }
 
   playBossMusic(bossLevel: number) {
+    if (this.musicSource === "radio") return;
     if (!this.musicEnabled) return;
+
     
     // Save current background music state
     const currentTrack = this.musicTracks[this.currentTrackIndex];
@@ -1423,6 +1518,8 @@ class SoundManager {
   }
 
   stopBossMusic() {
+    if (this.musicSource === "radio") return;
+
     if (this.bossMusic && !this.bossMusic.paused) {
       const bossRef = this.bossMusic;
       const sourceRef = this.bossMusicSource;
