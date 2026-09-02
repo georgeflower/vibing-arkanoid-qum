@@ -179,6 +179,7 @@ class SoundManager {
       this.cancelFade(track);
       track.play().catch(err => console.log('Audio play failed:', err));
     }
+    this.notifyTrackChange();
   }
 
   private handleTrackEnd() {
@@ -1381,6 +1382,7 @@ class SoundManager {
     if (this.musicSource === "radio") return;
     this.stopBackgroundMusic();
     this.currentTrackIndex = (this.currentTrackIndex + 1) % this.trackUrls.length;
+    this.notifyTrackChange();
     
     if (this.musicEnabled) {
       this.playBackgroundMusic();
@@ -1391,6 +1393,7 @@ class SoundManager {
     if (this.musicSource === "radio") return;
     this.stopBackgroundMusic();
     this.currentTrackIndex = (this.currentTrackIndex - 1 + this.trackUrls.length) % this.trackUrls.length;
+    this.notifyTrackChange();
     
     if (this.musicEnabled) {
       this.playBackgroundMusic();
