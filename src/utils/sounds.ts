@@ -1197,6 +1197,9 @@ class SoundManager {
         track.volume = this.musicVolume * 0.2;
       }
     });
+    if (this.radioAudio) {
+      this.radioAudio.volume = this.musicVolume * 0.2;
+    }
 
     const audio = new Audio('/siren-alarm-boss.ogg');
     audio.volume = Math.min(1, 0.7 * this.sfxVolume);
@@ -1208,10 +1211,14 @@ class SoundManager {
           track.volume = this.musicVolume;
         }
       });
+      if (this.radioAudio) {
+        this.radioAudio.volume = this.musicVolume;
+      }
     });
 
     audio.play().catch(err => console.log('Boss intro sound failed:', err));
   }
+
 
 
   playPyramidBulletSound() {
