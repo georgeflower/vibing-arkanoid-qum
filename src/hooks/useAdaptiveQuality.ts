@@ -142,49 +142,51 @@ function persistQuality(quality: QualityLevel): void {
 }
 
 function detectIntegratedGPU(): boolean {
-  if (cachedGPUDetection !== null) {
-    return cachedGPUDetection;
-  }
-
-  try {
-    const canvas = document.createElement("canvas");
-    const webglCtx = canvas.getContext("webgl");
-    const gl = (webglCtx ?? (canvas.getContext("experimental-webgl") as WebGLRenderingContext | null)) as WebGLRenderingContext | null;
-
-    if (!gl) {
-      cachedGPUDetection = false;
-      return false;
-    }
-
-    const debugInfo = gl.getExtension("WEBGL_debug_renderer_info");
-
-    if (!debugInfo) {
-      const loseContext = gl.getExtension("WEBGL_lose_context");
-      if (loseContext) loseContext.loseContext();
-      cachedGPUDetection = false;
-      return false;
-    }
-
-    const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL).toLowerCase();
-    const integratedIndicators = ["intel", "uhd", "iris", "arc", "integrated"];
-    const isIntegrated = integratedIndicators.some((indicator) => renderer.includes(indicator));
-
-    const loseContext = gl.getExtension("WEBGL_lose_context");
-    if (loseContext) loseContext.loseContext();
-
-    cachedGPUDetection = isIntegrated;
-    return isIntegrated;
-  } catch {
-    cachedGPUDetection = false;
-    return false;
-  }
+  // DISABLED: integrated-GPU detection caused capable machines to start capped at
+  // medium. Auto mode now starts at high and steps down only on measured FPS.
+  // try {
+  //   const canvas = document.createElement("canvas");
+  //   const webglCtx = canvas.getContext("webgl");
+  //   const gl = (webglCtx ?? (canvas.getContext("experimental-webgl") as WebGLRenderingContext | null)) as WebGLRenderingContext | null;
+  //
+  //   if (!gl) {
+  //     cachedGPUDetection = false;
+  //     return false;
+  //   }
+  //
+  //   const debugInfo = gl.getExtension("WEBGL_debug_renderer_info");
+  //
+  //   if (!debugInfo) {
+  //     const loseContext = gl.getExtension("WEBGL_lose_context");
+  //     if (loseContext) loseContext.loseContext();
+  //     cachedGPUDetection = false;
+  //     return false;
+  //   }
+  //
+  //   const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL).toLowerCase();
+  //   const integratedIndicators = ["intel", "uhd", "iris", "arc", "integrated"];
+  //   const isIntegrated = integratedIndicators.some((indicator) => renderer.includes(indicator));
+  //
+  //   const loseContext = gl.getExtension("WEBGL_lose_context");
+  //   if (loseContext) loseContext.loseContext();
+  //
+  //   cachedGPUDetection = isIntegrated;
+  //   return isIntegrated;
+  // } catch {
+  //   cachedGPUDetection = false;
+  //   return false;
+  // }
+  return false;
 }
 
 function detectLowEndDevice(): boolean {
-  const lowCores = (navigator.hardwareConcurrency ?? UNKNOWN_CORE_COUNT_FALLBACK) <= DEFAULT_LOW_END_CORE_COUNT;
-  const deviceMemory = (navigator as Navigator & { deviceMemory?: number }).deviceMemory;
-  const lowMemory = deviceMemory !== undefined && deviceMemory <= 4;
-  return lowCores || lowMemory;
+  // DISABLED: low-end heuristic (core count / device memory) started weak-but-capable
+  // devices at medium. Auto mode now starts at high and steps down only on measured FPS.
+  // const lowCores = (navigator.hardwareConcurrency ?? UNKNOWN_CORE_COUNT_FALLBACK) <= DEFAULT_LOW_END_CORE_COUNT;
+  // const deviceMemory = (navigator as Navigator & { deviceMemory?: number }).deviceMemory;
+  // const lowMemory = deviceMemory !== undefined && deviceMemory <= 4;
+  // return lowCores || lowMemory;
+  return false;
 }
 
 // Health ratio thresholds for adaptive quality selection
@@ -207,12 +209,16 @@ export const useAdaptiveQuality = (options: AdaptiveQualityOptions = {}) => {
     enableLogging = true,
   } = options;
 
-  // GPU detection: force medium on integrated GPUs
+  // Detection refs retained (functions now return false) so the GPU toast effect stays intact.
   const hasIntegratedGPU = useRef(detectIntegratedGPU()).current;
   const isLowEndDevice = useRef(detectLowEndDevice()).current;
   const storedQuality = useRef(getStoredQuality()).current;
-  const maxInitialQuality = !ENABLE_HIGH_QUALITY || hasIntegratedGPU ? "medium" : "high";
-  const preferredInitialQuality = storedQuality ?? (isLowEndDevice ? "medium" : initialQuality);
+  // DISABLED: hardware-based clamps — auto mode starts at high (subject to ENABLE_HIGH_QUALITY)
+  // and steps down only on measured FPS.
+  // const maxInitialQuality = !ENABLE_HIGH_QUALITY || hasIntegratedGPU ? "medium" : "high";
+  // const preferredInitialQuality = storedQuality ?? (isLowEndDevice ? "medium" : initialQuality);
+  const maxInitialQuality = !ENABLE_HIGH_QUALITY ? "medium" : "high";
+  const preferredInitialQuality = storedQuality ?? initialQuality;
   const forcedInitial = clampQualityLevel(preferredInitialQuality, maxInitialQuality);
 
   const [quality, setQuality] = useState<QualityLevel>(forcedInitial);
