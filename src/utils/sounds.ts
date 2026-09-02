@@ -220,22 +220,23 @@ class SoundManager {
 
 
   stopBackgroundMusic() {
-    this.musicTracks.forEach(track => {
-      if (track && !track.paused) {
-        this.fadeOutAudio(track);
-      } else if (track) {
-        track.pause();
-        track.currentTime = 0;
-      }
-    });
+    if (this.musicSource === "radio") {
+      this.stopRadio();
+      return;
+    }
+    this.stopBackgroundMusicTracks();
   }
 
   setMusicEnabled(enabled: boolean) {
     this.musicEnabled = enabled;
     if (!enabled) {
+      this.stopRadio();
       this.stopBackgroundMusic();
+    } else if (this.musicSource === "radio") {
+      this.startRadio();
     }
   }
+
 
   getMusicEnabled(): boolean {
     return this.musicEnabled;
