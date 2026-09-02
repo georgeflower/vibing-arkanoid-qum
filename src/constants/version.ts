@@ -1,6 +1,18 @@
-export const GAME_VERSION = "0.9.983";
+export const GAME_VERSION = "0.9.984";
 
 export const CHANGELOG = [
+  {
+    version: "0.9.984",
+    changes: [
+      "Fixed: Android now uses the same frameless fullscreen mobile layout as iPhone — no metal frame, canvas fills the viewport",
+      "Fixed: Mobile stats HUD now sits in its own reserved row above the playfield instead of overlaying bricks and the paddle",
+      "Fixed: Power-up timers and the QUMRAN bonus-letter hint now live in reserved strips below the playfield — no more covering the action or shifting the canvas",
+      "Fixed: Halfway-beat banner now triggers when turret bullets (or explosions) destroy bricks, not just ball hits",
+      "Improved: Power-up drop rate rebalanced — chance ramps from sparse to generous across each level, with a gentle pity so dry spells self-correct",
+      "Improved: Mobile performance — rendering now matches your screen's native refresh rate (90/120Hz) when quality allows, with smarter resolution scaling",
+      "Improved: Adaptive quality is now based purely on measured performance — auto mode starts at high on every device instead of guessing from hardware detection",
+    ],
+  },
   {
     version: "0.9.983",
     changes: [
