@@ -1518,6 +1518,8 @@ class SoundManager {
   }
 
   stopBossMusic() {
+    if (this.musicSource === "radio") return;
+
     if (this.bossMusic && !this.bossMusic.paused) {
       const bossRef = this.bossMusic;
       const sourceRef = this.bossMusicSource;
