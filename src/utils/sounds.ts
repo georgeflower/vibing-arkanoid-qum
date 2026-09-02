@@ -258,7 +258,9 @@ class SoundManager {
     });
     if (this.highScoreMusic) this.highScoreMusic.volume = this.musicVolume;
     if (this.bossMusic) this.bossMusic.volume = this.musicVolume;
+    if (this.radioAudio) this.radioAudio.volume = this.musicVolume;
   }
+
 
   getMusicVolume(): number {
     return this.musicVolume;
