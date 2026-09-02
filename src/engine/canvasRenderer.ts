@@ -2216,7 +2216,10 @@ export function renderFrame(
     const instructionY2 = height * 0.83;
     const instructionY3 = height * 0.88;
     const text1 = "USE A AND D OR LEFT AND RIGHT TO CHANGE THE ANGLE";
-    const text2 = "MUSIC: N - NEXT | B - PREVIOUS | M - MUTE/UNMUTE | P - PAUSE";
+    const text2 =
+      soundManager.getMusicSource() === "radio"
+        ? "MUSIC: M - MUTE/UNMUTE | P - PAUSE"
+        : "MUSIC: N - NEXT | B - PREVIOUS | M - MUTE/UNMUTE | P - PAUSE";
     const text3 = "F - FULLSCREEN | ESC - RELEASE MOUSE";
 
     ctx.fillStyle = "rgba(80, 80, 80, 0.8)";
