@@ -16,6 +16,10 @@ class SoundManager {
   private bossMusicSource: MediaElementAudioSourceNode | null = null;
   private masterSfxGain: GainNode | null = null;
   private activeFades = new Map<HTMLAudioElement, ReturnType<typeof setInterval>>();
+  private musicSource: "radio" | "builtin" = "radio";
+  private radioAudio: HTMLAudioElement | null = null;
+  private readonly radioUrl = 'https://nectarine.inversi0n.org/necta192.mp3';
+
   private trackUrls = [
     '/Pixel_Frenzy-2.mp3',
     '/sound_2.mp3',
