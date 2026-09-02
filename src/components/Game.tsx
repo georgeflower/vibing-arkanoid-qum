@@ -153,6 +153,7 @@ type LevelCompletePrompt =
   | { kind: "fallback"; headline: string; detail: string };
 
 import { assignPowerUpsToBricks, reassignPowerUpsToBricks } from "@/utils/powerUpAssignment";
+import { RadioScroller } from "@/components/RadioScroller";
 import { MEGA_BOSS_LEVEL, MEGA_BOSS_CONFIG } from "@/constants/megaBossConfig";
 import {
   createMegaBoss,
@@ -9330,6 +9331,14 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                         );
                       })()}
                   </div>
+
+                  {/* Nectarine radio info scroller - always-rendered 18px row (no layout shift) */}
+                  <RadioScroller
+                    enabled={gameSettingsData.musicSource === "radio"}
+                    potato={qualitySettings.level === "potato"}
+                  />
+
+
 
                   {/* Boss Victory Celebration Overlay - only shown in normal mode, not Boss Rush */}
                   <BossVictoryOverlay

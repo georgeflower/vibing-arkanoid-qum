@@ -696,3 +696,20 @@ All colors MUST be HSL.
 .boss-rush-scrollbar {
   scrollbar-color: hsl(15, 70%, 50%) hsl(210, 20%, 15%);
 }
+
+/* Nectarine radio info scroller (pure CSS marquee, no per-frame JS) */
+@keyframes radio-marquee-scroll {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+.radio-marquee {
+  will-change: transform;
+  animation-name: radio-marquee-scroll;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}

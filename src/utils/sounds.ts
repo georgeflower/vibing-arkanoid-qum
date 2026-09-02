@@ -1204,8 +1204,9 @@ class SoundManager {
     const audio = new Audio('/siren-alarm-boss.ogg');
     audio.volume = Math.min(1, 0.7 * this.sfxVolume);
 
-    // Restore music volume after boss intro sound ends
-    audio.addEventListener('ended', () => {
+    // Restore music volume on a timer so a missing 'ended' event can never
+    // leave the music/radio permanently ducked.
+    const restore = () => {
       this.musicTracks.forEach((track) => {
         if (track) {
           track.volume = this.musicVolume;
@@ -1214,6 +1215,14 @@ class SoundManager {
       if (this.radioAudio) {
         this.radioAudio.volume = this.musicVolume;
       }
+    };
+
+    let restoreTimer = window.setTimeout(restore, 4000);
+    audio.addEventListener('loadedmetadata', () => {
+      const d = audio.duration;
+      const delay = Number.isFinite(d) && d > 0 ? d * 1000 + 150 : 4000;
+      clearTimeout(restoreTimer);
+      restoreTimer = window.setTimeout(restore, delay);
     });
 
     audio.play().catch(err => console.log('Boss intro sound failed:', err));
