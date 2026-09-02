@@ -9331,6 +9331,14 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                       })()}
                   </div>
 
+                  {/* Nectarine radio info scroller - always-rendered 18px row (no layout shift) */}
+                  <RadioScroller
+                    enabled={gameSettingsData.musicSource === "radio"}
+                    potato={qualitySettings.level === "potato"}
+                  />
+
+
+
                   {/* Boss Victory Celebration Overlay - only shown in normal mode, not Boss Rush */}
                   <BossVictoryOverlay
                     active={bossVictoryOverlayActive && !isBossRush}
