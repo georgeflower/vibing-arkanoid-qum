@@ -13,6 +13,7 @@ import startScreenWebp from "@/assets/start-screen-new.webp";
 import { HighScoreDisplay } from "./HighScoreDisplay";
 import { Changelog } from "./Changelog";
 import { soundManager } from "@/utils/sounds";
+import { useGameSettings } from "@/hooks/useGameSettings";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { GAME_VERSION } from "@/constants/version";
@@ -43,6 +44,12 @@ interface MainMenuProps {
 
 export const MainMenu = ({ onStartGame, difficulty, setDifficulty, gameMode, setGameMode, startingLevel, setStartingLevel, hasStartedOnce, setHasStartedOnce }: MainMenuProps) => {
   const navigate = useNavigate();
+  const {
+    settings: gameSettings,
+    updateSettings: updateGameSettings,
+    saveSettings: saveGameSettings,
+  } = useGameSettings();
+  const musicSource = gameSettings.musicSource;
   const [showSettings, setShowSettings] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
   const [showHighScores, setShowHighScores] = useState(false);
