@@ -1467,6 +1467,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   const timerStartedRef = useRef(false);
   const nextLevelRef = useRef<(() => void) | null>(null);
   const handleLevelClearedRef = useRef<(() => void) | null>(null);
+  const checkHalfwayBeatRef = useRef<(() => void) | null>(null);
   const levelClearedHandledRef = useRef(false);
 
   // Fixed-step game loop
@@ -1879,6 +1880,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       }
     },
     handleBossHit,
+    () => checkHalfwayBeatRef.current?.(),
   );
 
   // Adaptive quality system
@@ -3047,6 +3049,28 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     collectedLetters,
   ]);
   handleLevelClearedRef.current = handleLevelCleared;
+
+  // Halfway beat — idempotent; callable from ball, bullet, or explosion brick destruction
+  const checkHalfwayBeat = useCallback(() => {
+    if (world.halfwayEventTriggered || world.levelStartDestructibleCount <= 0) return;
+
+    const remainingDestructible = world.bricks.reduce(
+      (count, brick) => count + (!brick.isIndestructible && brick.visible ? 1 : 0),
+      0,
+    );
+    if (remainingDestructible < world.levelStartDestructibleCount / 2) {
+      world.halfwayEventTriggered = true;
+      world.guaranteeNextEligiblePowerUpDrop = true;
+      renderState.halfwayPulseStartTime = performance.now();
+      soundManager.playHalfwayPulseSound();
+      setBackgroundFlash(0.9);
+      setTimeout(() => setBackgroundFlash(0), 180);
+    }
+  }, [setBackgroundFlash]);
+
+  useEffect(() => {
+    checkHalfwayBeatRef.current = checkHalfwayBeat;
+  }, [checkHalfwayBeat]);
 
   // Reset boss tutorial ref when level changes
   useEffect(() => {
@@ -4334,24 +4358,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       }
     }
 
-    if (
-      !world.halfwayEventTriggered &&
-      world.levelStartDestructibleCount > 0 &&
-      result.bricksDestroyedCount > 0
-    ) {
-      const remainingDestructible = world.bricks.reduce(
-        (count, brick) => count + (!brick.isIndestructible && brick.visible ? 1 : 0),
-        0,
-      );
-      if (remainingDestructible < world.levelStartDestructibleCount / 2) {
-        world.halfwayEventTriggered = true;
-        world.guaranteeNextEligiblePowerUpDrop = true;
-        renderState.halfwayPulseStartTime = performance.now();
-        soundManager.playHalfwayPulseSound();
-        setBackgroundFlash(0.9);
-        setTimeout(() => setBackgroundFlash(0), 180);
-      }
-    }
+    // Halfway beat — only scan on frames where the ball actually destroyed bricks
+    if (result.bricksDestroyedCount > 0) checkHalfwayBeat();
 
     // ═══ Explosive brick visuals ═══
     for (const exp of result.explosiveBrickExplosions) {
