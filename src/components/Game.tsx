@@ -8936,27 +8936,27 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                   }}
                 >
                   <div
-                    className="w-full flex flex-nowrap justify-center items-center gap-x-3 px-2 py-1 pointer-events-none"
+                    className="w-full flex flex-wrap content-center justify-center items-center gap-x-3 gap-y-0 px-2 pointer-events-none"
                     style={{
-                      height: "22px",
+                      height: "40px",
                       overflow: "hidden",
                       textShadow: "1px 1px 2px rgba(0,0,0,0.8)",
                     }}
                   >
-                    <div className="retro-pixel-text text-xs" style={{ color: "hsl(180, 70%, 60%)", whiteSpace: "nowrap" }}>
+                    <div className="retro-pixel-text text-[11px]" style={{ color: "hsl(180, 70%, 60%)", whiteSpace: "nowrap" }}>
                       SCORE: <span style={{ color: "hsl(0, 0%, 95%)" }}>{score.toString().padStart(6, "0")}</span>
                     </div>
                     {!isDailyChallenge && (
-                      <div className="retro-pixel-text text-xs" style={{ color: "hsl(30, 75%, 55%)", whiteSpace: "nowrap" }}>
+                      <div className="retro-pixel-text text-[11px]" style={{ color: "hsl(30, 75%, 55%)", whiteSpace: "nowrap" }}>
                         LV: <span style={{ color: "hsl(0, 0%, 95%)" }}>{level.toString().padStart(2, "0")}</span>
                       </div>
                     )}
-                    <div className="retro-pixel-text text-xs" style={{ color: "hsl(0, 70%, 55%)", whiteSpace: "nowrap" }}>
+                    <div className="retro-pixel-text text-[11px]" style={{ color: "hsl(0, 70%, 55%)", whiteSpace: "nowrap" }}>
                       LIVES: <span style={{ color: "hsl(0, 0%, 95%)" }}>{lives}</span>
                     </div>
                     {isDailyChallenge && settings.dailyChallengeConfig?.timeLimit && settings.dailyChallengeConfig.timeLimit > 0 ? (
                       <div
-                        className={`retro-pixel-text text-xs ${Math.max(0, settings.dailyChallengeConfig.timeLimit - totalPlayTime) <= 30 ? "animate-pulse" : ""}`}
+                        className={`retro-pixel-text text-[11px] ${Math.max(0, settings.dailyChallengeConfig.timeLimit - totalPlayTime) <= 30 ? "animate-pulse" : ""}`}
                         style={{
                           color: Math.max(0, settings.dailyChallengeConfig.timeLimit - totalPlayTime) <= 30
                             ? "hsl(0, 80%, 65%)"
@@ -8967,18 +8967,18 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                         TIME LEFT: {Math.max(0, settings.dailyChallengeConfig.timeLimit - totalPlayTime)}s
                       </div>
                     ) : (
-                      <div className="retro-pixel-text text-xs" style={{ color: "hsl(210, 60%, 65%)", whiteSpace: "nowrap" }}>
+                      <div className="retro-pixel-text text-[11px]" style={{ color: "hsl(210, 60%, 65%)", whiteSpace: "nowrap" }}>
                         TIMER: {timer}s
                       </div>
                     )}
                     {boss && bossHitCooldown > 0 && (
-                      <div className="retro-pixel-text text-xs animate-pulse" style={{ color: "hsl(0, 80%, 60%)", whiteSpace: "nowrap" }}>
+                      <div className="retro-pixel-text text-[11px] animate-pulse" style={{ color: "hsl(0, 80%, 60%)", whiteSpace: "nowrap" }}>
                         CD <span style={{ color: "hsl(0, 80%, 70%)" }}>{(bossHitCooldown / 1000).toFixed(1)}</span>
                       </div>
                     )}
                     {(BOSS_LEVELS.includes(level) || level === MEGA_BOSS_LEVEL) && hitStreak > 0 && (
                       <div
-                        className={`retro-pixel-text text-xs ${hitStreak >= 5 ? "animate-pulse" : ""}`}
+                        className={`retro-pixel-text text-[11px] ${hitStreak >= 5 ? "animate-pulse" : ""}`}
                         style={{ color: "hsl(48, 100%, 60%)", whiteSpace: "nowrap" }}
                       >
                         x{hitStreak} +{hitStreak}%
