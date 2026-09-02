@@ -4573,6 +4573,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   }, [
     createPowerUp,
     queueOrSpawnBrickPowerUps,
+    checkHalfwayBeat,
     setPowerUps,
     nextLevel,
     level,
