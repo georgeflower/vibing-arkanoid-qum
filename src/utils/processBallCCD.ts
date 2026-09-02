@@ -330,11 +330,16 @@ export function processBallCCD(
   // safety: clamp per-substep travel
   const maxAllowed = minBrickDimension * maxSubstepTravelFactor;
   const travelThisSubstep = Math.hypot(ball.dx * subDt, ball.dy * subDt);
+  // Speed before the anti-tunneling clamp — restored on the returned ball so the
+  // safety clamp slows the sweep but never permanently slows the ball.
+  const preClampSpeed = Math.hypot(ball.dx, ball.dy);
+  let speedWasClamped = false;
   if (travelThisSubstep > maxAllowed) {
     // warn by increasing substeps if caller can adapt; here we cap the movement vector
     const scale = maxAllowed / travelThisSubstep;
     ball.dx *= scale;
     ball.dy *= scale;
+    speedWasClamped = true;
   }
 
   const perfStart = debug ? performance.now() : 0;
@@ -743,6 +748,16 @@ export function processBallCCD(
     ball.y = pos0.y;
     // after substep continue to next substep (ball.dx/dy already updated)
   } // end substeps loop
+
+  // Restore the pre-clamp speed magnitude (direction from the resolved sweep)
+  if (speedWasClamped) {
+    const finalSpeed = Math.hypot(ball.dx, ball.dy);
+    if (finalSpeed > 0 && preClampSpeed > 0) {
+      const restore = preClampSpeed / finalSpeed;
+      ball.dx *= restore;
+      ball.dy *= restore;
+    }
+  }
 
   // Return a copy of the ball to avoid returning the reusable object
   // (which would be overwritten on next call)

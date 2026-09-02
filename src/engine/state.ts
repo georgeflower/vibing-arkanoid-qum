@@ -342,3 +342,8 @@ export function spawnScorePopup(x: number, y: number, value: number, text: strin
   slot.startTime = performance.now();
   slot.life = 800;
 }
+
+// Dev-only: expose the engine world for debugging/instrumentation in the browser console.
+if (import.meta.env.DEV && typeof window !== "undefined") {
+  (window as unknown as { __world?: typeof world }).__world = world;
+}

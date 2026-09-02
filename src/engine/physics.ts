@@ -857,10 +857,10 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
           ccdResult.ball.lastPaddleHitTime = nowCorner;
           ccdResult.ball.lastGravityResetTime = nowCorner;
 
-          // Normalize speed
+          // Normalize speed bidirectionally (same rule as the flat paddle surface)
           const currentSpdCorner = Math.hypot(ccdResult.ball.dx, ccdResult.ball.dy);
           const targetSpdCorner = ccdResult.ball.speed;
-          if (currentSpdCorner > 0 && currentSpdCorner > targetSpdCorner) {
+          if (currentSpdCorner > 0 && Math.abs(currentSpdCorner - targetSpdCorner) > 0.01) {
             const scaleCorner = targetSpdCorner / currentSpdCorner;
             ccdResult.ball.dx *= scaleCorner;
             ccdResult.ball.dy *= scaleCorner;
@@ -1354,7 +1354,17 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
     if (r.ball && !r.ball.waitingToLaunch) {
       const timeSinceCollision = world.simTimeMs - (r.ball.lastGravityResetTime ?? 0);
       if (timeSinceCollision > GRAVITY_DELAY_MS) {
-        r.ball.dy += BALL_GRAVITY;
+        // Frame-rate independent: BALL_GRAVITY is tuned per 60Hz frame.
+        const speedBefore = Math.hypot(r.ball.dx, r.ball.dy);
+        r.ball.dy += BALL_GRAVITY * dtSeconds * 60;
+        // Gravity may only BEND the trajectory, never change its magnitude —
+        // otherwise speed drifts up during rallies and snaps back on paddle hits.
+        const speedAfter = Math.hypot(r.ball.dx, r.ball.dy);
+        if (speedBefore > 0 && speedAfter > 0) {
+          const scale = speedBefore / speedAfter;
+          r.ball.dx *= scale;
+          r.ball.dy *= scale;
+        }
       }
     }
   }
