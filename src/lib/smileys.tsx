@@ -163,14 +163,20 @@ function smileyToRegexPart(code: string): string {
  */
 export function buildSmileyRegex(flags: string): RegExp {
   const codes = Object.keys(SMILEYS).sort((a, b) => b.length - a.length);
-  return new RegExp(codes.map(smileyToRegexPart).join("|"), flags);
+  try {
+    return new RegExp(codes.map(smileyToRegexPart).join("|"), flags);
+  } catch {
+    // Safari < 16.4 throws on lookbehind assertions — fall back to plain codes.
+    return new RegExp(codes.map(escapeRegex).join("|"), flags);
+  }
 }
 
 // Build a single regex once, sorted longest-first so e.g. ":facepalm2:" wins over ":facepalm:"
 const SMILEY_PATTERN = buildSmileyRegex("gi");
 
-export function renderWithSmileys(text: string): ReactNode[] {
+export function renderWithSmileys(text: string, plain = false): ReactNode[] {
   if (!text) return [];
+  if (plain) return [text];
   const out: ReactNode[] = [];
   let last = 0;
   let key = 0;
@@ -186,8 +192,8 @@ export function renderWithSmileys(text: string): ReactNode[] {
         src={SMILEYS[canonical]}
         alt={canonical}
         title={canonical}
-        loading="lazy"
-        className="inline-block h-4 align-text-bottom mx-0.5"
+        loading="eager"
+        className="inline-block h-3.5 align-text-bottom mx-0.5"
       />,
     );
     last = m.index + code.length;
