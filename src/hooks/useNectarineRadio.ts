@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   fetchEndpoint,
   parseXml,
@@ -15,74 +15,96 @@ interface Rating {
   votes: number;
 }
 
+export interface RadioState {
+  nowPlaying: NowPlaying | null;
+  rating: Rating | null;
+  oneliners: OnelinerEntry[];
+  timeLeft: string;
+}
+
 const POLL_MS = 30_000;
+
+// Module-level singleton store so multiple components share one polling loop.
+let state: RadioState = { nowPlaying: null, rating: null, oneliners: [], timeLeft: "-" };
+const listeners = new Set<() => void>();
+let subscribers = 0;
+let timers: ReturnType<typeof setInterval>[] = [];
+let lastSongId = "";
+
+function setState(patch: Partial<RadioState>) {
+  state = { ...state, ...patch };
+  listeners.forEach((l) => l());
+}
+
+async function pollQueue() {
+  try {
+    const doc = parseXml(await fetchEndpoint("queue"));
+    const np = parseNowPlaying(doc);
+    if (!np) return;
+    setState({ nowPlaying: np });
+    if (np.songId && np.songId !== lastSongId) {
+      lastSongId = np.songId;
+      setState({ rating: null });
+      try {
+        const r = await songRating(np.songId);
+        if (r) setState({ rating: r });
+      } catch {
+        /* silent */
+      }
+    }
+  } catch {
+    /* silent */
+  }
+}
+
+async function pollOneliner() {
+  try {
+    const doc = parseXml(await fetchEndpoint("oneliner"));
+    const list = parseOneliners(doc);
+    if (list.length > 0) setState({ oneliners: list });
+  } catch {
+    /* silent */
+  }
+}
+
+function startPolling() {
+  pollQueue();
+  pollOneliner();
+  timers = [
+    setInterval(pollQueue, POLL_MS),
+    setInterval(pollOneliner, POLL_MS),
+    setInterval(() => {
+      const np = state.nowPlaying;
+      setState({ timeLeft: np ? computeTimeLeft(np.playstart, np.lengthSec) : "-" });
+    }, 1000),
+  ];
+}
+
+function stopPolling() {
+  timers.forEach(clearInterval);
+  timers = [];
+}
 
 /**
  * Polls the Nectarine demovibes API for now-playing info and oneliners.
- * Everything fails silently: previous values are kept on any error.
+ * Shared across all consumers; everything fails silently.
  */
-export function useNectarineRadio(enabled: boolean) {
-  const [nowPlaying, setNowPlaying] = useState<NowPlaying | null>(null);
-  const [rating, setRating] = useState<Rating | null>(null);
-  const [oneliners, setOneliners] = useState<OnelinerEntry[]>([]);
-  const [timeLeft, setTimeLeft] = useState<string>("-");
-
-  const nowPlayingRef = useRef<NowPlaying | null>(null);
-  const lastSongIdRef = useRef<string>("");
+export function useNectarineRadio(enabled: boolean): RadioState {
+  const [snapshot, setSnapshot] = useState<RadioState>(state);
 
   useEffect(() => {
     if (!enabled) return;
-    let cancelled = false;
-
-    const pollQueue = async () => {
-      try {
-        const doc = parseXml(await fetchEndpoint("queue"));
-        const np = parseNowPlaying(doc);
-        if (cancelled || !np) return;
-        nowPlayingRef.current = np;
-        setNowPlaying(np);
-        if (np.songId && np.songId !== lastSongIdRef.current) {
-          lastSongIdRef.current = np.songId;
-          setRating(null);
-          try {
-            const r = await songRating(np.songId);
-            if (!cancelled && r) setRating(r);
-          } catch {
-            /* silent */
-          }
-        }
-      } catch {
-        /* silent */
-      }
-    };
-
-    const pollOneliner = async () => {
-      try {
-        const doc = parseXml(await fetchEndpoint("oneliner"));
-        const list = parseOneliners(doc);
-        if (!cancelled && list.length > 0) setOneliners(list);
-      } catch {
-        /* silent */
-      }
-    };
-
-    pollQueue();
-    pollOneliner();
-
-    const qId = setInterval(pollQueue, POLL_MS);
-    const oId = setInterval(pollOneliner, POLL_MS);
-    const tId = setInterval(() => {
-      const np = nowPlayingRef.current;
-      setTimeLeft(np ? computeTimeLeft(np.playstart, np.lengthSec) : "-");
-    }, 1000);
-
+    const listener = () => setSnapshot(state);
+    listeners.add(listener);
+    subscribers += 1;
+    if (subscribers === 1) startPolling();
+    setSnapshot(state);
     return () => {
-      cancelled = true;
-      clearInterval(qId);
-      clearInterval(oId);
-      clearInterval(tId);
+      listeners.delete(listener);
+      subscribers -= 1;
+      if (subscribers === 0) stopPolling();
     };
   }, [enabled]);
 
-  return { nowPlaying, rating, timeLeft, oneliners };
+  return snapshot;
 }

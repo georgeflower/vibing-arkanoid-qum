@@ -700,10 +700,10 @@ All colors MUST be HSL.
 /* Nectarine radio info scroller (pure CSS marquee, no per-frame JS) */
 @keyframes radio-marquee-scroll {
   from {
-    transform: translateX(100%);
+    transform: translateX(var(--marquee-start, 100%));
   }
   to {
-    transform: translateX(-100%);
+    transform: translateX(var(--marquee-end, -100%));
   }
 }
 

@@ -267,34 +267,61 @@ export const SettingsDialog = ({
         </div>
       </div>
 
-      {/* Track selector */}
+      {/* Music source */}
       <div className="space-y-2">
         <Label className="retro-pixel-text text-xs" style={{ color: "hsl(0, 0%, 85%)" }}>
-          Select Song
+          Music Source
         </Label>
         <RadioGroup
-          value={draft.currentTrack.toString()}
-          onValueChange={(v) => {
-            const idx = parseInt(v);
-            updateDraft({ currentTrack: idx });
-          }}
-          disabled={!draft.musicEnabled}
-          className="space-y-1 max-h-40 overflow-y-auto custom-scrollbar pr-1"
+          value={draft.musicSource}
+          onValueChange={(v) => updateDraft({ musicSource: v as "radio" | "builtin" })}
+          className="space-y-1"
         >
-          {trackNames.map((name, index) => (
-            <div key={index} className="flex items-center space-x-2">
-              <RadioGroupItem value={index.toString()} id={`st-${index}`} />
-              <Label
-                htmlFor={`st-${index}`}
-                className={`cursor-pointer retro-pixel-text text-[10px] ${!draft.musicEnabled ? "opacity-50" : ""}`}
-                style={{ color: "hsl(0, 0%, 85%)" }}
-              >
-                {name}
-              </Label>
-            </div>
-          ))}
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="radio" id="ms-radio" />
+            <Label htmlFor="ms-radio" className="cursor-pointer retro-pixel-text text-[10px]" style={{ color: "hsl(0, 0%, 85%)" }}>
+              Nectarine Radio
+            </Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="builtin" id="ms-builtin" />
+            <Label htmlFor="ms-builtin" className="cursor-pointer retro-pixel-text text-[10px]" style={{ color: "hsl(0, 0%, 85%)" }}>
+              Game Music
+            </Label>
+          </div>
         </RadioGroup>
       </div>
+
+      {/* Track selector - built-in music only */}
+      {draft.musicSource === "builtin" && (
+        <div className="space-y-2">
+          <Label className="retro-pixel-text text-xs" style={{ color: "hsl(0, 0%, 85%)" }}>
+            Select Song
+          </Label>
+          <RadioGroup
+            value={draft.currentTrack.toString()}
+            onValueChange={(v) => {
+              const idx = parseInt(v);
+              updateDraft({ currentTrack: idx });
+            }}
+            disabled={!draft.musicEnabled}
+            className="space-y-1 max-h-40 overflow-y-auto custom-scrollbar pr-1"
+          >
+            {trackNames.map((name, index) => (
+              <div key={index} className="flex items-center space-x-2">
+                <RadioGroupItem value={index.toString()} id={`st-${index}`} />
+                <Label
+                  htmlFor={`st-${index}`}
+                  className={`cursor-pointer retro-pixel-text text-[10px] ${!draft.musicEnabled ? "opacity-50" : ""}`}
+                  style={{ color: "hsl(0, 0%, 85%)" }}
+                >
+                  {name}
+                </Label>
+              </div>
+            ))}
+          </RadioGroup>
+        </div>
+      )}
 
       {/* Reset */}
       <Button

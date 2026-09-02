@@ -14,6 +14,7 @@ import type { Brick, BonusLetterType, Particle } from "@/types/game";
 import { isMegaBoss, type MegaBoss } from "@/utils/megaBossUtils";
 import { brickRenderer } from "@/utils/brickLayerCache";
 import { particlePool } from "@/utils/particlePool";
+import { soundManager } from "@/utils/sounds";
 
 // Defensive helper for canvas arc calls (prevents DOMException on negative/non-finite radius)
 const safeArcRadius = (r: number): number => (Number.isFinite(r) ? Math.max(0.001, r) : 0.001);
@@ -2216,7 +2217,10 @@ export function renderFrame(
     const instructionY2 = height * 0.83;
     const instructionY3 = height * 0.88;
     const text1 = "USE A AND D OR LEFT AND RIGHT TO CHANGE THE ANGLE";
-    const text2 = "MUSIC: N - NEXT | B - PREVIOUS | M - MUTE/UNMUTE | P - PAUSE";
+    const text2 =
+      soundManager.getMusicSource() === "radio"
+        ? "MUSIC: M - MUTE/UNMUTE | P - PAUSE"
+        : "MUSIC: N - NEXT | B - PREVIOUS | M - MUTE/UNMUTE | P - PAUSE";
     const text3 = "F - FULLSCREEN | ESC - RELEASE MOUSE";
 
     ctx.fillStyle = "rgba(80, 80, 80, 0.8)";

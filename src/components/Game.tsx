@@ -154,6 +154,7 @@ type LevelCompletePrompt =
 
 import { assignPowerUpsToBricks, reassignPowerUpsToBricks } from "@/utils/powerUpAssignment";
 import { RadioScroller } from "@/components/RadioScroller";
+import { MusicInfoRow } from "@/components/MusicInfoRow";
 import { MEGA_BOSS_LEVEL, MEGA_BOSS_CONFIG } from "@/constants/megaBossConfig";
 import {
   createMegaBoss,
@@ -9292,47 +9293,21 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                     </div>
                   )}
 
-                  {/* Bonus Letter Hint - reserved-height row below the power-up timers (no layout shift) */}
-                  <div
-                    className="flex items-center justify-center retro-pixel-text text-xs font-bold pointer-events-none"
-                    style={{
-                      minHeight: "18px",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {bonusLetterFloatingText?.active &&
-                      bonusLetters.length > 0 &&
-                      (() => {
-                        const elapsed = Date.now() - bonusLetterFloatingText.startTime;
-                        const duration = 4000;
+                  {/* Combined music / bonus-letter info row - fixed 18px, never scrolls */}
+                  <MusicInfoRow
+                    musicSource={gameSettingsData.musicSource}
+                    hintText={(() => {
+                      if (!bonusLetterFloatingText?.active || bonusLetters.length === 0) return null;
+                      const elapsed = Date.now() - bonusLetterFloatingText.startTime;
+                      if (elapsed >= 4000) {
+                        setTimeout(() => setBonusLetterFloatingText(null), 0);
+                        return null;
+                      }
+                      return "COLLECT Q-U-M-R-A-N FOR MEGA BONUS!";
+                    })()}
+                  />
 
-                        if (elapsed >= duration) {
-                          setTimeout(() => setBonusLetterFloatingText(null), 0);
-                          return null;
-                        }
-
-                        const zoomPhase = (elapsed / 500) * Math.PI;
-                        const zoomScale = 1 + Math.sin(zoomPhase) * 0.3;
-                        const opacity =
-                          elapsed < 500 ? elapsed / 500 : elapsed > duration - 500 ? (duration - elapsed) / 500 : 1;
-
-                        return (
-                          <span
-                            style={{
-                              display: "inline-block",
-                              transform: `scale(${zoomScale})`,
-                              color: "hsl(48, 100%, 60%)",
-                              textShadow: "0 0 10px hsl(48, 100%, 60%), 0 0 20px hsl(48, 100%, 50%)",
-                              opacity,
-                            }}
-                          >
-                            COLLECT Q-U-M-R-A-N FOR MEGA BONUS!
-                          </span>
-                        );
-                      })()}
-                  </div>
-
-                  {/* Nectarine radio info scroller - always-rendered 18px row (no layout shift) */}
+                  {/* Nectarine oneliner marquee - always-rendered 18px row (no layout shift) */}
                   <RadioScroller
                     enabled={gameSettingsData.musicSource === "radio"}
                     potato={qualitySettings.level === "potato"}

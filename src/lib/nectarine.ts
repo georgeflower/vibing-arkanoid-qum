@@ -51,16 +51,19 @@ function parseLength(raw: string | null): number {
 
 export function parseNowPlaying(doc: Document): NowPlaying | null {
   try {
-    const entry = doc.querySelector("now > entry") ?? doc.querySelector("now entry");
+    // CSS selectors on XML documents are unreliable across browsers - use tag traversal.
+    const nowEl = doc.getElementsByTagName("now")[0];
+    if (!nowEl) return null;
+    const entry = nowEl.getElementsByTagName("entry")[0];
     if (!entry) return null;
-    const artists = Array.from(entry.querySelectorAll("artist"))
+    const artists = Array.from(entry.getElementsByTagName("artist"))
       .map((a) => (a.textContent ?? "").trim())
       .filter(Boolean);
-    const songEl = entry.querySelector("song");
+    const songEl = entry.getElementsByTagName("song")[0];
     const title = (songEl?.textContent ?? "").trim();
     const songId = songEl?.getAttribute("id") ?? "";
     const lengthSec = parseLength(songEl?.getAttribute("length") ?? null);
-    const playstart = (entry.querySelector("playstart")?.textContent ?? "").trim();
+    const playstart = (entry.getElementsByTagName("playstart")[0]?.textContent ?? "").trim();
     if (!title && artists.length === 0) return null;
     return { artist: artists.join(" & "), title, songId, lengthSec, playstart };
   } catch {
@@ -70,17 +73,17 @@ export function parseNowPlaying(doc: Document): NowPlaying | null {
 
 export function parseOneliners(doc: Document): OnelinerEntry[] {
   try {
-    const entries = Array.from(doc.querySelectorAll("entry")).slice(0, 8);
+    const entries = Array.from(doc.getElementsByTagName("entry")).slice(0, 8);
     return entries.map((entry) => {
       const authorEl =
-        entry.querySelector("author") ??
-        entry.querySelector("user") ??
-        entry.querySelector("username") ??
-        entry.querySelector("nick");
+        entry.getElementsByTagName("author")[0] ??
+        entry.getElementsByTagName("user")[0] ??
+        entry.getElementsByTagName("username")[0] ??
+        entry.getElementsByTagName("nick")[0];
       const username = (authorEl?.textContent ?? "").trim() || "anon";
       const text = (
-        entry.querySelector("message")?.textContent ??
-        entry.querySelector("text")?.textContent ??
+        entry.getElementsByTagName("message")[0]?.textContent ??
+        entry.getElementsByTagName("text")[0]?.textContent ??
         ""
       ).trim();
       const flag = authorEl?.getAttribute("flag") ?? "";
