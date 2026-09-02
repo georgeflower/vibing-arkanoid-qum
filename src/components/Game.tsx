@@ -153,6 +153,7 @@ type LevelCompletePrompt =
   | { kind: "fallback"; headline: string; detail: string };
 
 import { assignPowerUpsToBricks, reassignPowerUpsToBricks } from "@/utils/powerUpAssignment";
+import { RadioScroller } from "@/components/RadioScroller";
 import { MEGA_BOSS_LEVEL, MEGA_BOSS_CONFIG } from "@/constants/megaBossConfig";
 import {
   createMegaBoss,
