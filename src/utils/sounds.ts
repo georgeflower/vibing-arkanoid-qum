@@ -314,7 +314,9 @@ class SoundManager {
   }
 
   playHighScoreMusic() {
+    if (this.musicSource === "radio") return;
     this.stopBackgroundMusic(); // Stop game music
+
     if (!this.highScoreMusic) {
       this.highScoreMusic = new Audio('/High_score.mp3');
       this.highScoreMusic.loop = true;
