@@ -276,7 +276,9 @@ class SoundManager {
   }
 
   setCurrentTrack(trackIndex: number) {
+    if (this.musicSource === "radio") return;
     const wasPlaying = this.musicTracks[this.currentTrackIndex] && 
+
                        !this.musicTracks[this.currentTrackIndex].paused;
     
     this.stopBackgroundMusic();
