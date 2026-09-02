@@ -14,6 +14,7 @@ import type { Brick, BonusLetterType, Particle } from "@/types/game";
 import { isMegaBoss, type MegaBoss } from "@/utils/megaBossUtils";
 import { brickRenderer } from "@/utils/brickLayerCache";
 import { particlePool } from "@/utils/particlePool";
+import { soundManager } from "@/utils/sounds";
 
 // Defensive helper for canvas arc calls (prevents DOMException on negative/non-finite radius)
 const safeArcRadius = (r: number): number => (Number.isFinite(r) ? Math.max(0.001, r) : 0.001);
