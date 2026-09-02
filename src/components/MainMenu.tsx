@@ -769,6 +769,30 @@ export const MainMenu = ({ onStartGame, difficulty, setDifficulty, gameMode, set
             </RadioGroup>
           </div>
 
+          {/* Music Source */}
+          <div className="space-y-2 pt-2 border-t border-[hsl(200,70%,50%)]/30">
+            <Label className="text-white text-base">Music</Label>
+            <div className="flex items-center gap-2">
+              {(["radio", "builtin"] as const).map((src) => (
+                <Button
+                  key={src}
+                  type="button"
+                  variant={musicSource === src ? "default" : "outline"}
+                  size="sm"
+                  className="text-xs"
+                  onClick={() => {
+                    soundManager.playMenuClick();
+                    const next = { ...gameSettings, musicSource: src };
+                    updateGameSettings({ musicSource: src });
+                    saveGameSettings(next);
+                  }}
+                >
+                  {src === "radio" ? "RADIO" : "GAME"}
+                </Button>
+              ))}
+            </div>
+          </div>
+
           {/* Game Mode */}
           <div className="space-y-2 pt-2 border-t border-[hsl(200,70%,50%)]/30">
             <Label className="text-white text-base">Game Mode</Label>
