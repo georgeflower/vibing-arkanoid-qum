@@ -9283,6 +9283,46 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                     </div>
                   )}
 
+                  {/* Bonus Letter Hint - reserved-height row below the power-up timers (no layout shift) */}
+                  <div
+                    className="flex items-center justify-center retro-pixel-text text-xs font-bold pointer-events-none"
+                    style={{
+                      minHeight: "18px",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {bonusLetterFloatingText?.active &&
+                      bonusLetters.length > 0 &&
+                      (() => {
+                        const elapsed = Date.now() - bonusLetterFloatingText.startTime;
+                        const duration = 4000;
+
+                        if (elapsed >= duration) {
+                          setTimeout(() => setBonusLetterFloatingText(null), 0);
+                          return null;
+                        }
+
+                        const zoomPhase = (elapsed / 500) * Math.PI;
+                        const zoomScale = 1 + Math.sin(zoomPhase) * 0.3;
+                        const opacity =
+                          elapsed < 500 ? elapsed / 500 : elapsed > duration - 500 ? (duration - elapsed) / 500 : 1;
+
+                        return (
+                          <span
+                            style={{
+                              display: "inline-block",
+                              transform: `scale(${zoomScale})`,
+                              color: "hsl(48, 100%, 60%)",
+                              textShadow: "0 0 10px hsl(48, 100%, 60%), 0 0 20px hsl(48, 100%, 50%)",
+                              opacity,
+                            }}
+                          >
+                            COLLECT Q-U-M-R-A-N FOR MEGA BONUS!
+                          </span>
+                        );
+                      })()}
+                  </div>
+
                   {/* Boss Victory Celebration Overlay - only shown in normal mode, not Boss Rush */}
                   <BossVictoryOverlay
                     active={bossVictoryOverlayActive && !isBossRush}
