@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { memo, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useNectarineRadio } from "@/hooks/useNectarineRadio";
 import { soundManager } from "@/utils/sounds";
 
@@ -6,6 +6,8 @@ interface MusicInfoRowProps {
   musicSource: "radio" | "builtin";
   /** Bonus-letter hint text; when set it takes over the block */
   hintText?: string | null;
+  /** Pause the title ping-pong scroll during active gameplay */
+  paused?: boolean;
 }
 
 /** Scroll speed (px/sec) for the ping-pong title scroll. */
@@ -29,7 +31,7 @@ const ROW_STYLE: React.CSSProperties = {
  * artist / title / rating+time. Nothing wraps; a long radio title
  * scrolls back and forth (ping-pong) inside its row.
  */
-export function MusicInfoRow({ musicSource, hintText }: MusicInfoRowProps) {
+export const MusicInfoRow = memo(function MusicInfoRow({ musicSource, hintText, paused }: MusicInfoRowProps) {
   const isRadio = musicSource === "radio";
   const { nowPlaying, rating, timeLeft } = useNectarineRadio(isRadio);
   const [trackName, setTrackName] = useState(() => soundManager.getCurrentTrackName());
@@ -107,7 +109,7 @@ export function MusicInfoRow({ musicSource, hintText }: MusicInfoRowProps) {
           >
             <span
               ref={titleSpanRef}
-              className={pingpong ? "title-pingpong" : undefined}
+              className={pingpong ? `title-pingpong${paused ? " is-paused" : ""}` : undefined}
               style={
                 pingpong
                   ? ({
@@ -151,6 +153,6 @@ export function MusicInfoRow({ musicSource, hintText }: MusicInfoRowProps) {
       )}
     </div>
   );
-}
+});
 
 export default MusicInfoRow;
