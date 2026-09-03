@@ -111,6 +111,9 @@ class SoundManager {
       if (this.musicEnabled) this.startRadio();
     } else {
       this.stopRadio();
+      // Always start the title/menu theme when switching to game music.
+      this.currentTrackIndex = TITLE_TRACK_INDEX;
+      this.notifyTrackChange();
       if (this.musicEnabled) this.playBackgroundMusic();
     }
   }
