@@ -17,6 +17,7 @@ export interface OnelinerEntry {
   username: string;
   text: string;
   flag: string;
+  time: string;
 }
 
 export async function fetchEndpoint(path: string): Promise<string> {
