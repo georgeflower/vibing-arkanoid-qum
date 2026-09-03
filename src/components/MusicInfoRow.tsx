@@ -153,6 +153,6 @@ export const MusicInfoRow = memo(function MusicInfoRow({ musicSource, hintText, 
       )}
     </div>
   );
-}
+});
 
 export default MusicInfoRow;
