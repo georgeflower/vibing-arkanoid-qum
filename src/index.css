@@ -697,3 +697,17 @@ All colors MUST be HSL.
   scrollbar-color: hsl(15, 70%, 50%) hsl(210, 20%, 15%);
 }
 
+
+/* Radio title row: ping-pong scroll with hold at both ends (alternate direction) */
+@keyframes title-pingpong {
+  0%, 15% { transform: translateX(0); }
+  85%, 100% { transform: translateX(var(--title-shift, 0px)); }
+}
+
+.title-pingpong {
+  animation-name: title-pingpong;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
+  will-change: transform;
+}
