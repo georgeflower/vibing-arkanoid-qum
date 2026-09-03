@@ -1,4 +1,8 @@
 // Simple sound effects using Web Audio API
+
+/** Index of the title/menu theme in the track list (Pixel Frenzy). */
+export const TITLE_TRACK_INDEX = 0;
+
 class SoundManager {
   private audioContext: AudioContext | null = null;
   private musicTracks: HTMLAudioElement[] = [];
@@ -111,6 +115,9 @@ class SoundManager {
       if (this.musicEnabled) this.startRadio();
     } else {
       this.stopRadio();
+      // Always start the title/menu theme when switching to game music.
+      this.currentTrackIndex = TITLE_TRACK_INDEX;
+      this.notifyTrackChange();
       if (this.musicEnabled) this.playBackgroundMusic();
     }
   }
