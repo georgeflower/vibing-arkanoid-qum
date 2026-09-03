@@ -109,7 +109,7 @@ export const MusicInfoRow = memo(function MusicInfoRow({ musicSource, hintText, 
           >
             <span
               ref={titleSpanRef}
-              className={pingpong ? "title-pingpong" : undefined}
+              className={pingpong ? `title-pingpong${paused ? " is-paused" : ""}` : undefined}
               style={
                 pingpong
                   ? ({
