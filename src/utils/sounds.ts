@@ -1,4 +1,8 @@
 // Simple sound effects using Web Audio API
+
+/** Index of the title/menu theme in the track list (Pixel Frenzy). */
+export const TITLE_TRACK_INDEX = 0;
+
 class SoundManager {
   private audioContext: AudioContext | null = null;
   private musicTracks: HTMLAudioElement[] = [];
