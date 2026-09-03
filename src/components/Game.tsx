@@ -896,6 +896,13 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     startTime: number;
   } | null>(null);
 
+  // Auto-clear the bonus-letter hint 4s after it appears (effect-driven, no setState during render)
+  useEffect(() => {
+    if (!bonusLetterFloatingText?.active) return;
+    const t = setTimeout(() => setBonusLetterFloatingText(null), 4000);
+    return () => clearTimeout(t);
+  }, [bonusLetterFloatingText?.startTime]);
+
   // Bullet impact effects for boss hits
   // ═══ PHASE 1: bulletImpacts lives in world.bulletImpacts (engine/state.ts) ═══
   const bulletImpacts = world.bulletImpacts;
@@ -9296,15 +9303,12 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                   {/* Combined music / bonus-letter info row - fixed 18px, never scrolls */}
                   <MusicInfoRow
                     musicSource={gameSettingsData.musicSource}
-                    hintText={(() => {
-                      if (!bonusLetterFloatingText?.active || bonusLetters.length === 0) return null;
-                      const elapsed = Date.now() - bonusLetterFloatingText.startTime;
-                      if (elapsed >= 4000) {
-                        setTimeout(() => setBonusLetterFloatingText(null), 0);
-                        return null;
-                      }
-                      return "COLLECT Q-U-M-R-A-N FOR MEGA BONUS!";
-                    })()}
+                    hintText={
+                      bonusLetterFloatingText?.active && bonusLetters.length > 0
+                        ? "COLLECT Q-U-M-R-A-N FOR MEGA BONUS!"
+                        : null
+                    }
+                    paused={gameState === "playing"}
                   />
 
 

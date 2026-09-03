@@ -709,5 +709,9 @@ All colors MUST be HSL.
   animation-timing-function: ease-in-out;
   animation-iteration-count: infinite;
   animation-direction: alternate;
-  will-change: transform;
+}
+
+/* Pause the scroll during active gameplay so it doesn't compete with the canvas */
+.title-pingpong.is-paused {
+  animation-play-state: paused;
 }

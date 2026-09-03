@@ -61,7 +61,7 @@ function startPolling() {
     setInterval(() => {
       const np = state.nowPlaying;
       setState({ timeLeft: np ? computeTimeLeft(np.playstart, np.lengthSec) : "-" });
-    }, 1000),
+    }, 5000),
   ];
 }
 
