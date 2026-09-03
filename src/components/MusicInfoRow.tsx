@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { memo, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useNectarineRadio } from "@/hooks/useNectarineRadio";
 import { soundManager } from "@/utils/sounds";
 
@@ -6,6 +6,8 @@ interface MusicInfoRowProps {
   musicSource: "radio" | "builtin";
   /** Bonus-letter hint text; when set it takes over the block */
   hintText?: string | null;
+  /** Pause the title ping-pong scroll during active gameplay */
+  paused?: boolean;
 }
 
 /** Scroll speed (px/sec) for the ping-pong title scroll. */
