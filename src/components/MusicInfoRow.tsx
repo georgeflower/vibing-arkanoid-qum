@@ -1,21 +1,25 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNectarineRadio } from "@/hooks/useNectarineRadio";
 import { soundManager } from "@/utils/sounds";
 
 interface MusicInfoRowProps {
   musicSource: "radio" | "builtin";
-  /** Bonus-letter hint text; when set it takes over the row */
+  /** Bonus-letter hint text; when set it takes over the block */
   hintText?: string | null;
 }
 
-/** Slow scroll speed (px/sec) for the left region when the text overflows. */
-const SPEED = 15;
+const CLAMP_STYLE: React.CSSProperties = {
+  display: "-webkit-box",
+  WebkitLineClamp: 2,
+  WebkitBoxOrient: "vertical",
+  overflow: "hidden",
+};
 
 /**
- * Fixed 18px info row below the play area.
- * LEFT: now-playing / track name (scrolls slowly only when it overflows).
- * RIGHT: rating + time left (static, never scrolls).
- * A bonus-letter hint takes over the whole row.
+ * Fixed 42px music info block below the play area.
+ * RADIO: artist/title wraps over up to 2 lines + rating/time line.
+ * BUILT-IN: current track name (up to 2 lines).
+ * A bonus-letter hint takes over the whole block. Nothing scrolls.
  */
 export function MusicInfoRow({ musicSource, hintText }: MusicInfoRowProps) {
   const isRadio = musicSource === "radio";
@@ -29,7 +33,7 @@ export function MusicInfoRow({ musicSource, hintText }: MusicInfoRowProps) {
     return () => soundManager.offTrackChange(cb);
   }, []);
 
-  const leftText = isRadio
+  const titleText = isRadio
     ? nowPlaying
       ? `♪ ${nowPlaying.artist} — ${nowPlaying.title}`
       : ""
@@ -37,65 +41,20 @@ export function MusicInfoRow({ musicSource, hintText }: MusicInfoRowProps) {
       ? `♪ ${trackName}`
       : "";
 
-  const leftRegionRef = useRef<HTMLDivElement>(null);
-  const leftTextRef = useRef<HTMLSpanElement>(null);
-  const [marquee, setMarquee] = useState<{ start: number; end: number; duration: number } | null>(null);
-
-  useLayoutEffect(() => {
-    const measure = () => {
-      const region = leftRegionRef.current;
-      const el = leftTextRef.current;
-      if (!region || !el || !leftText) {
-        setMarquee(null);
-        return;
-      }
-      const textWidth = el.scrollWidth;
-      const regionWidth = region.clientWidth;
-      if (textWidth <= regionWidth) {
-        setMarquee(null);
-        return;
-      }
-      const duration = Math.min(180, Math.max(15, (regionWidth + textWidth) / SPEED));
-      setMarquee({ start: regionWidth, end: -textWidth, duration });
-    };
-    measure();
-    window.addEventListener("resize", measure);
-    return () => window.removeEventListener("resize", measure);
-  }, [leftText, hintText]);
-
-  const rightParts: React.ReactNode[] = [];
-  if (isRadio && !hintText) {
-    if (rating) {
-      rightParts.push(
-        <span key="rating" style={{ color: "hsl(160, 80%, 55%)" }}>
-          {`★${rating.rating.toFixed(2)} (${rating.votes})`}
-        </span>,
-      );
-    }
-    if (timeLeft && timeLeft !== "-") {
-      rightParts.push(
-        <span key="time" style={{ color: "hsl(200, 90%, 65%)" }}>
-          {`${rightParts.length ? "   ·   " : ""}${timeLeft} LEFT`}
-        </span>,
-      );
-    }
-  }
+  const showRating = isRadio && !!rating;
+  const showTime = isRadio && !!timeLeft && timeLeft !== "-";
 
   return (
     <div
-      className="w-full flex items-center retro-pixel-text text-[10px] pointer-events-none"
-      style={{ height: "18px", overflow: "hidden" }}
+      className="w-full flex flex-col items-center justify-center retro-pixel-text pointer-events-none"
+      style={{ height: "42px", overflow: "hidden", lineHeight: "14px" }}
       aria-hidden="true"
     >
       {hintText ? (
         <div
+          className="text-[10px]"
           style={{
-            flex: 1,
-            minWidth: 0,
             textAlign: "center",
-            whiteSpace: "nowrap",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
             color: "hsl(48, 100%, 60%)",
             textShadow: "0 0 10px hsl(48, 100%, 60%), 0 0 20px hsl(48, 100%, 50%)",
             transition: "opacity 300ms ease",
@@ -107,46 +66,31 @@ export function MusicInfoRow({ musicSource, hintText }: MusicInfoRowProps) {
       ) : (
         <>
           <div
-            ref={leftRegionRef}
-            style={{ flex: 1, minWidth: 0, overflow: "hidden", position: "relative", height: "18px" }}
-          >
-            <span
-              ref={leftTextRef}
-              className={marquee ? "radio-marquee absolute left-0 top-0 whitespace-nowrap" : "whitespace-nowrap"}
-              style={
-                marquee
-                  ? ({
-                      color: "hsl(48, 100%, 60%)",
-                      lineHeight: "18px",
-                      animationDuration: `${marquee.duration}s`,
-                      ["--marquee-start" as any]: `${marquee.start}px`,
-                      ["--marquee-end" as any]: `${marquee.end}px`,
-                      opacity: leftText ? 1 : 0,
-                      transition: "opacity 300ms ease",
-                    } as React.CSSProperties)
-                  : ({
-                      color: "hsl(48, 100%, 60%)",
-                      display: "inline-block",
-                      lineHeight: "18px",
-                      opacity: leftText ? 1 : 0,
-                      transition: "opacity 300ms ease",
-                    } as React.CSSProperties)
-              }
-            >
-              {leftText}
-            </span>
-          </div>
-          <div
+            className="text-[10px]"
             style={{
-              flex: "none",
-              whiteSpace: "nowrap",
-              paddingLeft: rightParts.length ? "8px" : 0,
-              opacity: rightParts.length ? 1 : 0,
+              ...CLAMP_STYLE,
+              textAlign: "center",
+              color: "hsl(48, 100%, 60%)",
+              opacity: titleText ? 1 : 0,
               transition: "opacity 300ms ease",
             }}
           >
-            {rightParts}
+            {titleText}
           </div>
+          {isRadio && (
+            <div className="text-[9px]" style={{ whiteSpace: "nowrap" }}>
+              {showRating && (
+                <span style={{ color: "hsl(160, 80%, 55%)" }}>
+                  {`★${rating!.rating.toFixed(2)} (${rating!.votes})`}
+                </span>
+              )}
+              {showRating && showTime && <span>{`   ·   `}</span>}
+              {showTime && (
+                <span style={{ color: "hsl(200, 90%, 65%)" }}>{`${timeLeft} LEFT`}</span>
+              )}
+              {!showRating && !showTime && <span>&nbsp;</span>}
+            </div>
+          )}
         </>
       )}
     </div>
