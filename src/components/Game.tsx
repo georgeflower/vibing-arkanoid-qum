@@ -153,7 +153,7 @@ type LevelCompletePrompt =
   | { kind: "fallback"; headline: string; detail: string };
 
 import { assignPowerUpsToBricks, reassignPowerUpsToBricks } from "@/utils/powerUpAssignment";
-import { RadioChat } from "@/components/RadioChat";
+
 import { MusicInfoRow } from "@/components/MusicInfoRow";
 import { MEGA_BOSS_LEVEL, MEGA_BOSS_CONFIG } from "@/constants/megaBossConfig";
 import {
@@ -9307,14 +9307,6 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                     })()}
                   />
 
-                  {/* Spacer between info row and chat */}
-                  <div style={{ height: "8px" }} />
-
-                  {/* Nectarine oneliner chat - fixed height (no layout shift) */}
-                  <RadioChat
-                    enabled={gameSettingsData.musicSource === "radio"}
-                    potato={qualitySettings.level === "potato"}
-                  />
 
 
 

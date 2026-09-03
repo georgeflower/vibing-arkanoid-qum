@@ -697,31 +697,3 @@ All colors MUST be HSL.
   scrollbar-color: hsl(15, 70%, 50%) hsl(210, 20%, 15%);
 }
 
-/* Nectarine radio info scroller (pure CSS marquee, no per-frame JS) */
-@keyframes radio-marquee-scroll {
-  from {
-    transform: translateX(var(--marquee-start, 100%));
-  }
-  to {
-    transform: translateX(var(--marquee-end, -100%));
-  }
-}
-
-.radio-marquee {
-  will-change: transform;
-  animation-name: radio-marquee-scroll;
-  animation-timing-function: linear;
-  animation-iteration-count: infinite;
-}
-
-/* Nectarine chat: new message slides up + fades in */
-@keyframes radio-chat-in {
-  from {
-    transform: translateY(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}

@@ -13,12 +13,6 @@ export interface NowPlaying {
   playstart: string;
 }
 
-export interface OnelinerEntry {
-  username: string;
-  text: string;
-  flag: string;
-  time: string;
-}
 
 export async function fetchEndpoint(path: string): Promise<string> {
   const controller = new AbortController();
@@ -70,82 +64,6 @@ export function parseNowPlaying(doc: Document): NowPlaying | null {
   } catch {
     return null;
   }
-}
-
-export function parseOneliners(doc: Document): OnelinerEntry[] {
-  try {
-    const entries = Array.from(doc.getElementsByTagName("entry")).slice(0, 8);
-    return entries.map((entry) => {
-      const authorEl =
-        entry.getElementsByTagName("author")[0] ??
-        entry.getElementsByTagName("user")[0] ??
-        entry.getElementsByTagName("username")[0] ??
-        entry.getElementsByTagName("nick")[0];
-      const username = (authorEl?.textContent ?? "").trim() || "anon";
-      const text = (
-        entry.getElementsByTagName("message")[0]?.textContent ??
-        entry.getElementsByTagName("text")[0]?.textContent ??
-        ""
-      ).trim();
-      const flag = authorEl?.getAttribute("flag") ?? "";
-      const time = entry.getAttribute("time") ?? "";
-      return { username, text, flag, time };
-    });
-  } catch {
-    return [];
-  }
-}
-
-/**
- * Nectarine returns a bare HH:MM:SS in UTC. Anchor to today's UTC date,
- * handle day rollover, then render local time. Returns "" on failure.
- */
-export function formatOnelinerTime(raw: string): string {
-  try {
-    const v = (raw ?? "").trim();
-    if (!v) return "";
-
-    const direct = Date.parse(v);
-    if (Number.isFinite(direct)) {
-      return new Date(direct).toLocaleTimeString(undefined, {
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-      });
-    }
-
-    const m = v.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
-    if (!m) return "";
-    const [, hh, mm, ss] = m;
-    const now = new Date();
-    let utcMs = Date.UTC(
-      now.getUTCFullYear(),
-      now.getUTCMonth(),
-      now.getUTCDate(),
-      Number(hh),
-      Number(mm),
-      Number(ss ?? "0"),
-    );
-    const diffH = (utcMs - now.getTime()) / 3_600_000;
-    if (diffH > 12) utcMs -= 24 * 3_600_000;
-    else if (diffH < -12) utcMs += 24 * 3_600_000;
-    return new Date(utcMs).toLocaleTimeString(undefined, {
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    });
-  } catch {
-    return "";
-  }
-}
-
-export function countryCodeToFlag(code: string): string {
-  if (!code || code.length !== 2 || !/^[A-Za-z]{2}$/.test(code)) return "";
-  const upper = code.toUpperCase();
-  return String.fromCodePoint(
-    0x1f1e6 + (upper.charCodeAt(0) - 65),
-    0x1f1e6 + (upper.charCodeAt(1) - 65),
-  );
 }
 
 export function formatDuration(sec: number): string {

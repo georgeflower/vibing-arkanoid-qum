@@ -3,11 +3,9 @@ import {
   fetchEndpoint,
   parseXml,
   parseNowPlaying,
-  parseOneliners,
   computeTimeLeft,
   songRating,
   type NowPlaying,
-  type OnelinerEntry,
 } from "@/lib/nectarine";
 
 interface Rating {
@@ -18,14 +16,13 @@ interface Rating {
 export interface RadioState {
   nowPlaying: NowPlaying | null;
   rating: Rating | null;
-  oneliners: OnelinerEntry[];
   timeLeft: string;
 }
 
 const POLL_MS = 30_000;
 
 // Module-level singleton store so multiple components share one polling loop.
-let state: RadioState = { nowPlaying: null, rating: null, oneliners: [], timeLeft: "-" };
+let state: RadioState = { nowPlaying: null, rating: null, timeLeft: "-" };
 const listeners = new Set<() => void>();
 let subscribers = 0;
 let timers: ReturnType<typeof setInterval>[] = [];
@@ -57,22 +54,10 @@ async function pollQueue() {
   }
 }
 
-async function pollOneliner() {
-  try {
-    const doc = parseXml(await fetchEndpoint("oneliner"));
-    const list = parseOneliners(doc);
-    if (list.length > 0) setState({ oneliners: list });
-  } catch {
-    /* silent */
-  }
-}
-
 function startPolling() {
   pollQueue();
-  pollOneliner();
   timers = [
     setInterval(pollQueue, POLL_MS),
-    setInterval(pollOneliner, POLL_MS),
     setInterval(() => {
       const np = state.nowPlaying;
       setState({ timeLeft: np ? computeTimeLeft(np.playstart, np.lengthSec) : "-" });
@@ -86,7 +71,7 @@ function stopPolling() {
 }
 
 /**
- * Polls the Nectarine demovibes API for now-playing info and oneliners.
+ * Polls the Nectarine demovibes API for now-playing info.
  * Shared across all consumers; everything fails silently.
  */
 export function useNectarineRadio(enabled: boolean): RadioState {
