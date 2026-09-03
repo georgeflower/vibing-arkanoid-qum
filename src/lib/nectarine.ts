@@ -88,10 +88,54 @@ export function parseOneliners(doc: Document): OnelinerEntry[] {
         ""
       ).trim();
       const flag = authorEl?.getAttribute("flag") ?? "";
-      return { username, text, flag };
+      const time = entry.getAttribute("time") ?? "";
+      return { username, text, flag, time };
     });
   } catch {
     return [];
+  }
+}
+
+/**
+ * Nectarine returns a bare HH:MM:SS in UTC. Anchor to today's UTC date,
+ * handle day rollover, then render local time. Returns "" on failure.
+ */
+export function formatOnelinerTime(raw: string): string {
+  try {
+    const v = (raw ?? "").trim();
+    if (!v) return "";
+
+    const direct = Date.parse(v);
+    if (Number.isFinite(direct)) {
+      return new Date(direct).toLocaleTimeString(undefined, {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      });
+    }
+
+    const m = v.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+    if (!m) return "";
+    const [, hh, mm, ss] = m;
+    const now = new Date();
+    let utcMs = Date.UTC(
+      now.getUTCFullYear(),
+      now.getUTCMonth(),
+      now.getUTCDate(),
+      Number(hh),
+      Number(mm),
+      Number(ss ?? "0"),
+    );
+    const diffH = (utcMs - now.getTime()) / 3_600_000;
+    if (diffH > 12) utcMs -= 24 * 3_600_000;
+    else if (diffH < -12) utcMs += 24 * 3_600_000;
+    return new Date(utcMs).toLocaleTimeString(undefined, {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    });
+  } catch {
+    return "";
   }
 }
 
