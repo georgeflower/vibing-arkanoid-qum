@@ -713,3 +713,15 @@ All colors MUST be HSL.
   animation-timing-function: linear;
   animation-iteration-count: infinite;
 }
+
+/* Nectarine chat: new message slides up + fades in */
+@keyframes radio-chat-in {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
