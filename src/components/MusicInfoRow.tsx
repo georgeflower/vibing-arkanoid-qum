@@ -31,7 +31,7 @@ const ROW_STYLE: React.CSSProperties = {
  * artist / title / rating+time. Nothing wraps; a long radio title
  * scrolls back and forth (ping-pong) inside its row.
  */
-export function MusicInfoRow({ musicSource, hintText }: MusicInfoRowProps) {
+export const MusicInfoRow = memo(function MusicInfoRow({ musicSource, hintText, paused }: MusicInfoRowProps) {
   const isRadio = musicSource === "radio";
   const { nowPlaying, rating, timeLeft } = useNectarineRadio(isRadio);
   const [trackName, setTrackName] = useState(() => soundManager.getCurrentTrackName());
