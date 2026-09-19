@@ -2208,6 +2208,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       settings.difficulty,
       clearAllEnemies,
       clearAllBombs,
+      computeLevelSpeedMultiplier,
+      setSpeedMultiplier,
     ],
   );
 
