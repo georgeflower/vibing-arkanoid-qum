@@ -448,25 +448,35 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     [],
   );
 
+  /**
+   * SINGLE SOURCE OF TRUTH for the level speed multiplier.
+   * Every place that needs to (re)derive the intended speed for a level must use this.
+   */
+  const computeLevelSpeedMultiplier = useCallback(
+    (lvl: number): number => {
+      if (isDailyChallenge && settings.dailyChallengeConfig) {
+        return settings.dailyChallengeConfig.speedMultiplier;
+      }
+      if (isBossRush) {
+        const bossLevel = BOSS_RUSH_CONFIG.bossOrder[bossRushIndex] as BossRushLevel;
+        return BOSS_RUSH_CONFIG.speedMultipliers[bossLevel] ?? BOSS_RUSH_CONFIG.speedMultipliers[5];
+      }
+      return calculateSpeedForLevel(lvl, settings.difficulty);
+    },
+    [
+      isDailyChallenge,
+      settings.dailyChallengeConfig,
+      isBossRush,
+      bossRushIndex,
+      settings.difficulty,
+      calculateSpeedForLevel,
+    ],
+  );
+
   // ═══ PHASE 1: speedMultiplier lives in world.speedMultiplier (engine/state.ts) ═══
   // Initialize world.speedMultiplier on first render
   const [speedMultiplierInitialized] = useState(() => {
-    if (settings.gameMode === "bossRush") {
-      world.speedMultiplier = BOSS_RUSH_CONFIG.speedMultipliers[5];
-    } else if (isDailyChallenge && settings.dailyChallengeConfig) {
-      world.speedMultiplier = settings.dailyChallengeConfig.speedMultiplier;
-    } else {
-      const startLevel = settings.startingLevel;
-      const baseMultiplier = settings.difficulty === "godlike" ? 1.169 : 1.05;
-      const maxSpeedMultiplier = settings.difficulty === "godlike" ? 1.318 : 1.4;
-      let speedMult: number;
-      if (settings.difficulty === "godlike") {
-        speedMult = baseMultiplier + (startLevel - 1) * 0.05;
-      } else {
-        speedMult = baseMultiplier + (startLevel - 1) * 0.03;
-      }
-      world.speedMultiplier = Math.min(maxSpeedMultiplier, speedMult);
-    }
+    world.speedMultiplier = computeLevelSpeedMultiplier(settings.startingLevel);
     return true;
   });
   void speedMultiplierInitialized; // suppress unused warning
