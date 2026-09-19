@@ -448,25 +448,35 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     [],
   );
 
+  /**
+   * SINGLE SOURCE OF TRUTH for the level speed multiplier.
+   * Every place that needs to (re)derive the intended speed for a level must use this.
+   */
+  const computeLevelSpeedMultiplier = useCallback(
+    (lvl: number): number => {
+      if (isDailyChallenge && settings.dailyChallengeConfig) {
+        return settings.dailyChallengeConfig.speedMultiplier;
+      }
+      if (isBossRush) {
+        const bossLevel = BOSS_RUSH_CONFIG.bossOrder[bossRushIndex] as BossRushLevel;
+        return BOSS_RUSH_CONFIG.speedMultipliers[bossLevel] ?? BOSS_RUSH_CONFIG.speedMultipliers[5];
+      }
+      return calculateSpeedForLevel(lvl, settings.difficulty);
+    },
+    [
+      isDailyChallenge,
+      settings.dailyChallengeConfig,
+      isBossRush,
+      bossRushIndex,
+      settings.difficulty,
+      calculateSpeedForLevel,
+    ],
+  );
+
   // ═══ PHASE 1: speedMultiplier lives in world.speedMultiplier (engine/state.ts) ═══
   // Initialize world.speedMultiplier on first render
   const [speedMultiplierInitialized] = useState(() => {
-    if (settings.gameMode === "bossRush") {
-      world.speedMultiplier = BOSS_RUSH_CONFIG.speedMultipliers[5];
-    } else if (isDailyChallenge && settings.dailyChallengeConfig) {
-      world.speedMultiplier = settings.dailyChallengeConfig.speedMultiplier;
-    } else {
-      const startLevel = settings.startingLevel;
-      const baseMultiplier = settings.difficulty === "godlike" ? 1.169 : 1.05;
-      const maxSpeedMultiplier = settings.difficulty === "godlike" ? 1.318 : 1.4;
-      let speedMult: number;
-      if (settings.difficulty === "godlike") {
-        speedMult = baseMultiplier + (startLevel - 1) * 0.05;
-      } else {
-        speedMult = baseMultiplier + (startLevel - 1) * 0.03;
-      }
-      world.speedMultiplier = Math.min(maxSpeedMultiplier, speedMult);
-    }
+    world.speedMultiplier = computeLevelSpeedMultiplier(settings.startingLevel);
     return true;
   });
   void speedMultiplierInitialized; // suppress unused warning
@@ -916,6 +926,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
   // Get Ready overlay state (after dismissing tutorials)
   const [getReadyActive, setGetReadyActive] = useState(false);
+  const getReadyActiveRef = useRef(false);
+  const getReadyRafRef = useRef<number | null>(null);
   const getReadyStartTimeRef = useRef<number | null>(null);
   const baseSpeedMultiplierRef = useRef(1);
 
@@ -1332,7 +1344,12 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     nextCannonMissileTime,
   ]);
 
-  // "Get Ready" speed ramp - gradually increase speed from 30% to 100% over 2 seconds
+  // Keep a ref in sync so the rAF loop can read the live value
+  useEffect(() => {
+    getReadyActiveRef.current = getReadyActive;
+  }, [getReadyActive]);
+
+  // "Get Ready" speed ramp - gradually increase speed from 10% to 100% over 3 seconds
   useEffect(() => {
     if (!getReadyActive || getReadyStartTimeRef.current === null) return;
 
@@ -1341,7 +1358,11 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     const targetSpeed = baseSpeedMultiplierRef.current;
 
     const animate = () => {
-      if (!getReadyActive || getReadyStartTimeRef.current === null) return;
+      if (!getReadyActiveRef.current || getReadyStartTimeRef.current === null) {
+        // Interrupted - make sure we never strand the game mid-ramp
+        setSpeedMultiplier(baseSpeedMultiplierRef.current);
+        return;
+      }
 
       const elapsed = Date.now() - getReadyStartTimeRef.current;
       const progress = Math.min(elapsed / rampDuration, 1);
@@ -1350,15 +1371,26 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       const easeProgress = 1 - Math.pow(1 - progress, 2);
       const newSpeed = startSpeed + (targetSpeed - startSpeed) * easeProgress;
 
-      setSpeedMultiplier(newSpeed);
-
-      if (progress < 1) {
-        requestAnimationFrame(animate);
+      if (progress >= 1) {
+        // Ramp owns the restore to full speed (do not rely on the overlay)
+        setSpeedMultiplier(targetSpeed);
+        getReadyRafRef.current = null;
+        return;
       }
+
+      setSpeedMultiplier(newSpeed);
+      getReadyRafRef.current = requestAnimationFrame(animate);
     };
 
-    requestAnimationFrame(animate);
-  }, [getReadyActive]);
+    getReadyRafRef.current = requestAnimationFrame(animate);
+
+    return () => {
+      if (getReadyRafRef.current !== null) {
+        cancelAnimationFrame(getReadyRafRef.current);
+        getReadyRafRef.current = null;
+      }
+    };
+  }, [getReadyActive, setSpeedMultiplier]);
 
   // Mobile ball glow animation - full intensity for 3s, fade out over 2s
   useEffect(() => {
@@ -1394,6 +1426,17 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
     requestAnimationFrame(animateGlow);
   }, [getReadyActive, isMobileDevice]);
+
+  // Safety net: the Get Ready overlay only renders while a ball exists. If the ball is
+  // lost mid-sequence the overlay unmounts and its onComplete never fires - restore here.
+  useEffect(() => {
+    if (!getReadyActive || balls.length > 0) return;
+    setGetReadyActive(false);
+    setSpeedMultiplier(baseSpeedMultiplierRef.current);
+    getReadyStartTimeRef.current = null;
+    setGetReadyGlow(null);
+    getReadyGlowStartTimeRef.current = null;
+  }, [getReadyActive, balls.length, setSpeedMultiplier]);
 
   // Sound effect cooldowns (ms timestamps)
   const lastWallBounceSfxMs = useRef(0);
@@ -2142,7 +2185,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
       world.bullets = [];
       bulletPool.releaseAll();
-      if (world.speedMultiplier < 1) setSpeedMultiplier(1);
+      // Re-derive the intended level speed (never snap to a hardcoded 1.0)
+      setSpeedMultiplier(computeLevelSpeedMultiplier(levelRef.current));
       setBrickHitSpeedAccumulated(0);
       setTimer(0);
       setLastEnemySpawnTime(0);
@@ -2164,6 +2208,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       settings.difficulty,
       clearAllEnemies,
       clearAllBombs,
+      computeLevelSpeedMultiplier,
+      setSpeedMultiplier,
     ],
   );
 
@@ -8391,14 +8437,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
     // Keep the current level
     const currentLevel = level;
-    if (isDailyChallenge && settings.dailyChallengeConfig) {
-      setSpeedMultiplier(settings.dailyChallengeConfig.speedMultiplier);
-    } else {
-      const maxSpeedMultiplier = settings.difficulty === "godlike" ? 1.4875 : 1.5;
-      const baseMultiplier = settings.difficulty === "godlike" ? 1.0625 : 1.0;
-      const levelSpeedMultiplier = Math.min(maxSpeedMultiplier, Math.max(baseMultiplier, baseMultiplier + (currentLevel - 1) * 0.05));
-      setSpeedMultiplier(levelSpeedMultiplier);
-    }
+    // Self-healing: always re-derive from the single source of truth
+    setSpeedMultiplier(computeLevelSpeedMultiplier(currentLevel));
 
     // Reset paddle
     const initialPaddleX = SCALED_CANVAS_WIDTH / 2 - SCALED_PADDLE_WIDTH / 2;
@@ -8413,13 +8453,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     paddleXRef.current = initialPaddleX;
 
     // Initialize ball with level speed - waiting to launch
-    const retrySpeedMult = isDailyChallenge && settings.dailyChallengeConfig
-      ? settings.dailyChallengeConfig.speedMultiplier
-      : (() => {
-          const maxSM = settings.difficulty === "godlike" ? 1.4875 : 1.5;
-          const baseMult = settings.difficulty === "godlike" ? 1.0625 : 1.0;
-          return Math.min(maxSM, Math.max(baseMult, baseMult + (currentLevel - 1) * 0.05));
-        })();
+    const retrySpeedMult = computeLevelSpeedMultiplier(currentLevel);
     const baseSpeed = 4.5 * Math.min(retrySpeedMult, 1.75);
     const initialBall: Ball = {
       x: SCALED_CANVAS_WIDTH / 2,
@@ -9131,8 +9165,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                         canvasHeight={SCALED_CANVAS_HEIGHT}
                         isMobile={isMobileDevice}
                         onComplete={() => {
+                          // Speed restore is owned by the ramp effect
                           setGetReadyActive(false);
-                          setSpeedMultiplier(baseSpeedMultiplierRef.current);
                           getReadyStartTimeRef.current = null;
                           // Clear mobile glow
                           setGetReadyGlow(null);
@@ -9148,9 +9182,11 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                         onDismiss={() => {
                           // Resume game FIRST if it was paused for tutorial (before dismissTutorial sets tutorialActive=false)
                           if (tutorialStep.pauseGame) {
-                            // Store current speed multiplier and start "Get Ready" sequence
-                            baseSpeedMultiplierRef.current = world.speedMultiplier;
-                            setSpeedMultiplier(world.speedMultiplier * 0.1); // Start at 10% speed
+                            // Derive the base from the level (never from a possibly mid-ramp live value)
+                            if (!getReadyActive) {
+                              baseSpeedMultiplierRef.current = computeLevelSpeedMultiplier(level);
+                            }
+                            setSpeedMultiplier(baseSpeedMultiplierRef.current * 0.1); // Start at 10% speed
                             getReadyStartTimeRef.current = Date.now();
                             setGetReadyActive(true);
 
@@ -9179,8 +9215,10 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                           // Resume game FIRST before skipping tutorials
                           if (gameState === "paused") {
                             // Also trigger "Get Ready" when skipping
-                            baseSpeedMultiplierRef.current = world.speedMultiplier;
-                            setSpeedMultiplier(world.speedMultiplier * 0.1);
+                            if (!getReadyActive) {
+                              baseSpeedMultiplierRef.current = computeLevelSpeedMultiplier(level);
+                            }
+                            setSpeedMultiplier(baseSpeedMultiplierRef.current * 0.1);
                             getReadyStartTimeRef.current = Date.now();
                             setGetReadyActive(true);
 
