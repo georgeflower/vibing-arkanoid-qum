@@ -1344,7 +1344,12 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     nextCannonMissileTime,
   ]);
 
-  // "Get Ready" speed ramp - gradually increase speed from 30% to 100% over 2 seconds
+  // Keep a ref in sync so the rAF loop can read the live value
+  useEffect(() => {
+    getReadyActiveRef.current = getReadyActive;
+  }, [getReadyActive]);
+
+  // "Get Ready" speed ramp - gradually increase speed from 10% to 100% over 3 seconds
   useEffect(() => {
     if (!getReadyActive || getReadyStartTimeRef.current === null) return;
 
@@ -1353,7 +1358,11 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     const targetSpeed = baseSpeedMultiplierRef.current;
 
     const animate = () => {
-      if (!getReadyActive || getReadyStartTimeRef.current === null) return;
+      if (!getReadyActiveRef.current || getReadyStartTimeRef.current === null) {
+        // Interrupted - make sure we never strand the game mid-ramp
+        setSpeedMultiplier(baseSpeedMultiplierRef.current);
+        return;
+      }
 
       const elapsed = Date.now() - getReadyStartTimeRef.current;
       const progress = Math.min(elapsed / rampDuration, 1);
@@ -1362,15 +1371,26 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       const easeProgress = 1 - Math.pow(1 - progress, 2);
       const newSpeed = startSpeed + (targetSpeed - startSpeed) * easeProgress;
 
-      setSpeedMultiplier(newSpeed);
-
-      if (progress < 1) {
-        requestAnimationFrame(animate);
+      if (progress >= 1) {
+        // Ramp owns the restore to full speed (do not rely on the overlay)
+        setSpeedMultiplier(targetSpeed);
+        getReadyRafRef.current = null;
+        return;
       }
+
+      setSpeedMultiplier(newSpeed);
+      getReadyRafRef.current = requestAnimationFrame(animate);
     };
 
-    requestAnimationFrame(animate);
-  }, [getReadyActive]);
+    getReadyRafRef.current = requestAnimationFrame(animate);
+
+    return () => {
+      if (getReadyRafRef.current !== null) {
+        cancelAnimationFrame(getReadyRafRef.current);
+        getReadyRafRef.current = null;
+      }
+    };
+  }, [getReadyActive, setSpeedMultiplier]);
 
   // Mobile ball glow animation - full intensity for 3s, fade out over 2s
   useEffect(() => {
