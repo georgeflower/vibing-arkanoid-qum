@@ -2185,7 +2185,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
       world.bullets = [];
       bulletPool.releaseAll();
-      if (world.speedMultiplier < 1) setSpeedMultiplier(1);
+      // Re-derive the intended level speed (never snap to a hardcoded 1.0)
+      setSpeedMultiplier(computeLevelSpeedMultiplier(levelRef.current));
       setBrickHitSpeedAccumulated(0);
       setTimer(0);
       setLastEnemySpawnTime(0);
