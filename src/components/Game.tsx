@@ -1427,6 +1427,17 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     requestAnimationFrame(animateGlow);
   }, [getReadyActive, isMobileDevice]);
 
+  // Safety net: the Get Ready overlay only renders while a ball exists. If the ball is
+  // lost mid-sequence the overlay unmounts and its onComplete never fires - restore here.
+  useEffect(() => {
+    if (!getReadyActive || balls.length > 0) return;
+    setGetReadyActive(false);
+    setSpeedMultiplier(baseSpeedMultiplierRef.current);
+    getReadyStartTimeRef.current = null;
+    setGetReadyGlow(null);
+    getReadyGlowStartTimeRef.current = null;
+  }, [getReadyActive, balls.length, setSpeedMultiplier]);
+
   // Sound effect cooldowns (ms timestamps)
   const lastWallBounceSfxMs = useRef(0);
   const lastTurretDepleteSfxMs = useRef(0);
