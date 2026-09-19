@@ -926,6 +926,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
   // Get Ready overlay state (after dismissing tutorials)
   const [getReadyActive, setGetReadyActive] = useState(false);
+  const getReadyActiveRef = useRef(false);
+  const getReadyRafRef = useRef<number | null>(null);
   const getReadyStartTimeRef = useRef<number | null>(null);
   const baseSpeedMultiplierRef = useRef(1);
 
