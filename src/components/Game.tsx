@@ -8453,13 +8453,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     paddleXRef.current = initialPaddleX;
 
     // Initialize ball with level speed - waiting to launch
-    const retrySpeedMult = isDailyChallenge && settings.dailyChallengeConfig
-      ? settings.dailyChallengeConfig.speedMultiplier
-      : (() => {
-          const maxSM = settings.difficulty === "godlike" ? 1.4875 : 1.5;
-          const baseMult = settings.difficulty === "godlike" ? 1.0625 : 1.0;
-          return Math.min(maxSM, Math.max(baseMult, baseMult + (currentLevel - 1) * 0.05));
-        })();
+    const retrySpeedMult = computeLevelSpeedMultiplier(currentLevel);
     const baseSpeed = 4.5 * Math.min(retrySpeedMult, 1.75);
     const initialBall: Ball = {
       x: SCALED_CANVAS_WIDTH / 2,
