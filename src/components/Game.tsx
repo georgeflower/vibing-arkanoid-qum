@@ -9165,8 +9165,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                         canvasHeight={SCALED_CANVAS_HEIGHT}
                         isMobile={isMobileDevice}
                         onComplete={() => {
+                          // Speed restore is owned by the ramp effect
                           setGetReadyActive(false);
-                          setSpeedMultiplier(baseSpeedMultiplierRef.current);
                           getReadyStartTimeRef.current = null;
                           // Clear mobile glow
                           setGetReadyGlow(null);
