@@ -1521,15 +1521,21 @@ class SoundManager {
     
     // Determine which boss music to play
     let bossTrackUrl = '';
+    let bossName = 'BOSS THEME';
     if (bossLevel === 5) {
       bossTrackUrl = '/Boss_level_cube.mp3';
+      bossName = 'BOSS: CUBE';
     } else if (bossLevel === 10) {
       bossTrackUrl = '/Boss_level_sphere.mp3';
+      bossName = 'BOSS: SPHERE';
     } else if (bossLevel === 15) {
       bossTrackUrl = '/Boss_level_pyramid.mp3';
+      bossName = 'BOSS: PYRAMID';
     } else if (bossLevel === 20) {
       bossTrackUrl = '/Boss_level_Hexagon.mp3';
+      bossName = 'BOSS: HEXAGON';
     }
+    this.bossTrackName = bossName;
     
     // Stop any existing boss music
     if (this.bossMusic) {
