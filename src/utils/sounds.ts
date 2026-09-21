@@ -1565,10 +1565,14 @@ class SoundManager {
     }
     
     this.bossMusic.play().catch(() => {});
+    this.notifyTrackChange();
   }
 
   stopBossMusic() {
     if (this.musicSource === "radio") return;
+    this.bossTrackName = '';
+    this.notifyTrackChange();
+
 
     if (this.bossMusic && !this.bossMusic.paused) {
       const bossRef = this.bossMusic;
