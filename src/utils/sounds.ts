@@ -152,6 +152,8 @@ class SoundManager {
     // Never allow a second connection while one is playing or starting up.
     if (this.radioStarting) return;
     if (this.radioAudio && !this.radioAudio.paused) return;
+    // Radio and built-in music are mutually exclusive.
+    this.stopBackgroundMusicTracks();
     this.ensureRadio();
     const audio = this.radioAudio;
     if (!audio) return;
@@ -199,6 +201,9 @@ class SoundManager {
       this.startRadio();
       return;
     }
+
+    // Built-in music never plays alongside the radio stream.
+    this.stopRadio();
 
 
     // Stop all currently playing tracks first
