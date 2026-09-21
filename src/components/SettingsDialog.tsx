@@ -75,6 +75,13 @@ export const SettingsDialog = ({
   const isControlled = externalOpen !== undefined;
   const open = isControlled ? externalOpen : internalOpen;
 
+  // Always refresh the draft from the persisted settings whenever the dialog
+  // opens — including when a parent opens it via the `open` prop.
+  useEffect(() => {
+    if (open) setDraft({ ...loadSettings() });
+  }, [open]);
+
+
   const updateDraft = (partial: Partial<GameSettingsType>) => {
     setDraft((prev) => {
       const next = { ...prev, ...partial };
