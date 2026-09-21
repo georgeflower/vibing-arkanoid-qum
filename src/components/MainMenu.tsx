@@ -464,7 +464,7 @@ export const MainMenu = ({ onStartGame, difficulty, setDifficulty, gameMode, set
   if (!hasStartedOnce) {
     const handleFirstStart = () => {
       soundManager.playMenuClick();
-      soundManager.initializeRandomTrack();
+      soundManager.resetToTitleTrack();
       soundManager.playBackgroundMusic();
       setHasStartedOnce(true);
     };

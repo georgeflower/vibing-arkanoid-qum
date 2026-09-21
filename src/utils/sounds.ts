@@ -9,6 +9,7 @@ class SoundManager {
   private currentTrackIndex = 0;
   private highScoreMusic: HTMLAudioElement | null = null;
   private bossMusic: HTMLAudioElement | null = null;
+  private bossTrackName = '';
   private savedBackgroundMusicPosition: number = 0;
   private savedBackgroundMusicIndex: number = 0;
   private musicEnabled = true;
@@ -67,7 +68,17 @@ class SoundManager {
   }
 
   getCurrentTrackName(): string {
+    // While a boss fight is running, the boss theme is what's audible.
+    if (this.bossTrackName && this.bossMusic && !this.bossMusic.paused) {
+      return this.bossTrackName;
+    }
     return this.getTrackName(this.currentTrackIndex);
+  }
+
+  /** Force built-in music back to the title/menu theme. */
+  resetToTitleTrack() {
+    this.currentTrackIndex = TITLE_TRACK_INDEX;
+    this.notifyTrackChange();
   }
 
   private getAudioContext() {
@@ -1510,15 +1521,21 @@ class SoundManager {
     
     // Determine which boss music to play
     let bossTrackUrl = '';
+    let bossName = 'BOSS THEME';
     if (bossLevel === 5) {
       bossTrackUrl = '/Boss_level_cube.mp3';
+      bossName = 'BOSS: CUBE';
     } else if (bossLevel === 10) {
       bossTrackUrl = '/Boss_level_sphere.mp3';
+      bossName = 'BOSS: SPHERE';
     } else if (bossLevel === 15) {
       bossTrackUrl = '/Boss_level_pyramid.mp3';
+      bossName = 'BOSS: PYRAMID';
     } else if (bossLevel === 20) {
       bossTrackUrl = '/Boss_level_Hexagon.mp3';
+      bossName = 'BOSS: HEXAGON';
     }
+    this.bossTrackName = bossName;
     
     // Stop any existing boss music
     if (this.bossMusic) {
@@ -1548,10 +1565,14 @@ class SoundManager {
     }
     
     this.bossMusic.play().catch(() => {});
+    this.notifyTrackChange();
   }
 
   stopBossMusic() {
     if (this.musicSource === "radio") return;
+    this.bossTrackName = '';
+    this.notifyTrackChange();
+
 
     if (this.bossMusic && !this.bossMusic.paused) {
       const bossRef = this.bossMusic;
