@@ -23,6 +23,7 @@ class SoundManager {
   private activeFades = new Map<HTMLAudioElement, ReturnType<typeof setInterval>>();
   private musicSource: "radio" | "builtin" = "radio";
   private radioAudio: HTMLAudioElement | null = null;
+  private radioStarting = false;
   private readonly radioUrl = 'https://nectarine.inversi0n.org/necta192.mp3';
 
   private tracks: { url: string; name: string }[] = [
