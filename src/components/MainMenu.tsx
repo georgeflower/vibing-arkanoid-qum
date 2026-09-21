@@ -64,6 +64,12 @@ export const MainMenu = ({ onStartGame, difficulty, setDifficulty, gameMode, set
   const [dailyChallengeStreak, setDailyChallengeStreak] = useState(0);
 
 
+  // The radio stream never keeps running on the main menu.
+  useEffect(() => {
+    soundManager.stopRadio();
+  }, []);
+
+
   useEffect(() => {
     const syncSessionState = async (session: Awaited<ReturnType<typeof supabase.auth.getSession>>["data"]["session"]) => {
       setIsLoggedIn(!!session);
