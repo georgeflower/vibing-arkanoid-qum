@@ -148,12 +148,37 @@ class SoundManager {
 
   startRadio() {
     if (!this.musicEnabled || this.musicSource !== "radio") return;
+    // Never allow a second connection while one is playing or starting up.
+    if (this.radioStarting) return;
+    if (this.radioAudio && !this.radioAudio.paused) return;
     this.ensureRadio();
-    this.radioAudio?.play().catch(() => {});
+    const audio = this.radioAudio;
+    if (!audio) return;
+    this.radioStarting = true;
+    const play = audio.play();
+    if (play && typeof play.then === "function") {
+      play
+        .then(() => { this.radioStarting = false; })
+        .catch(() => { this.radioStarting = false; });
+    } else {
+      this.radioStarting = false;
+    }
   }
 
   stopRadio() {
-    this.radioAudio?.pause();
+    this.radioStarting = false;
+    const audio = this.radioAudio;
+    if (!audio) return;
+    // Fully tear the stream down: pausing a live stream keeps the
+    // connection/buffer alive and resuming it can stack another stream.
+    audio.pause();
+    try {
+      audio.src = "";
+      audio.load();
+    } catch {
+      /* ignore */
+    }
+    this.radioAudio = null;
   }
 
   private stopBackgroundMusicTracks() {
