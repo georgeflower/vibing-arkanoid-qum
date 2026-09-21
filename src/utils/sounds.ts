@@ -202,6 +202,9 @@ class SoundManager {
       return;
     }
 
+    // Built-in music never plays alongside the radio stream.
+    this.stopRadio();
+
 
     // Stop all currently playing tracks first
     this.musicTracks.forEach((track, index) => {
