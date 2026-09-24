@@ -8,8 +8,6 @@ const LAST_QUALITY_STORAGE_KEY = "va_lastQuality";
 const QUALITY_ORDER: QualityLevel[] = ["potato", "low", "medium", "high"];
 const MAX_FPS_SAMPLES = 10;
 const MIN_WARMUP_SAMPLES = 5;
-const DEFAULT_LOW_END_CORE_COUNT = 4;
-const UNKNOWN_CORE_COUNT_FALLBACK = 8;
 
 interface PerformanceProfilerSummary {
   totalObjects: number;
@@ -112,26 +110,7 @@ const QUALITY_PRESETS: Record<QualityLevel, Omit<QualitySettings, "level" | "aut
 
 export { QUALITY_PRESETS };
 
-// ─── GPU Hardware Detection ──────────────────────────────────
 
-let cachedGPUDetection: boolean | null = null;
-
-function isQualityLevel(value: string | null): value is QualityLevel {
-  return value !== null && QUALITY_ORDER.includes(value as QualityLevel);
-}
-
-function clampQualityLevel(requested: QualityLevel, maxLevel: QualityLevel): QualityLevel {
-  return QUALITY_ORDER.indexOf(requested) > QUALITY_ORDER.indexOf(maxLevel) ? maxLevel : requested;
-}
-
-function getStoredQuality(): QualityLevel | null {
-  try {
-    const storedQuality = localStorage.getItem(LAST_QUALITY_STORAGE_KEY);
-    return isQualityLevel(storedQuality) ? storedQuality : null;
-  } catch {
-    return null;
-  }
-}
 
 function persistQuality(quality: QualityLevel): void {
   try {
@@ -141,56 +120,7 @@ function persistQuality(quality: QualityLevel): void {
   }
 }
 
-function detectIntegratedGPU(): boolean {
-  // DISABLED: integrated-GPU detection caused capable machines to start capped at
-  // medium. Auto mode now starts at high and steps down only on measured FPS.
-  // try {
-  //   const canvas = document.createElement("canvas");
-  //   const webglCtx = canvas.getContext("webgl");
-  //   const gl = (webglCtx ?? (canvas.getContext("experimental-webgl") as WebGLRenderingContext | null)) as WebGLRenderingContext | null;
-  //
-  //   if (!gl) {
-  //     cachedGPUDetection = false;
-  //     return false;
-  //   }
-  //
-  //   const debugInfo = gl.getExtension("WEBGL_debug_renderer_info");
-  //
-  //   if (!debugInfo) {
-  //     const loseContext = gl.getExtension("WEBGL_lose_context");
-  //     if (loseContext) loseContext.loseContext();
-  //     cachedGPUDetection = false;
-  //     return false;
-  //   }
-  //
-  //   const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL).toLowerCase();
-  //   const integratedIndicators = ["intel", "uhd", "iris", "arc", "integrated"];
-  //   const isIntegrated = integratedIndicators.some((indicator) => renderer.includes(indicator));
-  //
-  //   const loseContext = gl.getExtension("WEBGL_lose_context");
-  //   if (loseContext) loseContext.loseContext();
-  //
-  //   cachedGPUDetection = isIntegrated;
-  //   return isIntegrated;
-  // } catch {
-  //   cachedGPUDetection = false;
-  //   return false;
-  // }
-  return false;
-}
-
-function detectLowEndDevice(): boolean {
-  // DISABLED: low-end heuristic (core count / device memory) started weak-but-capable
-  // devices at medium. Auto mode now starts at high and steps down only on measured FPS.
-  // const lowCores = (navigator.hardwareConcurrency ?? UNKNOWN_CORE_COUNT_FALLBACK) <= DEFAULT_LOW_END_CORE_COUNT;
-  // const deviceMemory = (navigator as Navigator & { deviceMemory?: number }).deviceMemory;
-  // const lowMemory = deviceMemory !== undefined && deviceMemory <= 4;
-  // return lowCores || lowMemory;
-  return false;
-}
-
 // Health ratio thresholds for adaptive quality selection
-const HEALTH_RATIO_POTATO = 0.55;
 const HEALTH_RATIO_LOW = 0.72;
 const HEALTH_RATIO_MEDIUM = 0.88;
 const HEALTH_RATIO_HIGH = 0.95;
@@ -209,22 +139,13 @@ export const useAdaptiveQuality = (options: AdaptiveQualityOptions = {}) => {
     enableLogging = true,
   } = options;
 
-  // Detection refs retained (functions now return false) so the GPU toast effect stays intact.
-  const hasIntegratedGPU = useRef(detectIntegratedGPU()).current;
-  const isLowEndDevice = useRef(detectLowEndDevice()).current;
-  const storedQuality = useRef(getStoredQuality()).current;
-  // DISABLED: hardware-based clamps — auto mode starts at high (subject to ENABLE_HIGH_QUALITY)
-  // and steps down only on measured FPS.
-  // const maxInitialQuality = !ENABLE_HIGH_QUALITY || hasIntegratedGPU ? "medium" : "high";
-  // const preferredInitialQuality = storedQuality ?? (isLowEndDevice ? "medium" : initialQuality);
-  const maxInitialQuality = !ENABLE_HIGH_QUALITY ? "medium" : "high";
-  const preferredInitialQuality = storedQuality ?? initialQuality;
-  const forcedInitial = clampQualityLevel(preferredInitialQuality, maxInitialQuality);
+  // Always start at HIGH (no hardware detection, no restored quality);
+  // auto mode steps down only on measured performance.
+  const forcedInitial: QualityLevel = ENABLE_HIGH_QUALITY ? "high" : initialQuality;
 
   const [quality, setQuality] = useState<QualityLevel>(forcedInitial);
   const [autoAdjustEnabled, setAutoAdjustEnabled] = useState(autoAdjust);
   const [lockedToLow, setLockedToLow] = useState(false);
-  const gpuToastShown = useRef(false);
 
   const healthHistoryRef = useRef<number[]>([]);
   const lastAdjustmentTimeRef = useRef<number>(0);
@@ -244,6 +165,7 @@ export const useAdaptiveQuality = (options: AdaptiveQualityOptions = {}) => {
   // Silent programmatic quality override (used to sync from persisted settings on mount).
   // Does NOT clear the lockout and does NOT show a toast.
   const applyQualitySilently = useCallback((q: QualityLevel) => {
+    if (q === "potato") q = "low";
     const capped = !ENABLE_HIGH_QUALITY && q === "high" ? "medium" : q;
     setQuality(capped);
     persistQuality(capped);
@@ -252,13 +174,6 @@ export const useAdaptiveQuality = (options: AdaptiveQualityOptions = {}) => {
   }, []);
 
 
-  // Show GPU detection toast once
-  useEffect(() => {
-    if (hasIntegratedGPU && !gpuToastShown.current) {
-      gpuToastShown.current = true;
-      toast.info("Integrated GPU detected — quality set to medium", { duration: 4000 });
-    }
-  }, [hasIntegratedGPU]);
 
   const qualitySettings = useMemo<QualitySettings>(() => ({
     level: quality,
@@ -336,20 +251,11 @@ export const useAdaptiveQuality = (options: AdaptiveQualityOptions = {}) => {
 
       let targetQuality: QualityLevel = quality;
 
-      if (avgHealth < HEALTH_RATIO_POTATO) {
-        targetQuality = "potato";
-      } else if (avgHealth < HEALTH_RATIO_LOW) {
-        targetQuality = lockedToLow && quality === "potato" ? "potato" : "low";
-      } else if (avgHealth < HEALTH_RATIO_MEDIUM) {
-        targetQuality = lockedToLow ? (quality === "potato" ? "potato" : "low") : "medium";
+      // Kartoffel removed: LOW is the floor.
+      if (avgHealth < HEALTH_RATIO_MEDIUM) {
+        targetQuality = "low";
       } else if (avgHealth >= HEALTH_RATIO_HIGH) {
-        targetQuality = lockedToLow
-          ? quality === "potato"
-            ? "potato"
-            : "low"
-          : ENABLE_HIGH_QUALITY
-            ? "high"
-            : "medium";
+        targetQuality = lockedToLow ? "low" : ENABLE_HIGH_QUALITY ? "high" : "medium";
       }
 
       if (targetQuality !== quality) {
@@ -405,6 +311,7 @@ export const useAdaptiveQuality = (options: AdaptiveQualityOptions = {}) => {
 
   // Silent version of setManualQuality — no toast (used by reactive settings sync).
   const applyManualQuality = useCallback((newQuality: QualityLevel) => {
+    if (newQuality === "potato") newQuality = "low";
     const capped = !ENABLE_HIGH_QUALITY && newQuality === "high" ? "medium" : newQuality;
     setQuality(capped);
     persistQuality(capped);
@@ -468,6 +375,5 @@ export const useAdaptiveQuality = (options: AdaptiveQualityOptions = {}) => {
     getPerformanceLog,
     resetQualityLockout,
     lockedToLow,
-    isIntegratedGPU: hasIntegratedGPU,
   };
 };

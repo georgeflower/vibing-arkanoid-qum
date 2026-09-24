@@ -3674,8 +3674,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
           saveGameSettings();
           toast.success(nextAuto ? "Auto quality adjustment enabled" : "Auto quality adjustment disabled");
         } else {
-          const levels: Array<"high" | "medium" | "low" | "potato"> = ["high", "medium", "low", "potato"];
-          const currentIndex = levels.indexOf(quality);
+          const levels: Array<"high" | "medium" | "low"> = ["high", "medium", "low"];
+          const currentIndex = levels.indexOf(quality as "high" | "medium" | "low");
           const nextIndex = (currentIndex + 1) % levels.length;
           const nextQuality = levels[nextIndex];
           setQuality(nextQuality);
