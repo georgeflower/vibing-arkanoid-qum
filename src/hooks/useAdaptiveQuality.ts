@@ -110,12 +110,7 @@ const QUALITY_PRESETS: Record<QualityLevel, Omit<QualitySettings, "level" | "aut
 
 export { QUALITY_PRESETS };
 
-// ─── GPU Hardware Detection ──────────────────────────────────
 
-
-function isQualityLevel(value: string | null): value is QualityLevel {
-  return value !== null && QUALITY_ORDER.includes(value as QualityLevel);
-}
 
 function persistQuality(quality: QualityLevel): void {
   try {
