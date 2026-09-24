@@ -40,11 +40,6 @@ interface SettingsDialogProps {
 type TabId = "video" | "sound";
 
 const QUALITY_LEVELS: { value: QualityLevel; label: string; description: string }[] = [
-  {
-    value: "potato",
-    label: "🥔 Kartoffel",
-    description: "For Rapture; RAPTURION the CENTURION of PENTURIONS — it's powered by a po-ta-to!",
-  },
   { value: "low", label: "Low", description: "Minimal effects, 75% resolution" },
   { value: "medium", label: "Medium", description: "Balanced visuals & performance" },
   { value: "high", label: "High", description: "Full effects, maximum quality" },
