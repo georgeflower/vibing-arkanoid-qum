@@ -1536,8 +1536,9 @@ class SoundManager {
   }
 
   playBossMusic(bossLevel: number) {
-    if (this.musicSource === "radio") return;
     if (!this.musicEnabled) return;
+    // On radio: close the stream for the boss fight; it resumes in stopBossMusic().
+    if (this.musicSource === "radio") this.stopRadio();
 
     
     // Save current background music state
@@ -1600,7 +1601,6 @@ class SoundManager {
   }
 
   stopBossMusic() {
-    if (this.musicSource === "radio") return;
     this.bossTrackName = '';
     this.notifyTrackChange();
 
@@ -1651,6 +1651,11 @@ class SoundManager {
 
   resumeBackgroundMusic() {
     if (!this.musicEnabled) return;
+    // Radio mode: never start built-in tracks — just reconnect the stream.
+    if (this.musicSource === "radio") {
+      this.startRadio();
+      return;
+    }
     
     // Restore the saved track and position
     this.currentTrackIndex = this.savedBackgroundMusicIndex;
