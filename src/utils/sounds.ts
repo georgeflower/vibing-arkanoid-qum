@@ -149,6 +149,8 @@ class SoundManager {
 
   startRadio() {
     if (!this.musicEnabled || this.musicSource !== "radio") return;
+    // Boss theme owns the music during a boss fight; radio resumes in resumeBackgroundMusic().
+    if (this.bossTrackName) return;
     // Never allow a second connection while one is playing or starting up.
     if (this.radioStarting) return;
     if (this.radioAudio && !this.radioAudio.paused) return;
