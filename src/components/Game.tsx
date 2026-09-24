@@ -4800,13 +4800,16 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       fpsTrackerRef.current.frameCount = 0;
       fpsTrackerRef.current.lastTime = frameNow;
 
-      // Update adaptive quality system and display using render stats
+      // Update adaptive quality system and display using render stats.
+      // The achievable FPS can never exceed the panel refresh rate: comparing a
+      // perfect 60 FPS against a 120 FPS target yields a 50% "health" score and
+      // downgraded quality forever on 60Hz displays.
       const renderStats = getRenderStats();
       if (renderStats.fps > 0) {
-        updateFps(
-          renderStats.fps,
-          renderStats.targetFps > 0 ? renderStats.targetFps : renderStats.refreshFps,
-        );
+        const panelFps = renderStats.refreshFps > 0 ? renderStats.refreshFps : 60;
+        const achievable =
+          renderStats.targetFps > 0 ? Math.min(renderStats.targetFps, panelFps) : panelFps;
+        updateFps(renderStats.fps, achievable);
       }
       setCurrentFps(Math.round(renderStats.fps));
 
