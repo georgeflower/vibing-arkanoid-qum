@@ -4806,7 +4806,10 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       // downgraded quality forever on 60Hz displays.
       const renderStats = getRenderStats();
       if (renderStats.fps > 0) {
-        const panelFps = renderStats.refreshFps > 0 ? renderStats.refreshFps : 60;
+        // Floor the panel estimate at 60: when the main thread stalls the rAF
+        // delta EMA sags below the true refresh rate and would flatter a
+        // struggling frame rate into looking healthy.
+        const panelFps = Math.max(60, renderStats.refreshFps > 0 ? renderStats.refreshFps : 60);
         const achievable =
           renderStats.targetFps > 0 ? Math.min(renderStats.targetFps, panelFps) : panelFps;
         updateFps(renderStats.fps, achievable);
