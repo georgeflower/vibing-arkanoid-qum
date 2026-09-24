@@ -50,7 +50,10 @@ function computeFrameDivider(): number {
   const refreshFps = 1000 / refreshEstimateMs;
   // ceil: never exceed the target; render every Nth vsync tick evenly.
   // 60Hz/60 -> 1, 120Hz/60 -> 2, 90Hz/60 -> 2 (even 45), 90Hz/30 -> 3 (even 30)
-  return Math.max(1, Math.ceil(refreshFps / currentTargetFps - 0.05)); // -0.05 tolerance for 60.1Hz-style jitter
+  // The tolerance must be generous: when frames run long the rAF-delta EMA
+  // reads *above* the real refresh rate, and a tight tolerance latched a 60Hz
+  // panel onto divider 2 — a self-inflicted 30 FPS lock.
+  return Math.max(1, Math.ceil(refreshFps / currentTargetFps - 0.3));
 }
 
 // ─── Render-frame statistics ───
