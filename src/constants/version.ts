@@ -1,6 +1,20 @@
-export const GAME_VERSION = "0.9.984";
+export const GAME_VERSION = "0.9.985";
 
 export const CHANGELOG = [
+  {
+    version: "0.9.985",
+    changes: [
+      "NEW: Nectarine demoscene radio — stream live chiptune radio as your music source, with now-playing info, ratings, and time left",
+      "Fixed: radio and game music can no longer play at the same time — starting one always stops the other, and saving Settings keeps your choice",
+      "Fixed: during a boss fight on radio, the boss theme now plays; when the boss is beaten, only the radio returns",
+      "Fixed: the radio stream now shuts off on the main menu and resumes when a game starts",
+      "Fixed: Game Music mode always starts on the menu theme (Pixel Frenzy) instead of a random level track",
+      "Fixed: ball speed no longer jitters mid-rally — frame timing is measured once per frame instead of twice with disagreeing clocks",
+      "Fixed: a new ball after losing a life now launches at the current level's speed instead of level-1 speed",
+      "Fixed: boss-level stats row no longer clips or overflows on mobile",
+      "Improved: quality now always starts at HIGH — no more hardware-detection popups, and the Potato preset has been retired",
+    ],
+  },
   {
     version: "0.9.984",
     changes: [
