@@ -251,11 +251,21 @@ export const useAdaptiveQuality = (options: AdaptiveQualityOptions = {}) => {
 
       let targetQuality: QualityLevel = quality;
 
-      // Kartoffel removed: LOW is the floor.
-      if (avgHealth < HEALTH_RATIO_MEDIUM) {
-        targetQuality = "low";
+      // Step one level at a time (LOW is the floor, potato removed). Jumping
+      // straight from HIGH to LOW overshot on integrated GPUs that run MEDIUM
+      // at a solid 60 FPS, so walk the ladder instead.
+      const ladder: QualityLevel[] = ENABLE_HIGH_QUALITY
+        ? ["low", "medium", "high"]
+        : ["low", "medium"];
+      const currentIdx = Math.max(0, ladder.indexOf(quality));
+
+      if (avgHealth < HEALTH_RATIO_LOW) {
+        // Badly behind: drop two steps at once (high -> low).
+        targetQuality = ladder[Math.max(0, currentIdx - 2)];
+      } else if (avgHealth < HEALTH_RATIO_MEDIUM) {
+        targetQuality = ladder[Math.max(0, currentIdx - 1)];
       } else if (avgHealth >= HEALTH_RATIO_HIGH) {
-        targetQuality = lockedToLow ? "low" : ENABLE_HIGH_QUALITY ? "high" : "medium";
+        targetQuality = lockedToLow ? "low" : ladder[Math.min(ladder.length - 1, currentIdx + 1)];
       }
 
       if (targetQuality !== quality) {
