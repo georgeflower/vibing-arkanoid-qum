@@ -2110,7 +2110,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
    */
   const handleSurviveDeath = useCallback(
     (toastMessage: string, opts?: { spawnMercy?: boolean }) => {
-      const baseSpeed = 4.5;
+      // Respawn at the level's intended speed (was hardcoded 4.5 → sudden slowdown after death)
+      const baseSpeed = 4.5 * Math.min(computeLevelSpeedMultiplier(levelRef.current), 1.75);
       const initialAngle = (-20 * Math.PI) / 180;
       const resetBall: Ball = {
         x: SCALED_CANVAS_WIDTH / 2,
@@ -4776,9 +4777,11 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     // ═══ PHASE 1: Frame Profiler Start (only if explicitly enabled) ═══
     if (profilerEnabled) frameProfiler.startFrame();
 
-    // FPS cap is enforced by physicsLoop; still compute elapsed for dt.
+    // FPS cap + drift compensation are owned by physicsLoop. Measure the true
+    // elapsed time here — a second modulo pass against a fixed 120Hz target
+    // warped dt frame-to-frame and made ball speed visibly pulse.
     const elapsed = frameNow - lastFrameTimeRef.current;
-    lastFrameTimeRef.current = frameNow - (elapsed % targetFrameTime);
+    lastFrameTimeRef.current = frameNow;
 
     // Calculate actual delta time in seconds, clamped to 50ms max to prevent
     // physics tunneling and instabilities on lag spikes or tab resume events
