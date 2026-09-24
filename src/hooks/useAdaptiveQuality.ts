@@ -8,8 +8,6 @@ const LAST_QUALITY_STORAGE_KEY = "va_lastQuality";
 const QUALITY_ORDER: QualityLevel[] = ["potato", "low", "medium", "high"];
 const MAX_FPS_SAMPLES = 10;
 const MIN_WARMUP_SAMPLES = 5;
-const DEFAULT_LOW_END_CORE_COUNT = 4;
-const UNKNOWN_CORE_COUNT_FALLBACK = 8;
 
 interface PerformanceProfilerSummary {
   totalObjects: number;
@@ -117,19 +115,6 @@ export { QUALITY_PRESETS };
 
 function isQualityLevel(value: string | null): value is QualityLevel {
   return value !== null && QUALITY_ORDER.includes(value as QualityLevel);
-}
-
-function clampQualityLevel(requested: QualityLevel, maxLevel: QualityLevel): QualityLevel {
-  return QUALITY_ORDER.indexOf(requested) > QUALITY_ORDER.indexOf(maxLevel) ? maxLevel : requested;
-}
-
-function getStoredQuality(): QualityLevel | null {
-  try {
-    const storedQuality = localStorage.getItem(LAST_QUALITY_STORAGE_KEY);
-    return isQualityLevel(storedQuality) ? storedQuality : null;
-  } catch {
-    return null;
-  }
 }
 
 function persistQuality(quality: QualityLevel): void {
@@ -331,6 +316,7 @@ export const useAdaptiveQuality = (options: AdaptiveQualityOptions = {}) => {
 
   // Silent version of setManualQuality — no toast (used by reactive settings sync).
   const applyManualQuality = useCallback((newQuality: QualityLevel) => {
+    if (newQuality === "potato") newQuality = "low";
     const capped = !ENABLE_HIGH_QUALITY && newQuality === "high" ? "medium" : newQuality;
     setQuality(capped);
     persistQuality(capped);

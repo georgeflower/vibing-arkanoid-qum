@@ -68,6 +68,7 @@ export function loadSettings(): GameSettings {
         merged.musicSource = "radio";
       }
       // Ensure resolution matches quality
+      if (merged.qualityLevel === "potato") merged.qualityLevel = "low"; // Kartoffel removed
       merged.canvasResolution = getResolutionForQuality(merged.qualityLevel);
       return merged;
     }
@@ -110,6 +111,7 @@ async function loadSettingsFromCloud(): Promise<GameSettings | null> {
       if (merged.musicSource !== "radio" && merged.musicSource !== "builtin") {
         merged.musicSource = "radio";
       }
+      if (merged.qualityLevel === "potato") merged.qualityLevel = "low"; // Kartoffel removed
       merged.canvasResolution = getResolutionForQuality(merged.qualityLevel);
       return merged;
     }
