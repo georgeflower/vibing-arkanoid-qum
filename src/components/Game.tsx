@@ -431,7 +431,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       }
 
       // 105% base for normal, ~117% for godlike (reduced 15% from 137.5%)
-      const baseMultiplier = difficulty === "godlike" ? 1.169 : 1.05;
+      const baseMultiplier = difficulty === "godlike" ? 1.169 : 1.0;
       // Level-based caps (before brick hit bonuses): ~132% godlike (reduced 15%), 140% normal
       const maxSpeedMultiplier = difficulty === "godlike" ? 1.318 : 1.4;
 
@@ -440,8 +440,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         // Godlike: always +5% per level
         speedMult = baseMultiplier + (levelNum - 1) * 0.05;
       } else {
-        // Normal: always +3% per level
-        speedMult = baseMultiplier + (levelNum - 1) * 0.03;
+        // Normal: +2.5% per level (1.00 at L1, reaches the 1.40 cap at L17)
+        speedMult = baseMultiplier + (levelNum - 1) * 0.025;
       }
       return Math.min(maxSpeedMultiplier, speedMult);
     },
@@ -2596,6 +2596,19 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       (count, brick) => count + (brick.isIndestructible ? 0 : 1),
       0,
     );
+    // Spread the speed budget across ~65% of the level so every level has an in-level ramp
+    // (normal mode, regular levels only; godlike / daily / boss rush keep the legacy 0.012 step).
+    const isRegularNormalLevel = !isDailyChallenge && !isBossRush && settings.difficulty !== "godlike";
+    world.levelSpeedBoostStep = isRegularNormalLevel
+      ? Math.min(
+          0.014,
+          Math.max(
+            0.002,
+            (MAX_TOTAL_SPEED_NORMAL - calculateSpeedForLevel(currentLevel, settings.difficulty)) /
+              (0.65 * Math.max(1, world.levelStartDestructibleCount)),
+          ),
+        )
+      : 0.012;
     bricksSinceLastPowerUpRef.current = 0;
     return newBricks;
   }, [SCALED_CANVAS_WIDTH, SCALED_CANVAS_HEIGHT, SCALED_PADDLE_WIDTH, SCALED_PADDLE_HEIGHT, SCALED_PADDLE_START_Y, SCALED_BRICK_WIDTH, SCALED_BRICK_HEIGHT, SCALED_BRICK_PADDING, SCALED_BRICK_OFFSET_LEFT, SCALED_BRICK_OFFSET_TOP]);
@@ -4601,9 +4614,6 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       setHitStreakActive(false);
       ballHitSinceLastPaddleRef.current.clear();
       world.backgroundHue = 0;
-
-      // Lower accumulated speed by 2% on death (but never below 0)
-      setBrickHitSpeedAccumulated((prev) => Math.max(0, prev - 0.02));
 
       setLives((prev) => {
         const newLives = prev - 1;

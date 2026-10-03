@@ -1097,7 +1097,7 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
                   remainingBrickCount++;
                 }
                 const endgameThreshold = Math.max(6, Math.round(world.levelStartDestructibleCount * 0.12));
-                let baseSpeedIncrease = 0.012;
+                let baseSpeedIncrease = world.levelSpeedBoostStep;
                 if (endgameThreshold > 0 && remainingBrickCount <= endgameThreshold) {
                   const t = (endgameThreshold - remainingBrickCount) / endgameThreshold;
                   baseSpeedIncrease = 0.02 + t * 0.02;
