@@ -1,6 +1,14 @@
-export const GAME_VERSION = "0.9.985";
+export const GAME_VERSION = "0.9.986";
 
 export const CHANGELOG = [
+  {
+    version: "0.9.986",
+    changes: [
+      "Improved: Ball speed now ramps gradually through every level instead of hitting max speed within the first few bricks — base speed rises smoothly from level 1 to level 17",
+      "Improved: Level difficulty smoothed — levels 6, 14 and 19 trimmed (fewer cracked bricks / outer bricks) so they no longer spike above their neighbours",
+      "Improved: Level 18 has side windows in its metal walls so the ball no longer gets pinned between metal bricks",
+    ],
+  },
   {
     version: "0.9.985",
     changes: [
