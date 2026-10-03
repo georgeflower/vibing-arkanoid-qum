@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════════════════
 // ████████╗ DEBUG CONFIGURATION - SET TO FALSE FOR PRODUCTION ████████╗
 // ═══════════════════════════════════════════════════════════════
-export const ENABLE_DEBUG_FEATURES = false;
+export const ENABLE_DEBUG_FEATURES = TRUE;
 // ═══════════════════════════════════════════════════════════════
 
 export const CANVAS_WIDTH = 850;
