@@ -115,6 +115,9 @@ export interface GameWorld {
   launchAngle: number;
   speedMultiplier: number;
   brickHitSpeedAccumulated: number;
+  levelBaseSpeedFactor: number;
+  speedBoostApplied: number;
+  speedBoostCap: number;
   enemiesKilled: number;
   enemySpawnCount: number;
   lastEnemySpawnTime: number;
@@ -177,8 +180,11 @@ const WORLD_DEFAULTS: Readonly<GameWorld> = Object.freeze({
   highlightFlash: 0,
   backgroundPhase: 0,
   launchAngle: -20,
-  speedMultiplier: 1.05,
+  speedMultiplier: 1.05 * 1.05,
   brickHitSpeedAccumulated: 0,
+  levelBaseSpeedFactor: 1.05 * 1.05,
+  speedBoostApplied: 0,
+  speedBoostCap: 0.5,
   enemiesKilled: 0,
   enemySpawnCount: 0,
   lastEnemySpawnTime: 0,
@@ -256,6 +262,9 @@ export function resetWorld(overrides?: Partial<GameWorld>): void {
   world.launchAngle = WORLD_DEFAULTS.launchAngle;
   world.speedMultiplier = WORLD_DEFAULTS.speedMultiplier;
   world.brickHitSpeedAccumulated = WORLD_DEFAULTS.brickHitSpeedAccumulated;
+  world.levelBaseSpeedFactor = WORLD_DEFAULTS.levelBaseSpeedFactor;
+  world.speedBoostApplied = WORLD_DEFAULTS.speedBoostApplied;
+  world.speedBoostCap = WORLD_DEFAULTS.speedBoostCap;
   world.enemiesKilled = WORLD_DEFAULTS.enemiesKilled;
   world.enemySpawnCount = WORLD_DEFAULTS.enemySpawnCount;
   world.lastEnemySpawnTime = WORLD_DEFAULTS.lastEnemySpawnTime;
