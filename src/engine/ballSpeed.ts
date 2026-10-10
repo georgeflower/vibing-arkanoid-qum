@@ -14,7 +14,14 @@ export const getEffectiveSpeedFactor = () => world.speedMultiplier * (1 + world.
 
 export const START_FACTOR_L1 = 1.15;
 export const START_FACTOR_L17 = 2.25;
-export const END_BOOST_RATIO = 1.2; // end-of-level total factor = start x this
+export const END_BOOST_RATIO_L1 = 1.5; // end-of-level total factor = start x this (level 1)
+export const END_BOOST_RATIO_L17 = 1.2; // ... at level 17+
+
+/** End-of-level boost ratio: linear L1 -> L17, clamped. */
+export function endBoostRatio(level: number): number {
+  const t = Math.min(1, Math.max(0, (level - 1) / 16));
+  return END_BOOST_RATIO_L1 + (END_BOOST_RATIO_L17 - END_BOOST_RATIO_L1) * t;
+}
 export const SLOWDOWN_RECOVER_SECONDS = 10;
 
 export type SpeedMode = "normal" | "godlike" | "daily" | "bossRush";
@@ -35,14 +42,14 @@ let slowdownRecoverRate = 0; // scale units per second while a slowdown is recov
  * Call at game start, level start, respawn, retry, boss-rush stage change. Resets everything speed-related.
  * startFactor is the level start factor. Non-normal modes pass maxTotalSpeed (legacy cap logic).
  */
-export function setLevelSpeed(startFactor: number, maxTotalSpeed: number | null = null): void {
+export function setLevelSpeed(startFactor: number, maxTotalSpeed: number | null = null, level = 1): void {
   world.levelBaseSpeedFactor = startFactor;
   world.speedMultiplier = startFactor;
   world.brickHitSpeedAccumulated = 0; // boost target (fraction)
   world.speedBoostApplied = 0; // eased boost actually applied
   world.speedBoostCap =
     maxTotalSpeed === null
-      ? Math.max(0, (startFactor * END_BOOST_RATIO) / startFactor - 1)
+      ? Math.max(0, endBoostRatio(level) - 1)
       : Math.max(0, maxTotalSpeed - Math.sqrt(startFactor));
   slowdownRecoverRate = 0;
   console.log(

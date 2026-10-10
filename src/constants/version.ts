@@ -1,6 +1,10 @@
-export const GAME_VERSION = "0.9.989";
+export const GAME_VERSION = "0.9.990";
 
 export const CHANGELOG = [
+  {
+    version: "0.9.990",
+    changes: ["Early levels now speed up more during the level; smoother bounce interpolation"],
+  },
   {
     version: "0.9.989",
     changes: ["Ball speed restored: higher level-start speeds, slowdown now recovers"],
