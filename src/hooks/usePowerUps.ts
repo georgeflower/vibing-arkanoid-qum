@@ -1,3 +1,4 @@
+import { applySlowdown, splitDirection } from "@/engine/ballSpeed";
 import { useState, useCallback, useRef } from "react";
 import type { PowerUp, PowerUpType, Ball, Paddle, Brick, Difficulty } from "@/types/game";
 import { POWERUP_SIZE, POWERUP_FALL_SPEED, CANVAS_HEIGHT, CANVAS_WIDTH, PADDLE_WIDTH, FIREBALL_DURATION } from "@/constants/game";
@@ -232,29 +233,11 @@ export const usePowerUps = (
               soundManager.playMultiballSound();
               if (balls.length > 0) {
               const baseBall = balls[0];
-                const MIN_SPLIT_SPEED = 4.5;
-                const newDx1 = baseBall.dx - 2;
-                const newDx2 = baseBall.dx + 2;
-                let speed1 = Math.sqrt(newDx1 * newDx1 + baseBall.dy * baseBall.dy);
-                let speed2 = Math.sqrt(newDx2 * newDx2 + baseBall.dy * baseBall.dy);
-                // Ensure neither split ball is slower than the minimum
-                let finalDx1 = newDx1, finalDy1 = baseBall.dy;
-                let finalDx2 = newDx2, finalDy2 = baseBall.dy;
-                if (speed1 < MIN_SPLIT_SPEED && speed1 > 0.01) {
-                  const scale = MIN_SPLIT_SPEED / speed1;
-                  finalDx1 *= scale;
-                  finalDy1 *= scale;
-                  speed1 = MIN_SPLIT_SPEED;
-                }
-                if (speed2 < MIN_SPLIT_SPEED && speed2 > 0.01) {
-                  const scale = MIN_SPLIT_SPEED / speed2;
-                  finalDx2 *= scale;
-                  finalDy2 *= scale;
-                  speed2 = MIN_SPLIT_SPEED;
-                }
+                const d1 = splitDirection(baseBall.dx, baseBall.dy, -20);
+                const d2 = splitDirection(baseBall.dx, baseBall.dy, 20);
                 const newBalls: Ball[] = [
-                  { ...baseBall, id: Date.now() + 1, dx: finalDx1, dy: finalDy1, speed: speed1, rotation: Math.random() * 360 },
-                  { ...baseBall, id: Date.now() + 2, dx: finalDx2, dy: finalDy2, speed: speed2, rotation: Math.random() * 360 },
+                  { ...baseBall, id: Date.now() + 1, dx: d1.dx, dy: d1.dy, rotation: Math.random() * 360 },
+                  { ...baseBall, id: Date.now() + 2, dx: d2.dx, dy: d2.dy, rotation: Math.random() * 360 },
                 ];
                 setBalls(prev => [...prev, ...newBalls]);
                 toast.success("Multi-ball activated!");
@@ -312,26 +295,8 @@ export const usePowerUps = (
             
             case "slowdown":
               soundManager.playSlowerSound();
-              setSpeedMultiplier(prev => {
-                const newSpeed = Math.max(0.9, prev - 0.1);
-                setBalls(prevBalls => prevBalls.map(ball => {
-                  const currentSpeed = Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy);
-                  const newBallSpeed = currentSpeed * (newSpeed / prev);
-                  const angle = Math.atan2(ball.dx, -ball.dy);
-                  return {
-                    ...ball,
-                    speed: newBallSpeed,
-                    dx: newBallSpeed * Math.sin(angle),
-                    dy: -newBallSpeed * Math.cos(angle),
-                    speedBoostAccumulated: 0,
-                  };
-                }));
-                return newSpeed;
-              });
-              if (setBrickHitSpeedAccumulated) {
-                setBrickHitSpeedAccumulated(0);
-              }
-              toast.success("Speed reduced by 10%!");
+              applySlowdown();
+              toast.success("Speed reduced by 15%!");
               break;
             
             case "paddleExtend":

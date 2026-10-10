@@ -1,6 +1,12 @@
-export const GAME_VERSION = "0.9.986";
+export const GAME_VERSION = "0.9.987";
 
 export const CHANGELOG = [
+  {
+    version: "0.9.987",
+    changes: [
+      "Ball speed is now constant between hits: one speed model, no more speed jumps after bounces. Slowdown power-up now reduces speed by 15%. Speed % in the HUD shows true speed.",
+    ],
+  },
   {
     version: "0.9.986",
     changes: [

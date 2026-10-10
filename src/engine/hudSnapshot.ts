@@ -10,6 +10,8 @@
  * and timer displays).
  */
 
+import { getEffectiveSpeedFactor } from "@/engine/ballSpeed";
+
 export interface HUDSnapshot {
   // Core HUD values
   score: number;
@@ -65,7 +67,7 @@ export function writeHUD(
   score: number,
   lives: number,
   level: number,
-  speedMultiplier: number,
+  _speedMultiplier: number, // ignored: HUD shows getEffectiveSpeedFactor()
   timer: number,
   bossHealth: number,
   bossMaxHealth: number,
@@ -79,7 +81,7 @@ export function writeHUD(
   hudSnapshot.score = score;
   hudSnapshot.lives = lives;
   hudSnapshot.level = level;
-  hudSnapshot.speedPercent = Math.round(speedMultiplier * 100);
+  hudSnapshot.speedPercent = Math.round(getEffectiveSpeedFactor() * 100);
   hudSnapshot.timer = timer;
   hudSnapshot.bossHealth = bossHealth;
   hudSnapshot.bossMaxHealth = bossMaxHealth;

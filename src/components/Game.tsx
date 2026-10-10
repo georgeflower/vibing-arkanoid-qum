@@ -1,3 +1,4 @@
+import { BALL_BASE_SPEED, getEffectiveSpeedFactor, levelSpeedFactor, setLevelSpeed } from "@/engine/ballSpeed";
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { world, type LaserWarning, type SuperWarning, type BulletImpact, triggerHitstop, spawnScorePopup, isHitstopActive } from "@/engine/state";
 import { renderState } from "@/engine/renderState";
@@ -476,7 +477,10 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   // ═══ PHASE 1: speedMultiplier lives in world.speedMultiplier (engine/state.ts) ═══
   // Initialize world.speedMultiplier on first render
   const [speedMultiplierInitialized] = useState(() => {
-    world.speedMultiplier = computeLevelSpeedMultiplier(settings.startingLevel);
+    setLevelSpeed(
+      computeLevelSpeedMultiplier(settings.startingLevel),
+      settings.difficulty === "godlike" ? MAX_TOTAL_SPEED_GODLIKE : MAX_TOTAL_SPEED_NORMAL,
+    );
     return true;
   });
   void speedMultiplierInitialized; // suppress unused warning
@@ -2104,26 +2108,28 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     }
   }, [isBossRush, isDailyChallenge, dailyChallengeData, bossRushIndex, bossRushStartTime, levelSkipped, getQualifiedLeaderboards]);
 
+  const createWaitingBall = useCallback(
+    (angleRad: number): Ball => ({
+      x: SCALED_CANVAS_WIDTH / 2,
+      y: SCALED_CANVAS_HEIGHT - SCALED_PADDLE_START_Y,
+      dx: BALL_BASE_SPEED * Math.sin(angleRad),
+      dy: -BALL_BASE_SPEED * Math.cos(angleRad),
+      radius: SCALED_BALL_RADIUS,
+      id: nextBallId.current++,
+      isFireball: false,
+      waitingToLaunch: true,
+    }),
+    [SCALED_CANVAS_WIDTH, SCALED_CANVAS_HEIGHT, SCALED_PADDLE_START_Y, SCALED_BALL_RADIUS],
+  );
+
   /**
    * Survive-death branch: resets ball (with proper angle math), clears all power-up
    * timers, entities, and bomb intervals. Optionally spawns mercy power-ups.
    */
   const handleSurviveDeath = useCallback(
     (toastMessage: string, opts?: { spawnMercy?: boolean }) => {
-      // Respawn at the level's intended speed (was hardcoded 4.5 → sudden slowdown after death)
-      const baseSpeed = 4.5 * Math.min(computeLevelSpeedMultiplier(levelRef.current), 1.75);
       const initialAngle = (-20 * Math.PI) / 180;
-      const resetBall: Ball = {
-        x: SCALED_CANVAS_WIDTH / 2,
-        y: SCALED_CANVAS_HEIGHT - SCALED_PADDLE_START_Y,
-        dx: baseSpeed * Math.sin(initialAngle),
-        dy: -baseSpeed * Math.cos(initialAngle),
-        radius: SCALED_BALL_RADIUS,
-        speed: baseSpeed,
-        id: nextBallId.current++,
-        isFireball: false,
-        waitingToLaunch: true,
-      };
+      const resetBall: Ball = createWaitingBall(initialAngle);
       setBalls([resetBall]);
       setLaunchAngle(-20);
       launchAngleDirectionRef.current = 1;
@@ -2187,8 +2193,10 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       world.bullets = [];
       bulletPool.releaseAll();
       // Re-derive the intended level speed (never snap to a hardcoded 1.0)
-      setSpeedMultiplier(computeLevelSpeedMultiplier(levelRef.current));
-      setBrickHitSpeedAccumulated(0);
+      setLevelSpeed(
+        computeLevelSpeedMultiplier(levelRef.current),
+        settings.difficulty === "godlike" ? MAX_TOTAL_SPEED_GODLIKE : MAX_TOTAL_SPEED_NORMAL,
+      );
       setTimer(0);
       setLastEnemySpawnTime(0);
       clearAllEnemies();
@@ -2210,6 +2218,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       clearAllEnemies,
       clearAllBombs,
       computeLevelSpeedMultiplier,
+      createWaitingBall,
       setSpeedMultiplier,
     ],
   );
@@ -2662,21 +2671,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     const startLevel = settings.startingLevel;
     const startingSpeedMultiplier = calculateSpeedForLevel(startLevel, settings.difficulty);
 
-    // Initialize ball with correct speed multiplier for starting level
-    const baseSpeed = 4.5 * startingSpeedMultiplier;
     const initialAngle = (-20 * Math.PI) / 180; // Start from left side
-    const initialBall: Ball = {
-      x: SCALED_CANVAS_WIDTH / 2,
-      y: SCALED_CANVAS_HEIGHT - SCALED_PADDLE_START_Y,
-      dx: baseSpeed * Math.sin(initialAngle), // Calculate from angle
-      dy: -baseSpeed * Math.cos(initialAngle), // Calculate from angle
-      radius: SCALED_BALL_RADIUS,
-      speed: baseSpeed,
-      id: nextBallId.current++,
-      isFireball: false,
-      waitingToLaunch: true,
-      rotation: 0,
-    };
+    const initialBall: Ball = { ...createWaitingBall(initialAngle), rotation: 0 };
     setBalls([initialBall]);
     setLaunchAngle(-20); // Start from left side
     launchAngleDirectionRef.current = 1; // Move right initially
@@ -2704,7 +2700,10 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     setHitStreakActive(false);
     ballHitSinceLastPaddleRef.current.clear();
     // Set speed multiplier (already calculated above)
-    setSpeedMultiplier(startingSpeedMultiplier);
+    setLevelSpeed(
+      startingSpeedMultiplier,
+      settings.difficulty === "godlike" ? MAX_TOTAL_SPEED_GODLIKE : MAX_TOTAL_SPEED_NORMAL,
+    );
     setGameState("ready");
     setPowerUps([]);
     setTimer(0);
@@ -2826,7 +2825,10 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       setBossFirstHitShieldDropped(false);
       // Keep hitStreak across boss rush level transitions — do NOT reset here
       ballHitSinceLastPaddleRef.current.clear();
-      setSpeedMultiplier(newSpeedMultiplier);
+      setLevelSpeed(
+        newSpeedMultiplier,
+        settings.difficulty === "godlike" ? MAX_TOTAL_SPEED_GODLIKE : MAX_TOTAL_SPEED_NORMAL,
+      );
 
       setPaddle((prev) => ({
         x: SCALED_CANVAS_WIDTH / 2 - SCALED_PADDLE_WIDTH / 2,
@@ -2840,18 +2842,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         hasSecondChance: prev?.hasSecondChance || false,
       }));
 
-      const baseSpeed = 5.175 * Math.min(newSpeedMultiplier, 1.55);
-      const initialBall: Ball = {
-        x: SCALED_CANVAS_WIDTH / 2,
-        y: SCALED_CANVAS_HEIGHT - SCALED_PADDLE_START_Y,
-        dx: baseSpeed,
-        dy: -baseSpeed,
-        radius: SCALED_BALL_RADIUS,
-        speed: baseSpeed,
-        id: nextBallId.current++,
-        isFireball: false,
-        waitingToLaunch: true,
-      };
+      const initialBall: Ball = createWaitingBall((-20 * Math.PI) / 180);
       setBalls([initialBall]);
       // Seed new ball into hit tracking so first paddle contact doesn't reset streak
       ballHitSinceLastPaddleRef.current.add(initialBall.id);
@@ -2875,7 +2866,6 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       setExplosions([]);
       setEnemySpawnCount(0);
       setLastEnemySpawnTime(0);
-      setBrickHitSpeedAccumulated(0);
       setLastBossSpawnTime(0);
       setBossSpawnAnimation(null);
       setBossDefeatedTransitioning(false); // Reset so minions can spawn for next boss
@@ -2918,7 +2908,10 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     setBossFirstHitShieldDropped(false); // Reset shield drop for new boss level
     // Keep hitStreak across level transitions — do NOT reset here
     ballHitSinceLastPaddleRef.current.clear();
-    setSpeedMultiplier(newSpeedMultiplier);
+    setLevelSpeed(
+      newSpeedMultiplier,
+      settings.difficulty === "godlike" ? MAX_TOTAL_SPEED_GODLIKE : MAX_TOTAL_SPEED_NORMAL,
+    );
 
     // Update max level reached in localStorage (only for normal game mode, not daily challenge)
     if (settings.gameMode === "normal") {
@@ -2936,19 +2929,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       hasSecondChance: prev?.hasSecondChance || false, // Persist second chance across levels
     }));
 
-    // Initialize ball with new speed - waiting to launch (capped at 155%)
-    const baseSpeed = 5.175 * Math.min(newSpeedMultiplier, 1.55); // 50% faster base speed
-    const initialBall: Ball = {
-      x: SCALED_CANVAS_WIDTH / 2,
-      y: SCALED_CANVAS_HEIGHT - SCALED_PADDLE_START_Y,
-      dx: baseSpeed,
-      dy: -baseSpeed,
-      radius: SCALED_BALL_RADIUS,
-      speed: baseSpeed,
-      id: nextBallId.current++,
-      isFireball: false,
-      waitingToLaunch: true,
-    };
+    const initialBall: Ball = createWaitingBall((-20 * Math.PI) / 180);
     setBalls([initialBall]);
     // Seed new ball into hit tracking so first paddle contact doesn't reset streak
     ballHitSinceLastPaddleRef.current.add(initialBall.id);
@@ -2975,8 +2956,6 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     setLastEnemySpawnTime(0);
     setBonusLetters([]);
     // Don't reset collected letters between levels
-    // Reset accumulated slowdown speed on level clear
-    setBrickHitSpeedAccumulated(0);
     setLastBossSpawnTime(0);
     setBossSpawnAnimation(null);
     // Only clear boss state if the new level is NOT a boss level
@@ -3225,7 +3204,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     setBalls((prev) =>
       prev.map((ball) => {
         if (ball.waitingToLaunch) {
-          const speed = ball.speed;
+          const speed = BALL_BASE_SPEED;
           const angle = (launchAngle * Math.PI) / 180;
           return {
             ...ball,
@@ -3924,7 +3903,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   // Get substep debug info for overlay
   const getSubstepDebugInfo = useCallback(() => {
     const balls = world.balls; // live read
-    const speedMultiplier = world.speedMultiplier; // live read
+    const speedMultiplier = getEffectiveSpeedFactor(); // live read
     if (balls.length === 0) {
       return {
         substeps: 0,
@@ -3969,8 +3948,6 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     const boss = world.boss;
     if (!paddle || balls.length === 0) return;
 
-    const maxTotalSpeed = settings.difficulty === "godlike" ? MAX_TOTAL_SPEED_GODLIKE : MAX_TOTAL_SPEED_NORMAL;
-
     // ═══ Run pure physics frame ═══
     const result = runPhysicsFrame({
       dtSeconds: dtSecondsRef.current,
@@ -3981,7 +3958,6 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       minBrickDimension: Math.min(SCALED_BRICK_WIDTH, SCALED_BRICK_HEIGHT),
       qualityLevel: qualitySettings.level,
       difficulty: settings.difficulty,
-      maxTotalSpeed,
       isBossRush,
       debugSettings,
       pendingChainExplosions: pendingChainExplosionsRef.current,
@@ -8457,7 +8433,10 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     // Keep the current level
     const currentLevel = level;
     // Self-healing: always re-derive from the single source of truth
-    setSpeedMultiplier(computeLevelSpeedMultiplier(currentLevel));
+    setLevelSpeed(
+      computeLevelSpeedMultiplier(currentLevel),
+      settings.difficulty === "godlike" ? MAX_TOTAL_SPEED_GODLIKE : MAX_TOTAL_SPEED_NORMAL,
+    );
 
     // Reset paddle
     const initialPaddleX = SCALED_CANVAS_WIDTH / 2 - SCALED_PADDLE_WIDTH / 2;
@@ -8472,19 +8451,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     paddleXRef.current = initialPaddleX;
 
     // Initialize ball with level speed - waiting to launch
-    const retrySpeedMult = computeLevelSpeedMultiplier(currentLevel);
-    const baseSpeed = 4.5 * Math.min(retrySpeedMult, 1.75);
-    const initialBall: Ball = {
-      x: SCALED_CANVAS_WIDTH / 2,
-      y: SCALED_CANVAS_HEIGHT - SCALED_PADDLE_START_Y,
-      dx: baseSpeed,
-      dy: -baseSpeed,
-      radius: SCALED_BALL_RADIUS,
-      speed: baseSpeed,
-      id: nextBallId.current++,
-      isFireball: false,
-      waitingToLaunch: true,
-    };
+    const initialBall: Ball = createWaitingBall((-20 * Math.PI) / 180);
     setBalls([initialBall]);
     setLaunchAngle(-20);
     launchAngleDirectionRef.current = 1;
@@ -8531,7 +8498,6 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     setBonusLetters([]);
     setCollectedLetters(new Set());
     setLetterLevelAssignments(createRandomLetterAssignments());
-    setBrickHitSpeedAccumulated(0);
     setLastBossSpawnTime(0);
     setBossSpawnAnimation(null);
     setEnemiesKilled(0);
@@ -9203,7 +9169,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                           if (tutorialStep.pauseGame) {
                             // Derive the base from the level (never from a possibly mid-ramp live value)
                             if (!getReadyActive) {
-                              baseSpeedMultiplierRef.current = computeLevelSpeedMultiplier(level);
+                              baseSpeedMultiplierRef.current = levelSpeedFactor(computeLevelSpeedMultiplier(level));
                             }
                             setSpeedMultiplier(baseSpeedMultiplierRef.current * 0.1); // Start at 10% speed
                             getReadyStartTimeRef.current = Date.now();
@@ -9235,7 +9201,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                           if (gameState === "paused") {
                             // Also trigger "Get Ready" when skipping
                             if (!getReadyActive) {
-                              baseSpeedMultiplierRef.current = computeLevelSpeedMultiplier(level);
+                              baseSpeedMultiplierRef.current = levelSpeedFactor(computeLevelSpeedMultiplier(level));
                             }
                             setSpeedMultiplier(baseSpeedMultiplierRef.current * 0.1);
                             getReadyStartTimeRef.current = Date.now();
@@ -9828,7 +9794,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
                       <div className="right-stat-label" style={{ color: "hsl(120, 50%, 50%)" }}>
                         SPEED
                       </div>
-                      <div className="right-stat-value">{Math.round(speedMultiplier * 100)}%</div>
+                      <div className="right-stat-value">{Math.round(getEffectiveSpeedFactor() * 100)}%</div>
                     </div>
 
                     {/* Turret Ammo - Only show when turrets are active */}

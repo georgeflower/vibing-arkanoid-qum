@@ -6,6 +6,7 @@
  * Returns a PhysicsFrameResult with events for Game.tsx to apply side effects.
  */
 
+import { BALL_BASE_SPEED, easeSpeedBoost, getEffectiveSpeedFactor, normalizeBallSpeed } from "@/engine/ballSpeed";
 import { world, triggerHitstop, spawnScorePopup } from "@/engine/state";
 import { processBallWithCCD } from "@/utils/gameCCD";
 import { PHYSICS_CONFIG, ENABLE_DEBUG_FEATURES } from "@/constants/game";
@@ -120,7 +121,6 @@ export interface PhysicsConfig {
   minBrickDimension: number;
   qualityLevel: "potato" | "low" | "medium" | "high";
   difficulty: string;
-  maxTotalSpeed: number;
   isBossRush: boolean;
   debugSettings: {
     enableCollisionLogging: boolean;
@@ -594,7 +594,9 @@ function performBossFirstSweep(
 // ─── Main Physics Frame ───
 
 export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
-  const { balls, paddle, boss, resurrectedBosses, bricks, enemies, speedMultiplier } = world;
+  const { balls, paddle, boss, resurrectedBosses, bricks, enemies } = world;
+  easeSpeedBoost(config.dtSeconds);
+  const speedFactor = getEffectiveSpeedFactor();
 
   const result = createEmptyResult();
 
@@ -607,7 +609,7 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
   const brickById = new Map<number, Brick>();
   for (let i = 0; i < bricks.length; i++) brickById.set(bricks[i].id, bricks[i]);
 
-  const { dtSeconds, frameTick, level, gameState, debugSettings, maxTotalSpeed, isBossRush } = config;
+  const { dtSeconds, frameTick, level, gameState, debugSettings, isBossRush } = config;
 
   // ═══ Advance simulation clock ═══
   world.simTimeSeconds += dtSeconds;
@@ -674,7 +676,7 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
       bricks,
       paddle,
       canvasSize: config.canvasSize,
-      speedMultiplier,
+      speedMultiplier: speedFactor,
       minBrickDimension: config.minBrickDimension,
       boss: null, // Boss handled in Phase 0
       resurrectedBosses: [],
@@ -804,15 +806,6 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
           ccdResult.ball.lastPaddleHitTime = world.simTimeMs;
           ccdResult.ball.lastGravityResetTime = world.simTimeMs;
 
-          // Normalize speed bidirectionally to remove gravity contribution and prevent permanent slowdowns
-          const currentSpd = Math.hypot(ccdResult.ball.dx, ccdResult.ball.dy);
-          const targetSpd = ccdResult.ball.speed;
-          if (currentSpd > 0 && Math.abs(currentSpd - targetSpd) > 0.01) {
-            const scale = targetSpd / currentSpd;
-            ccdResult.ball.dx *= scale;
-            ccdResult.ball.dy *= scale;
-          }
-
           if (!isDuplicate) {
             if (ENABLE_DEBUG_FEATURES && debugSettings.enableCollisionLogging && ballBefore) {
               const speedAfter = Math.hypot(ccdResult.ball.dx, ccdResult.ball.dy);
@@ -856,15 +849,6 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
 
           ccdResult.ball.lastPaddleHitTime = nowCorner;
           ccdResult.ball.lastGravityResetTime = nowCorner;
-
-          // Normalize speed bidirectionally (same rule as the flat paddle surface)
-          const currentSpdCorner = Math.hypot(ccdResult.ball.dx, ccdResult.ball.dy);
-          const targetSpdCorner = ccdResult.ball.speed;
-          if (currentSpdCorner > 0 && Math.abs(currentSpdCorner - targetSpdCorner) > 0.01) {
-            const scaleCorner = targetSpdCorner / currentSpdCorner;
-            ccdResult.ball.dx *= scaleCorner;
-            ccdResult.ball.dy *= scaleCorner;
-          }
 
           if (!isDuplicate) {
             if (ENABLE_DEBUG_FEATURES && debugSettings.enableCollisionLogging && ballBefore) {
@@ -1084,10 +1068,8 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
                 spawnScorePopup(brick.x + brick.width / 2, brick.y + brick.height / 2, brick.points, `+${brick.points}`);
               }
 
-              // Speed increase — per-ball cap so multiball doesn't stagnate
-              const ballAccumulated = ccdResult.ball.speedBoostAccumulated ?? 0;
-              const speedBudget = maxTotalSpeed - speedMultiplier;
-              if (ballAccumulated < speedBudget) {
+              // Speed increase — global boost target (eased in by easeSpeedBoost)
+              if (world.brickHitSpeedAccumulated < world.speedBoostCap) {
                 let remainingBrickCount = 0;
                 for (let bi2 = 0; bi2 < bricks.length; bi2++) {
                   const b = bricks[bi2];
@@ -1102,16 +1084,9 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
                   const t = (endgameThreshold - remainingBrickCount) / endgameThreshold;
                   baseSpeedIncrease = 0.02 + t * 0.02;
                 }
-                const speedIncrease = Math.min(baseSpeedIncrease, speedBudget - ballAccumulated);
-                ccdResult.ball.speedBoostAccumulated = ballAccumulated + speedIncrease;
-                ccdResult.ball.dx *= 1 + speedIncrease;
-                ccdResult.ball.dy *= 1 + speedIncrease;
-                ccdResult.ball.speed = Math.hypot(ccdResult.ball.dx, ccdResult.ball.dy);
-
-                // Update global accumulator as max across all balls (for HUD/display)
-                world.brickHitSpeedAccumulated = Math.max(
-                  world.brickHitSpeedAccumulated,
-                  ccdResult.ball.speedBoostAccumulated,
+                world.brickHitSpeedAccumulated += Math.min(
+                  baseSpeedIncrease,
+                  world.speedBoostCap - world.brickHitSpeedAccumulated,
                 );
               }
 
@@ -1431,28 +1406,31 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
 
   // ═══ Phase 4b: Speed ramp for balls released from Mega Boss ═══
   const RAMP_DURATION_MS = 1500;
-  const TARGET_SPEED = 4;
   const rampNow = world.simTimeMs;
+  const rampScales = new Map<number, number>();
   for (const ball of updatedBalls) {
+    let rampScale = 1;
     if (ball.releaseSpeedScale != null && ball.releasedFromBossTime) {
       const elapsed = rampNow - ball.releasedFromBossTime;
       if (elapsed >= RAMP_DURATION_MS) {
-        const currentSpeed = Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy);
-        if (currentSpeed > 0) {
-          ball.dx = (ball.dx / currentSpeed) * TARGET_SPEED;
-          ball.dy = (ball.dy / currentSpeed) * TARGET_SPEED;
-        }
         delete ball.releaseSpeedScale;
         delete ball.releasedFromBossTime;
       } else {
         const t = elapsed / RAMP_DURATION_MS;
-        const scale = ball.releaseSpeedScale + (1 - ball.releaseSpeedScale) * t;
-        const currentSpeed = Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy);
-        if (currentSpeed > 0) {
-          const desiredSpeed = TARGET_SPEED * scale;
-          ball.dx = (ball.dx / currentSpeed) * desiredSpeed;
-          ball.dy = (ball.dy / currentSpeed) * desiredSpeed;
-        }
+        rampScale = ball.releaseSpeedScale + (1 - ball.releaseSpeedScale) * t;
+      }
+    }
+    rampScales.set(ball.id, rampScale);
+  }
+
+  // Single normalization point: |v| is always BALL_BASE_SPEED * rampScale
+  for (const ball of updatedBalls) {
+    normalizeBallSpeed(ball, rampScales.get(ball.id) ?? 1);
+    if (ENABLE_DEBUG_FEATURES && !ball.waitingToLaunch) {
+      const expected = BALL_BASE_SPEED * (rampScales.get(ball.id) ?? 1);
+      const mag = Math.hypot(ball.dx, ball.dy);
+      if (mag > 1e-6 && Math.abs(mag - expected) > 0.02) {
+        console.warn(`[BallSpeed] Ball ${ball.id} |v|=${mag.toFixed(3)} expected ${expected.toFixed(3)}`);
       }
     }
   }
