@@ -1,6 +1,12 @@
-export const GAME_VERSION = "0.9.987";
+export const GAME_VERSION = "0.9.988";
 
 export const CHANGELOG = [
+  {
+    version: "0.9.988",
+    changes: [
+      "Smoother ball motion: interpolation now follows the real bounce path and uses the same clock as the physics step (no more stalls on 120 Hz screens). Level 1 starts a little faster; the speed curve still reaches the same cap at level 17.",
+    ],
+  },
   {
     version: "0.9.987",
     changes: [

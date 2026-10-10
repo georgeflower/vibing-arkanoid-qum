@@ -34,6 +34,7 @@ export interface Ball {
   previousY?: number; // Y position before CCD pass (for anti-rescue check)
   renderPrevX?: number; // X position at start of physics step (for render interpolation)
   renderPrevY?: number; // Y position at start of physics step (for render interpolation)
+  renderPath?: number[]; // flat [x0,y0,x1,y1,...] ball-centre positions of collisions this physics step, in order (render interpolation only)
   lastPaddleHitTime?: number; // Timestamp (ms) of last paddle hit (for cooldown)
   releasedFromBossTime?: number; // Timestamp when ball was released from Mega Boss
   releaseSpeedScale?: number; // Speed multiplier for slow-start ramp (0.3 → 1.0)

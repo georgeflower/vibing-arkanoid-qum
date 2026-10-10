@@ -621,6 +621,7 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
     for (const ball of balls) {
       ball.renderPrevX = ball.x;
       ball.renderPrevY = ball.y;
+      ball.renderPath = undefined;
     }
     return result;
   }
@@ -630,6 +631,7 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
     ball.previousY = ball.y;
     ball.renderPrevX = ball.x;
     ball.renderPrevY = ball.y;
+    ball.renderPath = undefined;
   }
 
   // ═══ Phase 0: Boss-First Swept Collision ═══
@@ -731,6 +733,11 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
     const sortedEvents = ccdResult.events.sort((a, b) => a.t - b.t);
 
     for (const event of sortedEvents) {
+      // Record contact point for bounce-path render interpolation (max 4 points)
+      if (!ccdResult.ball.renderPath) ccdResult.ball.renderPath = [];
+      if (ccdResult.ball.renderPath.length < 8) {
+        ccdResult.ball.renderPath.push(event.point.x, event.point.y);
+      }
       const objectKey = `${event.objectType}-${event.objectId}`;
       const lastTOI = processedObjects.get(objectKey);
       const isDuplicate =
@@ -1407,7 +1414,7 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
   // ═══ Phase 4b: Speed ramp for balls released from Mega Boss ═══
   const RAMP_DURATION_MS = 1500;
   const rampNow = world.simTimeMs;
-  const rampScales = new Map<number, number>();
+  // Single normalization point: |v| is always BALL_BASE_SPEED * rampScale
   for (const ball of updatedBalls) {
     let rampScale = 1;
     if (ball.releaseSpeedScale != null && ball.releasedFromBossTime) {
@@ -1420,14 +1427,9 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
         rampScale = ball.releaseSpeedScale + (1 - ball.releaseSpeedScale) * t;
       }
     }
-    rampScales.set(ball.id, rampScale);
-  }
-
-  // Single normalization point: |v| is always BALL_BASE_SPEED * rampScale
-  for (const ball of updatedBalls) {
-    normalizeBallSpeed(ball, rampScales.get(ball.id) ?? 1);
+    normalizeBallSpeed(ball, rampScale);
     if (ENABLE_DEBUG_FEATURES && !ball.waitingToLaunch) {
-      const expected = BALL_BASE_SPEED * (rampScales.get(ball.id) ?? 1);
+      const expected = BALL_BASE_SPEED * rampScale;
       const mag = Math.hypot(ball.dx, ball.dy);
       if (mag > 1e-6 && Math.abs(mag - expected) > 0.02) {
         console.warn(`[BallSpeed] Ball ${ball.id} |v|=${mag.toFixed(3)} expected ${expected.toFixed(3)}`);
