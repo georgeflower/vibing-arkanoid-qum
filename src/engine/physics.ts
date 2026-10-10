@@ -730,14 +730,16 @@ export function runPhysicsFrame(config: PhysicsConfig): PhysicsFrameResult {
     if (!ccdResult.ball) continue;
 
     const ballBefore = ballStatesBeforeCCD?.get(ccdResult.ball.id);
-    const sortedEvents = ccdResult.events.sort((a, b) => a.t - b.t);
-
+    // Record contact points for bounce-path render interpolation (max 4 points), in time order
+    const sortedEvents = [...ccdResult.events].sort((a, b) => a.t - b.t);
+    if (!ccdResult.ball.renderPath) ccdResult.ball.renderPath = [];
     for (const event of sortedEvents) {
-      // Record contact point for bounce-path render interpolation (max 4 points)
-      if (!ccdResult.ball.renderPath) ccdResult.ball.renderPath = [];
       if (ccdResult.ball.renderPath.length < 8) {
         ccdResult.ball.renderPath.push(event.point.x, event.point.y);
       }
+    }
+
+    for (const event of sortedEvents) {
       const objectKey = `${event.objectType}-${event.objectId}`;
       const lastTOI = processedObjects.get(objectKey);
       const isDuplicate =

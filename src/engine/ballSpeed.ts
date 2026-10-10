@@ -12,18 +12,53 @@ export const levelSpeedFactor = (m: number) => m * m;
 /** The ONE number CCD, substeps and HUD use. */
 export const getEffectiveSpeedFactor = () => world.speedMultiplier * (1 + world.speedBoostApplied);
 
-/** Call at game start, level start, respawn, retry, boss-rush stage change. Resets everything speed-related. */
-export function setLevelSpeed(m: number, maxTotalSpeed: number): void {
-  const f = levelSpeedFactor(m);
-  world.levelBaseSpeedFactor = f;
-  world.speedMultiplier = f;
+export const START_FACTOR_L1 = 1.15;
+export const START_FACTOR_L17 = 2.25;
+export const END_BOOST_RATIO = 1.2; // end-of-level total factor = start x this
+export const SLOWDOWN_RECOVER_SECONDS = 10;
+
+export type SpeedMode = "normal" | "godlike" | "daily" | "bossRush";
+
+/**
+ * Start speed factor for a level. Normal: linear L1 -> L17 (clamped).
+ * Other modes keep their legacy result (legacyMultiplier squared).
+ */
+export function levelStartFactor(level: number, mode: SpeedMode, legacyMultiplier = 1): number {
+  if (mode !== "normal") return levelSpeedFactor(legacyMultiplier);
+  const t = Math.min(1, Math.max(0, (level - 1) / 16));
+  return START_FACTOR_L1 + (START_FACTOR_L17 - START_FACTOR_L1) * t;
+}
+
+let slowdownRecoverRate = 0; // scale units per second while a slowdown is recovering
+
+/**
+ * Call at game start, level start, respawn, retry, boss-rush stage change. Resets everything speed-related.
+ * startFactor is the level start factor. Non-normal modes pass maxTotalSpeed (legacy cap logic).
+ */
+export function setLevelSpeed(startFactor: number, maxTotalSpeed: number | null = null): void {
+  world.levelBaseSpeedFactor = startFactor;
+  world.speedMultiplier = startFactor;
   world.brickHitSpeedAccumulated = 0; // boost target (fraction)
   world.speedBoostApplied = 0; // eased boost actually applied
-  world.speedBoostCap = Math.max(0, maxTotalSpeed - m);
+  world.speedBoostCap =
+    maxTotalSpeed === null
+      ? Math.max(0, (startFactor * END_BOOST_RATIO) / startFactor - 1)
+      : Math.max(0, maxTotalSpeed - Math.sqrt(startFactor));
+  slowdownRecoverRate = 0;
+  console.log(
+    `[BallSpeed] level start: startFactor=${startFactor.toFixed(3)} cap=${world.speedBoostCap.toFixed(3)}`,
+  );
 }
 
 /** Call once per physics frame before CCD. */
 export function easeSpeedBoost(dtSeconds: number): void {
+  if (slowdownRecoverRate > 0) {
+    const base = world.levelBaseSpeedFactor;
+    if (world.speedMultiplier < base) {
+      world.speedMultiplier = Math.min(base, world.speedMultiplier + slowdownRecoverRate * dtSeconds);
+    }
+    if (world.speedMultiplier >= base) slowdownRecoverRate = 0;
+  }
   const diff = world.brickHitSpeedAccumulated - world.speedBoostApplied;
   if (Math.abs(diff) < 1e-4) {
     world.speedBoostApplied = world.brickHitSpeedAccumulated;
@@ -37,6 +72,8 @@ export function applySlowdown(): void {
     world.speedMultiplier * SLOWDOWN_SCALE,
     world.levelBaseSpeedFactor * SLOWDOWN_FLOOR,
   );
+  // Restart linear recovery to the base factor from the new (lower) value
+  slowdownRecoverRate = (world.levelBaseSpeedFactor - world.speedMultiplier) / SLOWDOWN_RECOVER_SECONDS;
 }
 
 /** Set |v| to BASE * rampScale, keeping direction. Skips waitingToLaunch balls and zero vectors. */
