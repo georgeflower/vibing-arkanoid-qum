@@ -431,8 +431,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         return settings.dailyChallengeConfig.speedMultiplier;
       }
 
-      // 105% base for normal, ~117% for godlike (reduced 15% from 137.5%)
-      const baseMultiplier = difficulty === "godlike" ? 1.169 : 1.0;
+      // 107% base for normal, ~117% for godlike (reduced 15% from 137.5%)
+      const baseMultiplier = difficulty === "godlike" ? 1.169 : 1.07;
       // Level-based caps (before brick hit bonuses): ~132% godlike (reduced 15%), 140% normal
       const maxSpeedMultiplier = difficulty === "godlike" ? 1.318 : 1.4;
 
@@ -441,8 +441,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
         // Godlike: always +5% per level
         speedMult = baseMultiplier + (levelNum - 1) * 0.05;
       } else {
-        // Normal: +2.5% per level (1.00 at L1, reaches the 1.40 cap at L17)
-        speedMult = baseMultiplier + (levelNum - 1) * 0.025;
+        // Normal: (1.4 - 1.07) / 16 per level (1.07 at L1, reaches the 1.40 cap at L17)
+        speedMult = baseMultiplier + (levelNum - 1) * ((1.4 - 1.07) / 16);
       }
       return Math.min(maxSpeedMultiplier, speedMult);
     },
@@ -4676,7 +4676,6 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     const paddle = world.paddle; // live read from engine state
     const balls = world.balls; // live read from engine state
     const bricks = world.bricks; // live read from engine state
-    const speedMultiplier = world.speedMultiplier; // live read from engine state
     const launchAngle = world.launchAngle; // live read from engine state
     const backgroundPhase = world.backgroundPhase; // live read from engine state
     const enemies = world.enemies; // live read from engine state
@@ -4881,8 +4880,8 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     }
 
     // Record physics frame timing for render-side interpolation
-    world.lastPhysicsUpdateTime = performance.now();
-    world.lastPhysicsDtMs = Math.max(1, dtSecondsRef.current * 1000);
+    world.lastPhysicsUpdateTime = frameNow;
+    world.lastPhysicsDtMs = Math.min(50, Math.max(1, elapsed));
 
     // Update bonus letters - OPTIMIZED: In-place mutation with sine wave motion
     const currentTime = Date.now();

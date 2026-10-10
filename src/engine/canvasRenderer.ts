@@ -8,6 +8,7 @@
  * NO React dependency. NO per-frame allocations beyond canvas API internals.
  */
 
+import { interpolateAlongPath } from "./interpolation";
 import type { GameWorld } from "@/engine/state";
 import type { RenderState, AssetRefs } from "@/engine/renderState";
 import type { Brick, BonusLetterType, Particle } from "@/types/game";
@@ -846,6 +847,7 @@ export function renderFrame(
     (bombs.length + bossAttacks.length + enemies.length + explosions.length + dangerBalls.length) / 10,
   );
 
+  const interpOut = { x: 0, y: 0 };
   balls.forEach((ball) => {
     const ballColor = ball.isFireball ? "hsl(30, 85%, 55%)" : "hsl(0, 0%, 92%)";
 
@@ -857,8 +859,19 @@ export function renderFrame(
       ball.renderPrevX !== undefined &&
       ball.renderPrevY !== undefined
     ) {
-      const rdx = ball.x - ball.renderPrevX;
-      const rdy = ball.y - ball.renderPrevY;
+      const path = ball.renderPath;
+      // Polyline length: renderPrev -> contact points -> current
+      let stepDist = 0;
+      let px = ball.renderPrevX;
+      let py = ball.renderPrevY;
+      if (path) {
+        for (let i = 0; i + 1 < path.length; i += 2) {
+          stepDist += Math.hypot(path[i] - px, path[i + 1] - py);
+          px = path[i];
+          py = path[i + 1];
+        }
+      }
+      stepDist += Math.hypot(ball.x - px, ball.y - py);
       // Teleport guard: skip interpolation when the ball jumped an unusually large
       // distance in one physics step (Second Chance save, mega-boss trap/release,
       // boundary clamp) to avoid ghost streaks.
@@ -867,12 +880,14 @@ export function renderFrame(
       // limit is 9× the per-step budget — a large jump must be 9× that budget to
       // trigger the guard, keeping it conservative and avoiding false snaps.
       const TELEPORT_GUARD_FACTOR = 3; // actual-distance limit = expected * TELEPORT_GUARD_FACTOR
-      const stepDistSq = rdx * rdx + rdy * rdy;
+      const stepDistSq = stepDist * stepDist;
       const speed = Math.hypot(ball.dx, ball.dy);
       const expected = Math.max(4, speed * 3);
       if (stepDistSq <= expected * expected * TELEPORT_GUARD_FACTOR * TELEPORT_GUARD_FACTOR) {
-        drawX = ball.renderPrevX + rdx * alpha;
-        drawY = ball.renderPrevY + rdy * alpha;
+        if (interpolateAlongPath(ball.renderPrevX, ball.renderPrevY, path, ball.x, ball.y, alpha, interpOut)) {
+          drawX = interpOut.x;
+          drawY = interpOut.y;
+        }
       }
     }
 

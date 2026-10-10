@@ -132,7 +132,7 @@ export interface GameWorld {
   simTimeMs: number;      // integer milliseconds (Math.floor(simTimeSeconds * 1000)), for convenience
 
   // Render-interpolation timing (written by physics loop, read by render loop)
-  lastPhysicsUpdateTime: number; // performance.now() timestamp of last physics frame
+  lastPhysicsUpdateTime: number; // rAF timestamp of last physics frame
   lastPhysicsDtMs: number;       // wall-clock ms the last physics step covered
 
   // Score & lives live here so the game loop can mutate them
