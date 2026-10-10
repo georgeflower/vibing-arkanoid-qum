@@ -1,4 +1,4 @@
-import { BALL_BASE_SPEED, END_BOOST_RATIO, getEffectiveSpeedFactor, levelStartFactor, setLevelSpeed } from "@/engine/ballSpeed";
+import { BALL_BASE_SPEED, endBoostRatio, getEffectiveSpeedFactor, levelStartFactor, setLevelSpeed } from "@/engine/ballSpeed";
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { world, type LaserWarning, type SuperWarning, type BulletImpact, triggerHitstop, spawnScorePopup, isHitstopActive } from "@/engine/state";
 import { renderState } from "@/engine/renderState";
@@ -418,7 +418,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   const MAX_TOTAL_SPEED_NORMAL = 1.5;
   const MAX_TOTAL_SPEED_GODLIKE = 1.49;
 
-  // Normal mode derives its cap from END_BOOST_RATIO (null); other modes keep the legacy cap.
+  // Normal mode derives its cap from endBoostRatio(level) (null); other modes keep the legacy cap.
   const nonNormalSpeedCap = (): number | null =>
     isDailyChallenge || isBossRush || settings.difficulty === "godlike"
       ? settings.difficulty === "godlike"
@@ -492,7 +492,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
   // ═══ PHASE 1: speedMultiplier lives in world.speedMultiplier (engine/state.ts) ═══
   // Initialize world.speedMultiplier on first render
   const [speedMultiplierInitialized] = useState(() => {
-    setLevelSpeed(computeLevelSpeedMultiplier(settings.startingLevel), nonNormalSpeedCap());
+    setLevelSpeed(computeLevelSpeedMultiplier(settings.startingLevel), nonNormalSpeedCap(), settings.startingLevel);
     return true;
   });
   void speedMultiplierInitialized; // suppress unused warning
@@ -2205,7 +2205,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       world.bullets = [];
       bulletPool.releaseAll();
       // Re-derive the intended level speed (never snap to a hardcoded 1.0)
-      setLevelSpeed(computeLevelSpeedMultiplier(levelRef.current), nonNormalSpeedCap());
+      setLevelSpeed(computeLevelSpeedMultiplier(levelRef.current), nonNormalSpeedCap(), levelRef.current);
       setTimer(0);
       setLastEnemySpawnTime(0);
       clearAllEnemies();
@@ -2622,7 +2622,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
           0.014,
           Math.max(
             0.002,
-            (END_BOOST_RATIO - 1) /
+            (endBoostRatio(currentLevel) - 1) /
               (0.65 * Math.max(1, world.levelStartDestructibleCount)),
           ),
         )
@@ -2709,7 +2709,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     setHitStreakActive(false);
     ballHitSinceLastPaddleRef.current.clear();
     // Set speed multiplier (already calculated above)
-    setLevelSpeed(startingSpeedFactor, nonNormalSpeedCap());
+    setLevelSpeed(startingSpeedFactor, nonNormalSpeedCap(), startLevel);
     setGameState("ready");
     setPowerUps([]);
     setTimer(0);
@@ -2831,7 +2831,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
       setBossFirstHitShieldDropped(false);
       // Keep hitStreak across boss rush level transitions — do NOT reset here
       ballHitSinceLastPaddleRef.current.clear();
-      setLevelSpeed(levelStartFactor(nextBossLevel, "bossRush", newSpeedMultiplier), nonNormalSpeedCap());
+      setLevelSpeed(levelStartFactor(nextBossLevel, "bossRush", newSpeedMultiplier), nonNormalSpeedCap(), nextBossLevel);
 
       setPaddle((prev) => ({
         x: SCALED_CANVAS_WIDTH / 2 - SCALED_PADDLE_WIDTH / 2,
@@ -2911,7 +2911,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     setBossFirstHitShieldDropped(false); // Reset shield drop for new boss level
     // Keep hitStreak across level transitions — do NOT reset here
     ballHitSinceLastPaddleRef.current.clear();
-    setLevelSpeed(newSpeedMultiplier, nonNormalSpeedCap());
+    setLevelSpeed(newSpeedMultiplier, nonNormalSpeedCap(), newLevel);
 
     // Update max level reached in localStorage (only for normal game mode, not daily challenge)
     if (settings.gameMode === "normal") {
@@ -8432,7 +8432,7 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
     // Keep the current level
     const currentLevel = level;
     // Self-healing: always re-derive from the single source of truth
-    setLevelSpeed(computeLevelSpeedMultiplier(currentLevel), nonNormalSpeedCap());
+    setLevelSpeed(computeLevelSpeedMultiplier(currentLevel), nonNormalSpeedCap(), currentLevel);
 
     // Reset paddle
     const initialPaddleX = SCALED_CANVAS_WIDTH / 2 - SCALED_PADDLE_WIDTH / 2;
