@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 
 import { Link } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { fetchHighScoreRows } from "@/lib/api";
 import { GAME_VERSION } from "@/constants/version";
 import { CHANGELOG } from "@/constants/version";
 import startScreen from "@/assets/start-screen-new.webp";
@@ -105,31 +105,9 @@ const Home = () => {
     const fetchScores = async () => {
       setScoresLoading(true);
       try {
-        let query = supabase
-          .from("high_scores")
-          .select("player_name, score, level, difficulty, game_mode")
-          .order("score", { ascending: false })
-          .limit(10);
-
-        if (difficultyTab === "godlike") {
-          query = query.eq("difficulty", "godlike");
-        } else if (difficultyTab === "normal") {
-          query = query.or("difficulty.is.null,difficulty.neq.godlike");
-        }
-
-        if (leaderboardTab === "weekly") {
-          const weekAgo = new Date();
-          weekAgo.setDate(weekAgo.getDate() - 7);
-          query = query.gte("created_at", weekAgo.toISOString());
-        } else if (leaderboardTab === "daily") {
-          const today = new Date();
-          today.setHours(0, 0, 0, 0);
-          query = query.gte("created_at", today.toISOString());
-        }
-
-        const { data } = await query;
+        const { scores: data } = await fetchHighScoreRows(leaderboardTab, difficultyTab);
         setScores(
-          (data || []).map((r) => ({
+          (data || []).slice(0, 10).map((r) => ({
             name: r.player_name,
             score: r.score,
             level: r.level,

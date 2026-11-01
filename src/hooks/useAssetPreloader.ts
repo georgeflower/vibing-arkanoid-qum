@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { assetUrl } from "@/lib/assetUrl";
 import { GAME_VERSION } from "@/constants/version";
 
 // All image imports - ordered by priority
@@ -124,7 +125,7 @@ const loadAsset = (entry: AssetEntry): Promise<void> =>
   new Promise((resolve) => {
     if (entry.type === "image") {
       const img = new Image();
-      img.src = entry.url;
+      img.src = assetUrl(entry.url);
       if (typeof img.decode === "function") {
         img.decode()
           .catch(() => {})
@@ -136,7 +137,7 @@ const loadAsset = (entry: AssetEntry): Promise<void> =>
         img.onerror = () => resolve();
       }
     } else {
-      fetch(entry.url, { method: "HEAD" })
+      fetch(assetUrl(entry.url), { method: "HEAD" })
         .then(() => resolve())
         .catch(() => resolve());
     }

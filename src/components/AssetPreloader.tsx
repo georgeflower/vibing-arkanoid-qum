@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { assetUrl } from "@/lib/assetUrl";
 import { GAME_VERSION } from "@/constants/version";
 
 // All image imports
@@ -196,10 +197,10 @@ const AssetPreloader = ({ onComplete }: AssetPreloaderProps) => {
           const img = new Image();
           img.onload = () => resolve();
           img.onerror = () => resolve(); // Don't block on failures
-          img.src = entry.url;
+          img.src = assetUrl(entry.url);
         } else {
           // For audio, just do a HEAD fetch to prime the cache
-          fetch(entry.url, { method: "HEAD" })
+          fetch(assetUrl(entry.url), { method: "HEAD" })
             .then(() => resolve())
             .catch(() => resolve());
         }

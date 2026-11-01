@@ -1,4 +1,5 @@
 // Simple sound effects using Web Audio API
+import { assetUrl } from "@/lib/assetUrl";
 
 /** Index of the title/menu theme in the track list (Pixel Frenzy). */
 export const TITLE_TRACK_INDEX = 0;
@@ -35,7 +36,7 @@ class SoundManager {
     { url: '/level_7.mp3', name: 'PLASMA STORM' },
     { url: '/Turrican.mp3', name: 'TURRICAN' },
     { url: '/Flubber_Happy_Moderate_Amiga.mp3', name: 'AMIGA BOUNCE' },
-    { url: '/level_boss_chip_atari.mp3', name: 'BOSS: PYRAMID' },
+    { url: '/leve_boss_chip_atari.mp3', name: 'BOSS: PYRAMID' },
     { url: '/level_cave_c64.mp3', name: 'CAVERN C64' },
     { url: '/level_cave_2_c64.mp3', name: 'CAVERN C64 II' },
     { url: '/level_cave_chip_atari.mp3', name: 'CHIP CAVERN' },
@@ -45,7 +46,7 @@ class SoundManager {
   ];
 
   private get trackUrls(): string[] {
-    return this.tracks.map(t => t.url);
+    return this.tracks.map(t => assetUrl(t.url));
   }
 
   private trackChangeListeners = new Set<() => void>();
@@ -384,7 +385,7 @@ class SoundManager {
     this.stopBackgroundMusic(); // Stop game music
 
     if (!this.highScoreMusic) {
-      this.highScoreMusic = new Audio('/High_score.mp3');
+      this.highScoreMusic = new Audio(assetUrl('/High_score.mp3'));
       this.highScoreMusic.loop = true;
       this.highScoreMusic.volume = this.musicVolume;
     }
@@ -887,7 +888,7 @@ class SoundManager {
     try {
       const loadPromises = this.soundUrls.map(async (url) => {
         try {
-          const response = await fetch(url);
+          const response = await fetch(assetUrl(url));
           const arrayBuffer = await response.arrayBuffer();
           const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
           this.audioBuffers[url] = audioBuffer;
@@ -1267,7 +1268,7 @@ class SoundManager {
       this.radioAudio.volume = this.musicVolume * 0.2;
     }
 
-    const audio = new Audio('/siren-alarm-boss.ogg');
+    const audio = new Audio(assetUrl('/siren-alarm-boss.ogg'));
     audio.volume = Math.min(1, 0.7 * this.sfxVolume);
 
     // Restore music volume on a timer so a missing 'ended' event can never
@@ -1578,7 +1579,7 @@ class SoundManager {
     }
     
     // Create and play new boss music with looping
-    this.bossMusic = new Audio(bossTrackUrl);
+    this.bossMusic = new Audio(assetUrl(bossTrackUrl));
     this.bossMusic.loop = true;
     this.bossMusic.volume = this.musicVolume;
     
