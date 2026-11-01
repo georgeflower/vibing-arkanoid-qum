@@ -25,10 +25,6 @@ export const FIREBALL_DURATION = 5000; // 5 seconds
 // Final level - game ends after this level
 export const FINAL_LEVEL = 20;
 
-// Daily challenges run on a synthetic level above FINAL_LEVEL so normal
-// level-progression and boss-level checks never match them.
-export const DAILY_CHALLENGE_LEVEL = 21;
-
 export const BULLET_WIDTH = 4;
 export const BULLET_HEIGHT = 12;
 export const BULLET_SPEED = 7;

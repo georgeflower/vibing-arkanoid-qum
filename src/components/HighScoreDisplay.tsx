@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
 import { Button } from "./ui/button";
 import { useHighScores, type LeaderboardType, type DifficultyFilter } from "@/hooks/useHighScores";
 import { useBossRushScores } from "@/hooks/useBossRushScores";
@@ -87,17 +86,7 @@ export const HighScoreDisplay = ({ onClose, leaderboardType = 'all-time', initia
                       <div className="flex flex-col min-w-0">
                         <span className="text-white font-bold flex items-center gap-1 truncate">
                           {entry.beatLevel50 && <span>👑</span>}
-                          {entry.profileLink ? (
-                            <Link
-                              to={`/player/${entry.profileLink.username}`}
-                              state={{ returnToHighScores: true }}
-                              className="truncate underline hover:text-cyan-300 transition-colors"
-                            >
-                              {entry.name}
-                            </Link>
-                          ) : (
-                            <span className="truncate">{entry.name}</span>
-                          )}
+                          <span className="truncate">{entry.name}</span>
                         </span>
                         {entry.difficulty === "godlike" && (
                           <span className="text-red-500 text-[8px] sm:text-[9px] md:text-[10px] font-bold leading-tight">GOD-MODE</span>

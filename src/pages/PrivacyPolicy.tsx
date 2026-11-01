@@ -14,56 +14,39 @@ const PrivacyPolicy = () => (
         <h1 className="retro-pixel-text text-center mb-8" style={{ fontSize: "24px", color: "hsl(200, 70%, 50%)", textShadow: "0 0 10px hsl(200,70%,50%,0.5)" }}>
           PRIVACY POLICY
         </h1>
-        <p className="text-xs mb-6" style={{ color: "hsl(0,0%,50%)" }}>Last updated: March 2026</p>
+        <p className="text-xs mb-6" style={{ color: "hsl(0,0%,50%)" }}>Last updated: November 2026</p>
 
         <Section title="1. WHAT DATA WE COLLECT">
-          <p>We collect only the minimum data needed to run Vibing Arkanoid:</p>
+          <p>Vibing Arkanoid has no accounts, no logins and no email addresses. The only data stored on our servers is what you choose to submit to the public leaderboard:</p>
           <ul className="list-disc ml-4 space-y-1">
-            <li><strong>Email address</strong> — used for account login and verification</li>
-            <li><strong>Username & display name</strong> — shown on your profile and leaderboards</li>
-            <li><strong>Initials</strong> — displayed on high score tables</li>
-            <li><strong>Hashed password</strong> — your password is never stored in plain text; we use bcrypt with salt</li>
-            <li><strong>Game stats</strong> — scores, achievements, play time, etc.</li>
+            <li><strong>Initials</strong> — up to 3 letters you type in when you reach a high score</li>
+            <li><strong>Score details</strong> — score, level reached, difficulty / game mode and the time of submission</li>
           </ul>
         </Section>
 
-        <Section title="2. WHY WE COLLECT IT">
-          <p>Your data is collected solely to:</p>
+        <Section title="2. WHAT STAYS IN YOUR BROWSER">
+          <p>Your game settings (sound, video quality, music source) and the highest level you have unlocked are saved in your browser's local storage on your own device. They are never sent to us.</p>
+        </Section>
+
+        <Section title="3. ANALYTICS & COOKIES">
+          <p>We do not use analytics, tracking, advertising or tracking cookies.</p>
+        </Section>
+
+        <Section title="4. DATA RETENTION & REMOVAL">
+          <p>Leaderboard entries are kept until they are removed. Because entries are anonymous, we cannot tell whose entry is whose. If you want an entry removed, contact us through the project's GitHub repository and tell us the initials, score and approximate date.</p>
+        </Section>
+
+        <Section title="5. THIRD-PARTY SERVICES">
           <ul className="list-disc ml-4 space-y-1">
-            <li>Authenticate your account securely</li>
-            <li>Display your profile and stats</li>
-            <li>Show your scores on leaderboards</li>
-            <li>Track gameplay achievements</li>
+            <li><strong>Cloud hosting</strong> — hosts the game and the leaderboard database</li>
+            <li><strong>Google Fonts</strong> — used to load the game's fonts</li>
+            <li><strong>Nectarine Radio</strong> (nectarine.inversi0n.org / scenestream.net) — the radio stream and "now playing" information. When you play the radio, your browser connects to the stream like any other web radio, and that service sees your IP address.</li>
           </ul>
+          <p className="mt-2">We do not share, sell, or rent any data to third parties for marketing purposes.</p>
         </Section>
 
-        <Section title="3. HOW DATA IS STORED & PROTECTED">
-          <p>All data is stored in encrypted databases hosted on secure cloud infrastructure. Passwords are hashed using industry-standard bcrypt. All communication uses HTTPS encryption. We use JWT tokens with short expiration for session management.</p>
-        </Section>
-
-        <Section title="4. DATA RETENTION">
-          <p>Your account data is kept for as long as your account exists. If you delete your account, all associated data (profile, stats, scores) will be permanently removed within 30 days.</p>
-        </Section>
-
-        <Section title="5. REQUESTING DATA DELETION">
-          <p>You can request deletion of your account and all associated data by contacting us or using the account deletion feature in your profile settings. We will process deletion requests within 30 days.</p>
-        </Section>
-
-        <Section title="6. THIRD-PARTY SERVICES">
-          <p>We use the following third-party services:</p>
-          <ul className="list-disc ml-4 space-y-1">
-            <li><strong>Cloud hosting</strong> — for database and authentication services</li>
-            <li><strong>Email provider</strong> — for sending verification and password reset emails</li>
-          </ul>
-          <p className="mt-2">We do not share, sell, or rent your personal data to any third parties for marketing purposes.</p>
-        </Section>
-
-        <Section title="7. COOKIES">
-          <p>We use essential cookies only for authentication sessions. We do not use tracking cookies or analytics that identify individual users.</p>
-        </Section>
-
-        <Section title="8. YOUR RIGHTS">
-          <p>You have the right to access, correct, or delete your personal data at any time through your profile page or by contacting us.</p>
+        <Section title="6. QUESTIONS">
+          <p>For any question about this policy, open an issue in the project's GitHub repository.</p>
         </Section>
 
         <div className="flex justify-center gap-3 mt-8">

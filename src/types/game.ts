@@ -242,28 +242,11 @@ export type GameState = "ready" | "playing" | "paused" | "gameOver" | "won";
 
 export type Difficulty = "normal" | "godlike";
 
-export type GameMode = "normal" | "bossRush" | "dailyChallenge";
-
-export interface DailyChallengeConfig {
-  layout: (boolean | number)[][];
-  dateString: string;
-  startingLives: number;
-  targetScore: number;
-  timeLimit: number;
-  objectiveIds: string[];
-  speedMultiplier: number;
-  enemySpawnInterval: number;
-  musicReactiveBackground: boolean;
-  noExtraLives: boolean;
-  shapeName: string;
-  isBossChallenge: boolean;
-  bossLevel: number;
-}
+export type GameMode = "normal" | "bossRush";
 
 export interface GameSettings {
   startingLives: number;
   difficulty: Difficulty;
   startingLevel: number;
   gameMode: GameMode;
-  dailyChallengeConfig?: DailyChallengeConfig;
 }
