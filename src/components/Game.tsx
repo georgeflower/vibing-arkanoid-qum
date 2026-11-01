@@ -23,7 +23,7 @@ import { useScaledConstants } from "@/hooks/useScaledConstants";
 import { useViewportFrame } from "@/hooks/useViewportFrame";
 import { useCanvasResize } from "@/hooks/useCanvasResize";
 import { BOSS_RUSH_CONFIG, BossRushLevel } from "@/constants/bossRushConfig";
-import { supabase } from "@/integrations/supabase/client";
+import { apiPost } from "@/lib/api";
 import { SettingsDialog } from "./SettingsDialog";
 import { useGameSettings } from "@/hooks/useGameSettings";
 
@@ -7991,18 +7991,13 @@ export const Game = ({ settings, onReturnToMenu }: GameProps) => {
 
   const handleBossRushScoreSubmit = async (name: string) => {
     try {
-      const response = await supabase.functions.invoke("submit-score", {
-        body: {
-          type: "boss_rush",
-          player_name: name,
-          score: score,
-          completion_time_ms: bossRushCompletionTime,
-          boss_level: bossRushGameOverLevel,
-        },
+      await apiPost("/api/scores", {
+        type: "boss_rush",
+        player_name: name,
+        score: score,
+        completion_time_ms: bossRushCompletionTime,
+        boss_level: bossRushGameOverLevel,
       });
-      if (response.error) throw response.error;
-      const result = response.data as { error?: string };
-      if (result?.error) throw new Error(result.error);
       try {
         await addHighScore(
           name,

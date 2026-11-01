@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { apiGet, apiPost } from "@/lib/api";
 import { toast } from "sonner";
 
 export interface BossRushScore {
@@ -23,15 +23,9 @@ export const useBossRushScores = () => {
       setIsLoading(true);
       setError(null);
 
-      const { data, error: fetchError } = await supabase
-        .from('boss_rush_scores')
-        .select('*')
-        .order('score', { ascending: false })
-        .limit(MAX_BOSS_RUSH_SCORES);
+      const { scores: data } = await apiGet<{ scores: Array<{ id: string; player_name: string; score: number; completion_time_ms: number; boss_level: number; created_at: string }> }>('/api/boss-rush');
 
-      if (fetchError) throw fetchError;
-
-      const mappedScores: BossRushScore[] = (data || []).map(row => ({
+      const mappedScores: BossRushScore[] = (data || []).slice(0, MAX_BOSS_RUSH_SCORES).map(row => ({
         id: row.id,
         name: row.player_name,
         score: row.score,
@@ -55,14 +49,8 @@ export const useBossRushScores = () => {
 
   const isTopScore = async (score: number): Promise<boolean> => {
     try {
-      const { count, error: countError } = await supabase
-        .from('boss_rush_scores')
-        .select('*', { count: 'exact', head: true })
-        .gte('score', score);
-
-      if (countError) throw countError;
-
-      return (count || 0) < MAX_BOSS_RUSH_SCORES;
+      const { qualifies } = await apiGet<{ qualifies: boolean }>('/api/boss-rush/qualify', { score });
+      return !!qualifies;
     } catch (err) {
       console.error('Failed to check boss rush score:', err);
       return false;
@@ -87,19 +75,13 @@ export const useBossRushScores = () => {
         }
       }
 
-      const response = await supabase.functions.invoke('submit-score', {
-        body: {
-          type: 'boss_rush',
-          player_name: name,
-          score,
-          completion_time_ms: completionTimeMs,
-          boss_level: bossLevel,
-        },
+      await apiPost('/api/scores', {
+        type: 'boss_rush',
+        player_name: name,
+        score,
+        completion_time_ms: completionTimeMs,
+        boss_level: bossLevel,
       });
-
-      if (response.error) throw response.error;
-      const result = response.data as { error?: string };
-      if (result?.error) throw new Error(result.error);
 
       sessionStorage.setItem(lastSubmissionKey, now.toString());
       toast.success('Boss Rush score submitted!');

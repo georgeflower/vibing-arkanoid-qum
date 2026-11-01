@@ -22,6 +22,7 @@ const PrivacyPolicy = () => (
             <li><strong>Initials</strong> — up to 3 letters you type in when you reach a high score</li>
             <li><strong>Score details</strong> — score, level reached, difficulty / game mode and the time of submission</li>
           </ul>
+          <p className="mt-2">To prevent spam, when you submit a score a one-way hash of your IP address is kept for about an hour to limit how often scores can be submitted. Your IP address itself is not stored with your score.</p>
         </Section>
 
         <Section title="2. WHAT STAYS IN YOUR BROWSER">
@@ -38,7 +39,7 @@ const PrivacyPolicy = () => (
 
         <Section title="5. THIRD-PARTY SERVICES">
           <ul className="list-disc ml-4 space-y-1">
-            <li><strong>Cloud hosting</strong> — hosts the game and the leaderboard database</li>
+            <li><strong>Cloudflare</strong> (Workers and D1) — runs the leaderboard service and database; the game itself is hosted on Nekoweb</li>
             <li><strong>Google Fonts</strong> — used to load the game's fonts</li>
             <li><strong>Nectarine Radio</strong> (nectarine.inversi0n.org / scenestream.net) — the radio stream and "now playing" information. When you play the radio, your browser connects to the stream like any other web radio, and that service sees your IP address.</li>
           </ul>

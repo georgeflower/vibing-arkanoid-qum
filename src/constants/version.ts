@@ -1,6 +1,20 @@
-export const GAME_VERSION = "0.9.991";
+export const GAME_VERSION = "0.9.993";
 
 export const CHANGELOG = [
+  {
+    version: "0.9.993",
+    changes: [
+      "Now hosted at qumran.nekoweb.org/games/q-arkanoid/ — works from any folder and from /index.html",
+      "Fixed: the \"BOSS: PYRAMID\" menu track was silent because of a misspelled file name",
+    ],
+  },
+  {
+    version: "0.9.992",
+    changes: [
+      "New leaderboard and radio backend (Cloudflare) — all existing scores were moved over",
+      "Radio now-playing info and ratings use the new backend",
+    ],
+  },
   {
     version: "0.9.991",
     changes: [

@@ -1,8 +1,9 @@
-// Client for the Nectarine / scenestream demovibes XML API via the xml-proxy edge function.
+// Client for the Nectarine / scenestream demovibes XML API via the Cloudflare Worker radio proxy.
 // Everything here fails silently: the game must never break or block on network issues.
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
-const PROXY_URL = `${SUPABASE_URL}/functions/v1/xml-proxy`;
+import { API_BASE } from "@/lib/api";
+
+const PROXY_URL = `${API_BASE}/api/radio`;
 const FETCH_TIMEOUT_MS = 15_000;
 
 export interface NowPlaying {

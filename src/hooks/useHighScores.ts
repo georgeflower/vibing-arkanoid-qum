@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { apiGet, apiPost, dailySinceIso, weeklySinceIso, fetchHighScoreRows } from "@/lib/api";
 import { toast } from "sonner";
 
 export type LeaderboardType = 'all-time' | 'weekly' | 'daily';
@@ -30,32 +30,9 @@ export const useHighScores = (leaderboardType: LeaderboardType = 'all-time', dif
       setIsLoading(true);
       setError(null);
 
-      let query = supabase
-        .from('high_scores')
-        .select('*')
-        .order('score', { ascending: false })
-        .limit(MAX_HIGH_SCORES);
+      const { scores: rows } = await fetchHighScoreRows(leaderboardType, difficultyFilter);
 
-      if (difficultyFilter === 'godlike') {
-        query = query.eq('difficulty', 'godlike');
-      } else if (difficultyFilter === 'normal') {
-        query = query.or('difficulty.is.null,difficulty.neq.godlike');
-      }
-
-      if (leaderboardType === 'weekly') {
-        const weekAgo = new Date();
-        weekAgo.setDate(weekAgo.getDate() - 7);
-        query = query.gte('created_at', weekAgo.toISOString());
-      } else if (leaderboardType === 'daily') {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        query = query.gte('created_at', today.toISOString());
-      }
-
-      const { data, error: fetchError } = await query;
-      if (fetchError) throw fetchError;
-
-      const scores: HighScore[] = (data || []).map(row => ({
+      const scores: HighScore[] = (rows || []).slice(0, MAX_HIGH_SCORES).map(row => ({
         id: row.id,
         name: row.player_name,
         score: row.score,
@@ -94,36 +71,20 @@ export const useHighScores = (leaderboardType: LeaderboardType = 'all-time', dif
     allTime: { name: string; score: number } | null;
   };
 
+  type QualifyResponse = { daily: boolean; weekly: boolean; allTime: boolean };
+
+  const fetchQualification = (score: number) =>
+    apiGet<QualifyResponse>("/api/scores/qualify", {
+      score,
+      dailySince: dailySinceIso(),
+      weeklySince: weeklySinceIso(),
+    });
+
   const isHighScore = async (score: number): Promise<boolean> => {
     if (score <= 0) return false;
     try {
-      const now = new Date();
-      const today = new Date(now);
-      today.setHours(0, 0, 0, 0);
-      const { count: dailyHigherCount, error: dailyError } = await supabase
-        .from('high_scores')
-        .select('*', { count: 'exact', head: true })
-        .gte('created_at', today.toISOString())
-        .gte('score', score);
-      if (dailyError) throw dailyError;
-      if ((dailyHigherCount || 0) < MAX_HIGH_SCORES) return true;
-
-      const weekAgo = new Date(now);
-      weekAgo.setDate(weekAgo.getDate() - 7);
-      const { count: weeklyHigherCount, error: weeklyError } = await supabase
-        .from('high_scores')
-        .select('*', { count: 'exact', head: true })
-        .gte('created_at', weekAgo.toISOString())
-        .gte('score', score);
-      if (weeklyError) throw weeklyError;
-      if ((weeklyHigherCount || 0) < MAX_HIGH_SCORES) return true;
-
-      const { count: allTimeHigherCount, error: allTimeError } = await supabase
-        .from('high_scores')
-        .select('*', { count: 'exact', head: true })
-        .gte('score', score);
-      if (allTimeError) throw allTimeError;
-      return (allTimeHigherCount || 0) < MAX_HIGH_SCORES;
+      const q = await fetchQualification(score);
+      return q.daily || q.weekly || q.allTime;
     } catch (err) {
       console.error('Failed to check high score:', err);
       return false;
@@ -133,32 +94,8 @@ export const useHighScores = (leaderboardType: LeaderboardType = 'all-time', dif
   const getQualifiedLeaderboards = async (score: number): Promise<LeaderboardQualification> => {
     if (score <= 0) return { daily: false, weekly: false, allTime: false };
     try {
-      const now = new Date();
-      const today = new Date(now);
-      today.setHours(0, 0, 0, 0);
-      const { count: dailyHigherCount } = await supabase
-        .from('high_scores')
-        .select('*', { count: 'exact', head: true })
-        .gte('created_at', today.toISOString())
-        .gte('score', score);
-      const dailyQualifies = (dailyHigherCount || 0) < MAX_HIGH_SCORES;
-
-      const weekAgo = new Date(now);
-      weekAgo.setDate(weekAgo.getDate() - 7);
-      const { count: weeklyHigherCount } = await supabase
-        .from('high_scores')
-        .select('*', { count: 'exact', head: true })
-        .gte('created_at', weekAgo.toISOString())
-        .gte('score', score);
-      const weeklyQualifies = (weeklyHigherCount || 0) < MAX_HIGH_SCORES;
-
-      const { count: allTimeHigherCount } = await supabase
-        .from('high_scores')
-        .select('*', { count: 'exact', head: true })
-        .gte('score', score);
-      const allTimeQualifies = (allTimeHigherCount || 0) < MAX_HIGH_SCORES;
-
-      return { daily: dailyQualifies, weekly: weeklyQualifies, allTime: allTimeQualifies };
+      const q = await fetchQualification(score);
+      return { daily: !!q.daily, weekly: !!q.weekly, allTime: !!q.allTime };
     } catch (err) {
       console.error('Failed to check qualified leaderboards:', err);
       return { daily: false, weekly: false, allTime: false };
@@ -167,38 +104,14 @@ export const useHighScores = (leaderboardType: LeaderboardType = 'all-time', dif
 
   const fetchTopScores = useCallback(async (): Promise<TopScores> => {
     try {
-      const now = new Date();
-      const today = new Date(now);
-      today.setHours(0, 0, 0, 0);
-      const { data: dailyData } = await supabase
-        .from('high_scores')
-        .select('player_name, score')
-        .gte('created_at', today.toISOString())
-        .order('score', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      const weekAgo = new Date(now);
-      weekAgo.setDate(weekAgo.getDate() - 7);
-      const { data: weeklyData } = await supabase
-        .from('high_scores')
-        .select('player_name, score')
-        .gte('created_at', weekAgo.toISOString())
-        .order('score', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      const { data: allTimeData } = await supabase
-        .from('high_scores')
-        .select('player_name, score')
-        .order('score', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
+      const top = await apiGet<TopScores>("/api/scores/top", {
+        dailySince: dailySinceIso(),
+        weeklySince: weeklySinceIso(),
+      });
       return {
-        daily: dailyData ? { name: dailyData.player_name, score: dailyData.score } : null,
-        weekly: weeklyData ? { name: weeklyData.player_name, score: weeklyData.score } : null,
-        allTime: allTimeData ? { name: allTimeData.player_name, score: allTimeData.score } : null,
+        daily: top.daily ?? null,
+        weekly: top.weekly ?? null,
+        allTime: top.allTime ?? null,
       };
     } catch (err) {
       console.error('Failed to fetch top scores:', err);
@@ -230,23 +143,17 @@ export const useHighScores = (leaderboardType: LeaderboardType = 'all-time', dif
         }
       }
 
-      const response = await supabase.functions.invoke('submit-score', {
-        body: {
-          type: 'high_score',
-          player_name: name,
-          score,
-          level,
-          difficulty,
-          beat_level_50: beatLevel50,
-          collected_all_letters: collectedAllLetters,
-          starting_lives: startingLives,
-          game_mode: gameMode,
-        },
+      await apiPost('/api/scores', {
+        type: 'high_score',
+        player_name: name,
+        score,
+        level,
+        difficulty,
+        beat_level_50: beatLevel50,
+        collected_all_letters: collectedAllLetters,
+        starting_lives: startingLives,
+        game_mode: gameMode,
       });
-
-      if (response.error) throw response.error;
-      const result = response.data as { error?: string };
-      if (result?.error) throw new Error(result.error);
 
       sessionStorage.setItem(lastSubmissionKey, now.toString());
       toast.success('High score submitted!');
