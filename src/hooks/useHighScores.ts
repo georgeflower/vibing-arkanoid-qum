@@ -5,11 +5,6 @@ import { toast } from "sonner";
 export type LeaderboardType = 'all-time' | 'weekly' | 'daily';
 export type DifficultyFilter = 'all' | 'normal' | 'godlike';
 
-export interface ProfileLink {
-  username: string;
-  avatar_url: string | null;
-}
-
 export interface HighScore {
   id?: string;
   name: string;
@@ -21,8 +16,6 @@ export interface HighScore {
   startingLives?: number;
   createdAt?: string;
   gameMode?: string;
-  userId?: string | null;
-  profileLink?: ProfileLink | null;
 }
 
 const MAX_HIGH_SCORES = 20;
@@ -73,66 +66,7 @@ export const useHighScores = (leaderboardType: LeaderboardType = 'all-time', dif
         startingLives: row.starting_lives || undefined,
         createdAt: row.created_at,
         gameMode: row.game_mode || undefined,
-        userId: row.user_id || null,
       }));
-
-      // Batch-fetch public profiles for scores with user_ids
-      const userIds = [...new Set(scores.filter(s => s.userId).map(s => s.userId!))];
-      let profileMapByUserId = new Map<string, ProfileLink>();
-
-      if (userIds.length > 0) {
-        const { data: profiles } = await supabase
-          .from('player_profiles')
-          .select('user_id, username, avatar_url, is_public')
-          .in('user_id', userIds)
-          .eq('is_public', true);
-
-        if (profiles) {
-          for (const p of profiles) {
-            if (p.username) {
-              profileMapByUserId.set(p.user_id, {
-                username: p.username,
-                avatar_url: (p as any).avatar_url || null,
-              });
-            }
-          }
-        }
-      }
-
-      // For scores without user_id, try matching player_name (initials) to profiles
-      const unmatchedInitials = [...new Set(
-        scores.filter(s => !s.userId || !profileMapByUserId.has(s.userId))
-          .map(s => s.name.toUpperCase())
-      )];
-      let profileMapByInitials = new Map<string, ProfileLink>();
-
-      if (unmatchedInitials.length > 0) {
-        const { data: initialProfiles } = await supabase
-          .from('player_profiles')
-          .select('initials, username, avatar_url, is_public')
-          .in('initials', unmatchedInitials)
-          .eq('is_public', true);
-
-        if (initialProfiles) {
-          for (const p of initialProfiles) {
-            if (p.username && p.initials) {
-              profileMapByInitials.set(p.initials.toUpperCase(), {
-                username: p.username,
-                avatar_url: (p as any).avatar_url || null,
-              });
-            }
-          }
-        }
-      }
-
-      // Attach profile links: prefer user_id match, fall back to initials match
-      for (const score of scores) {
-        if (score.userId && profileMapByUserId.has(score.userId)) {
-          score.profileLink = profileMapByUserId.get(score.userId)!;
-        } else {
-          score.profileLink = profileMapByInitials.get(score.name.toUpperCase()) || null;
-        }
-      }
 
       setHighScores(scores);
     } catch (err) {

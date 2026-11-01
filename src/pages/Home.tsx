@@ -101,18 +101,6 @@ const Home = () => {
   const [difficultyTab, setDifficultyTab] = useState<DifficultyTab>("all");
   const [scores, setScores] = useState<ScoreEntry[]>([]);
   const [scoresLoading, setScoresLoading] = useState(true);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setIsLoggedIn(!!session);
-    });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setIsLoggedIn(!!session);
-    });
-    return () => subscription.unsubscribe();
-  }, []);
-
   useEffect(() => {
     const fetchScores = async () => {
       setScoresLoading(true);
@@ -219,35 +207,6 @@ const Home = () => {
               ▶ PLAY NOW
             </Link>
 
-            <div className="mt-4 flex gap-3 justify-center">
-              {isLoggedIn ? (
-                <Link
-                  to="/profile"
-                  className="retro-pixel-text px-4 py-2 rounded text-xs"
-                  style={{
-                    background: "hsl(330, 40%, 50%)",
-                    color: "white",
-                    textDecoration: "none",
-                    border: "2px ridge hsl(330,40%,60%)",
-                  }}
-                >
-                  👤 PROFILE
-                </Link>
-              ) : (
-                <Link
-                  to="/auth"
-                  className="retro-pixel-text px-4 py-2 rounded text-xs"
-                  style={{
-                    background: "hsl(0,0%,25%)",
-                    color: "hsl(0,0%,75%)",
-                    textDecoration: "none",
-                    border: "2px ridge hsl(0,0%,35%)",
-                  }}
-                >
-                  🔑 LOGIN
-                </Link>
-              )}
-            </div>
             <a
               href="https://buymeacoffee.com/qumran"
               target="_blank"
@@ -449,9 +408,6 @@ const Home = () => {
                 <li className="retro-pixel-text">
                   <span style={{ color: "hsl(0,85%,55%)" }}>Boss Rush</span> — All 4 bosses back-to-back
                 </li>
-                <li className="retro-pixel-text">
-                  <span style={{ color: "hsl(45,100%,50%)" }}>Daily Challenge</span> — New challenge every day
-                </li>
               </ul>
             </div>
           </div>
@@ -481,66 +437,6 @@ const Home = () => {
                 </p>
               </div>
             ))}
-          </div>
-        </section>
-
-        {/* ===== PLAYER PROFILES ===== */}
-        <section className="amiga-box rounded-lg p-6 sm:p-8 mb-10">
-          <SectionTitle>Player Profiles</SectionTitle>
-
-          <div
-            className="space-y-4"
-            style={{ color: "hsl(0,0%,78%)", fontSize: "clamp(9px, 1.5vw, 13px)", lineHeight: 1.8 }}
-          >
-            <p className="retro-pixel-text">
-              Create an account with a unique <span style={{ color: "hsl(200,70%,50%)" }}>username</span> and
-              3-letter <span style={{ color: "hsl(330,100%,65%)" }}>initials</span> for the leaderboard.
-              Upload a custom <span style={{ color: "hsl(30,100%,60%)" }}>avatar</span> (256×256 max) to personalize your profile.
-            </p>
-            <p className="retro-pixel-text">
-              Track your lifetime stats — bricks destroyed, bosses killed, power-ups collected,
-              total play time, best combo streaks, and unlockable{" "}
-              <span style={{ color: "hsl(45,100%,50%)" }}>achievements</span>.
-            </p>
-            <p className="retro-pixel-text">
-              Toggle your profile between <span style={{ color: "hsl(120,50%,50%)" }}>public</span> and private.
-              Public profiles are linked from the leaderboard — click any player's initials to view their stats.
-            </p>
-            <p className="retro-pixel-text" style={{ color: "hsl(0,0%,55%)" }}>
-              🔒 Secure authentication with email verification. Full account deletion available —
-              your scores stay on the leaderboard (unlinked) but all profile data is permanently removed.
-            </p>
-          </div>
-        </section>
-
-        {/* ===== DAILY CHALLENGE ===== */}
-        <section className="amiga-box rounded-lg p-6 sm:p-8 mb-10">
-          <SectionTitle>Daily Challenge</SectionTitle>
-
-          <div
-            className="space-y-4"
-            style={{ color: "hsl(0,0%,78%)", fontSize: "clamp(9px, 1.5vw, 13px)", lineHeight: 1.8 }}
-          >
-            <p className="retro-pixel-text">
-              A <span style={{ color: "hsl(45,100%,50%)" }}>new challenge</span> is generated every day
-              with a unique procedural brick layout, special modifiers, and objectives to complete.
-            </p>
-            <p className="retro-pixel-text">
-              Daily modifiers include:{" "}
-              <span style={{ color: "hsl(0,85%,55%)" }}>125% ball speed</span>,{" "}
-              <span style={{ color: "hsl(330,100%,65%)" }}>enemy spawns every 10 seconds</span>,{" "}
-              <span style={{ color: "hsl(280,80%,60%)" }}>music-reactive backgrounds</span>, and{" "}
-              <span style={{ color: "hsl(200,70%,50%)" }}>no extra lives</span>.
-              Additional modifiers like "One Life", "Fast Ball", or "Brick Wall" add extra variety.
-            </p>
-            <p className="retro-pixel-text">
-              Complete objectives like <span style={{ color: "hsl(0,85%,55%)" }}>No Deaths</span>,{" "}
-              <span style={{ color: "hsl(200,70%,50%)" }}>Speed Run</span>,{" "}
-              <span style={{ color: "hsl(30,100%,60%)" }}>Score Hunter</span>, or{" "}
-              <span style={{ color: "hsl(120,50%,50%)" }}>Combo Master</span> to earn credit.
-              Build a <span style={{ color: "hsl(45,100%,50%)" }}>daily streak</span> by completing
-              challenges on consecutive days and unlock exclusive achievements!
-            </p>
           </div>
         </section>
 

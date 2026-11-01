@@ -5,16 +5,13 @@ import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import type { GameSettings, Difficulty, GameMode, DailyChallengeConfig } from "@/types/game";
-import { DailyChallengeOverlay } from "./DailyChallengeOverlay";
-import type { DailyChallenge } from "@/utils/dailyChallenge";
+import type { GameSettings, Difficulty, GameMode } from "@/types/game";
 import startScreenImg from "@/assets/start-screen-new.png";
 import startScreenWebp from "@/assets/start-screen-new.webp";
 import { HighScoreDisplay } from "./HighScoreDisplay";
 import { Changelog } from "./Changelog";
 import { soundManager } from "@/utils/sounds";
 import { useGameSettings } from "@/hooks/useGameSettings";
-import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { GAME_VERSION } from "@/constants/version";
 
@@ -22,7 +19,7 @@ import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { TopScoresDisplay } from "./TopScoresDisplay";
 import { X, ChevronUp, ChevronDown } from "lucide-react";
 import { useLevelProgress } from "@/hooks/useLevelProgress";
-import { FINAL_LEVEL, ENABLE_DEBUG_FEATURES, DAILY_CHALLENGE_LEVEL } from "@/constants/game";
+import { FINAL_LEVEL, ENABLE_DEBUG_FEATURES } from "@/constants/game";
 import { BOSS_RUSH_CONFIG } from "@/constants/bossRushConfig";
 import { SettingsDialog } from "./SettingsDialog";
 import { isMobileDevice, isIOSDevice } from "@/utils/deviceDetect";
@@ -59,9 +56,6 @@ export const MainMenu = ({ onStartGame, difficulty, setDifficulty, gameMode, set
   const [lastSeenWhatsNewVersion, setLastSeenWhatsNewVersion] = useState<string>(() => {
     try { return localStorage.getItem("lastSeenWhatsNewVersion") ?? ""; } catch { return ""; }
   });
-  const [showDailyChallenge, setShowDailyChallenge] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [dailyChallengeStreak, setDailyChallengeStreak] = useState(0);
 
 
   // The radio stream never keeps running on the main menu.
@@ -69,31 +63,6 @@ export const MainMenu = ({ onStartGame, difficulty, setDifficulty, gameMode, set
     soundManager.stopRadio();
   }, []);
 
-
-  useEffect(() => {
-    const syncSessionState = async (session: Awaited<ReturnType<typeof supabase.auth.getSession>>["data"]["session"]) => {
-      setIsLoggedIn(!!session);
-      if (!session) {
-        setDailyChallengeStreak(0);
-        return;
-      }
-
-      const { data: profile } = await supabase
-        .from("player_profiles")
-        .select("daily_challenge_streak")
-        .eq("user_id", session.user.id)
-        .maybeSingle();
-      setDailyChallengeStreak(profile?.daily_challenge_streak ?? 0);
-    };
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      void syncSessionState(session);
-    });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
-      void syncSessionState(session);
-    });
-    return () => subscription.unsubscribe();
-  }, []);
 
   // Starting level state
   const [showLockedMessage, setShowLockedMessage] = useState(false);
@@ -122,8 +91,7 @@ export const MainMenu = ({ onStartGame, difficulty, setDifficulty, gameMode, set
         !showAbout &&
         !showChangelog &&
         !showWhatsNew &&
-        hasStartedOnce &&
-        !showDailyChallenge
+        hasStartedOnce
       ) {
         e.preventDefault();
         soundManager.playMenuClick();
@@ -133,7 +101,7 @@ export const MainMenu = ({ onStartGame, difficulty, setDifficulty, gameMode, set
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [navigate, showInstructions, showHighScores, showAbout, showChangelog, showWhatsNew, hasStartedOnce, showDailyChallenge]);
+  }, [navigate, showInstructions, showHighScores, showAbout, showChangelog, showWhatsNew, hasStartedOnce]);
 
   const handleStart = () => {
     const settings: GameSettings = {
@@ -141,32 +109,6 @@ export const MainMenu = ({ onStartGame, difficulty, setDifficulty, gameMode, set
       difficulty,
       startingLevel: gameMode === "bossRush" ? BOSS_RUSH_CONFIG.bossOrder[0] : startingLevel,
       gameMode,
-    };
-    onStartGame(settings);
-  };
-
-  const handleDailyChallengeStart = (challenge: DailyChallenge) => {
-    const config: DailyChallengeConfig = {
-      layout: challenge.layout,
-      dateString: challenge.dateString,
-      startingLives: challenge.startingLives,
-      targetScore: challenge.targetScore,
-      timeLimit: challenge.timeLimit,
-      objectiveIds: challenge.objectives.map((o) => o.id),
-      speedMultiplier: challenge.speedMultiplier,
-      enemySpawnInterval: challenge.enemySpawnInterval,
-      musicReactiveBackground: challenge.musicReactiveBackground,
-      noExtraLives: challenge.noExtraLives,
-      shapeName: challenge.shapeName,
-      isBossChallenge: challenge.isBossChallenge,
-      bossLevel: challenge.bossLevel,
-    };
-    const settings: GameSettings = {
-      startingLives: challenge.startingLives,
-      difficulty,
-      startingLevel: DAILY_CHALLENGE_LEVEL,
-      gameMode: "dailyChallenge",
-      dailyChallengeConfig: config,
     };
     onStartGame(settings);
   };
@@ -207,15 +149,6 @@ export const MainMenu = ({ onStartGame, difficulty, setDifficulty, gameMode, set
   useSwipeGesture(aboutRef, () => setShowAbout(false), { enabled: showAbout && isMobileDevice });
   useSwipeGesture(instructionsRef, () => setShowInstructions(false), { enabled: showInstructions && isMobileDevice });
 
-  useEffect(() => {
-    if (window.location.hash === "#highscores") {
-      setHasStartedOnce(true);
-      setShowHighScores(true);
-      const cleanUrl = `${window.location.pathname}${window.location.search}`;
-      window.history.replaceState(window.history.state, "", cleanUrl);
-    }
-  }, []);
-
   // ESC key to close overlay screens
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -235,24 +168,12 @@ export const MainMenu = ({ onStartGame, difficulty, setDifficulty, gameMode, set
         } else if (showInstructions) {
           soundManager.playMenuClick();
           setShowInstructions(false);
-        } else if (showDailyChallenge) {
-          soundManager.playMenuClick();
-          setShowDailyChallenge(false);
         }
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [showHighScores, showChangelog, showWhatsNew, showAbout, showInstructions, showDailyChallenge]);
-
-  if (showDailyChallenge) {
-    return (
-      <DailyChallengeOverlay
-        onPlay={handleDailyChallengeStart}
-        onClose={() => setShowDailyChallenge(false)}
-      />
-    );
-  }
+  }, [showHighScores, showChangelog, showWhatsNew, showAbout, showInstructions]);
 
   if (showHighScores) {
     return (
@@ -391,31 +312,6 @@ export const MainMenu = ({ onStartGame, difficulty, setDifficulty, gameMode, set
               soundtrack that'll make your speakers weep with joy. Collect the legendary{" "}
               <span className="text-[hsl(330,100%,65%)] font-bold">Q-U-M-R-A-N</span> bonus letters for 5 extra lives!
             </p>
-
-            <div className="bg-black/30 p-1.5 sm:p-4 md:p-5 rounded-lg border border-[hsl(330,100%,65%)]/30">
-              <div className="flex items-center gap-1 sm:gap-2 mb-0.5 sm:mb-2">
-                <h3 className="font-bold text-[10px] sm:text-base md:text-lg text-[hsl(330,100%,65%)]">👤 Player Profiles</h3>
-                <span className="text-[7px] sm:text-[9px] font-bold px-1 sm:px-1.5 py-0.5 rounded" style={{ background: "hsl(45,100%,50%)", color: "hsl(220,30%,10%)" }}>
-                  BETA
-                </span>
-              </div>
-              <p className="text-[9px] sm:text-sm leading-relaxed">
-                Create an account with a unique <span className="text-[hsl(200,70%,50%)] font-bold">username</span> and
-                upload a custom avatar. Track your lifetime stats, achievements, and power-up usage. Toggle your profile
-                between public and private — public profiles are linked directly from the leaderboard. Full account
-                deletion with data safety: your scores remain on the board but are unlinked from your profile.
-              </p>
-            </div>
-
-            <div className="bg-black/30 p-1.5 sm:p-4 md:p-5 rounded-lg border border-[hsl(45,100%,50%)]/30">
-              <h3 className="font-bold text-[10px] sm:text-base md:text-lg mb-0.5 sm:mb-2 text-[hsl(45,100%,50%)]">📅 Daily Challenge</h3>
-              <p className="text-[9px] sm:text-sm leading-relaxed">
-                A new challenge is generated every day with a unique procedural layout, special modifiers (125% speed,
-                enemy spawns every 10s, music-reactive backgrounds, no extra lives), and objectives to complete.
-                Build a <span className="text-[hsl(330,100%,65%)] font-bold">daily streak</span> by completing
-                challenges on consecutive days and unlock exclusive achievements!
-              </p>
-            </div>
 
             <div className="bg-black/30 p-1.5 sm:p-4 md:p-5 rounded-lg border border-[hsl(200,70%,50%)]/30">
               <h3 className="font-bold text-[10px] sm:text-base md:text-lg mb-0.5 sm:mb-2 text-[hsl(200,70%,50%)]">
@@ -701,34 +597,6 @@ export const MainMenu = ({ onStartGame, difficulty, setDifficulty, gameMode, set
                 </li>
               </ul>
             </div>
-            <div>
-              <h3 className="font-bold text-[10px] sm:text-base md:text-lg mb-0.5 sm:mb-2 text-[hsl(330,100%,65%)]">
-                Player Profile
-              </h3>
-              <ul className="list-disc list-inside space-y-0.5 sm:space-y-1 text-[9px] sm:text-sm">
-                <li>Create an account from the login screen with a unique username and 3-letter initials</li>
-                <li>Upload a custom avatar image (max 256×256 pixels) from your profile page</li>
-                <li>Toggle your profile between public and private visibility</li>
-                <li>Public profiles are linked from the leaderboard — click any player's initials to view their stats</li>
-                <li>View lifetime stats: bricks destroyed, bosses killed, total play time, best combo, and more</li>
-                <li>Unlock achievements by reaching milestones</li>
-              </ul>
-            </div>
-
-            <div>
-              <h3 className="font-bold text-[10px] sm:text-base md:text-lg mb-0.5 sm:mb-2 text-[hsl(45,100%,50%)]">
-                Daily Challenge
-              </h3>
-              <ul className="list-disc list-inside space-y-0.5 sm:space-y-1 text-[9px] sm:text-sm">
-                <li>Access from the main menu — a new challenge is generated every day</li>
-                <li>Each challenge has a unique procedural brick layout with special modifiers</li>
-                <li>Modifiers include: 125% ball speed, enemy spawns every 10s, music-reactive backgrounds, no extra lives</li>
-                <li>Additional daily modifiers: One Life, Two Lives, Fast Ball, or Brick Wall</li>
-                <li>Complete objectives like No Deaths, Speed Run, Score Hunter, Purist, or Combo Master</li>
-                <li>Build a daily streak by completing challenges on consecutive days</li>
-                <li>Unlock exclusive daily challenge achievements</li>
-              </ul>
-            </div>
           </div>
 
           <Button
@@ -913,30 +781,6 @@ export const MainMenu = ({ onStartGame, difficulty, setDifficulty, gameMode, set
           <Button
             onClick={() => {
               soundManager.playMenuClick();
-              setShowDailyChallenge(true);
-            }}
-            onMouseEnter={() => soundManager.playMenuHover()}
-            className="w-full relative bg-[hsl(45,100%,45%)] hover:bg-[hsl(45,100%,55%)] text-white"
-            style={{ textShadow: "0 1px 2px rgba(0,0,0,0.5)" }}
-          >
-            ⚡ Daily Challenge <span className="text-[hsl(0,100%,60%)] font-bold ml-2">BETA</span>
-            {dailyChallengeStreak > 0 && (
-              <span
-                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full px-2 py-0.5 text-xs font-bold"
-                style={{
-                  background: "hsl(0,0%,12%)",
-                  border: "1px solid hsl(30,100%,55%)",
-                  color: "hsl(30,100%,60%)",
-                }}
-              >
-                🔥 {dailyChallengeStreak}
-              </span>
-            )}
-          </Button>
-
-          <Button
-            onClick={() => {
-              soundManager.playMenuClick();
               setShowInstructions(true);
             }}
             onMouseEnter={() => soundManager.playMenuHover()}
@@ -1009,18 +853,6 @@ export const MainMenu = ({ onStartGame, difficulty, setDifficulty, gameMode, set
               // Quality is handled reactively via the useEffect above
             }}
           />
-
-          <Button
-            onClick={() => {
-              soundManager.playMenuClick();
-              navigate(isLoggedIn ? "/profile" : "/auth");
-            }}
-            onMouseEnter={() => soundManager.playMenuHover()}
-            variant="outline"
-            className="w-full border-[hsl(330,40%,50%)] text-[hsl(330,40%,50%)] hover:bg-[hsl(330,40%,50%)] hover:text-white"
-          >
-            {isLoggedIn ? "👤 Profile" : "🔑 Login"}
-          </Button>
 
           <a
             href="https://buymeacoffee.com/qumran"

@@ -1,6 +1,15 @@
-export const GAME_VERSION = "0.9.990";
+export const GAME_VERSION = "0.9.991";
 
 export const CHANGELOG = [
+  {
+    version: "0.9.991",
+    changes: [
+      "Simplified: accounts, login (incl. Google), profiles, avatars and achievements removed — high scores are just your 3 initials",
+      "Daily Challenge removed",
+      "Existing leaderboard scores are kept",
+      "No analytics",
+    ],
+  },
   {
     version: "0.9.990",
     changes: ["Early levels now speed up more during the level; smoother bounce interpolation"],

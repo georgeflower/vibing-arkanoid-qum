@@ -8,13 +8,9 @@ interface GameUIProps {
   speed: number;
   bossHitCooldown?: number;
   boss?: Boss | null;
-  dailyChallengeTimeLeft?: number | null; // countdown seconds remaining, null = show normal timer
 }
 
-export const GameUI = ({ score, lives, level, timer, speed, bossHitCooldown = 0, boss = null, dailyChallengeTimeLeft = null }: GameUIProps) => {
-  const showCountdown = dailyChallengeTimeLeft !== null;
-  const isUrgent = showCountdown && dailyChallengeTimeLeft <= 30;
-
+export const GameUI = ({ score, lives, level, timer, speed, bossHitCooldown = 0, boss = null }: GameUIProps) => {
   return (
     <div className="flex flex-row gap-4 flex-wrap justify-center">
       {/* Score */}
@@ -47,19 +43,13 @@ export const GameUI = ({ score, lives, level, timer, speed, bossHitCooldown = 0,
         </div>
       </div>
 
-      {/* Timer / Countdown */}
+      {/* Timer */}
       <div className="amiga-box px-4 py-3 min-w-[140px]">
-        <div className="text-[10px] retro-pixel-text mb-2 text-center" style={{
-          color: showCountdown
-            ? isUrgent ? 'hsl(0, 80%, 60%)' : 'hsl(45, 100%, 50%)'
-            : 'hsl(210, 60%, 55%)'
-        }}>
-          {showCountdown ? 'TIME LEFT' : 'TIMER'}
+        <div className="text-[10px] retro-pixel-text mb-2 text-center" style={{ color: 'hsl(210, 60%, 55%)' }}>
+          TIMER
         </div>
-        <div className={`text-xl retro-pixel-text text-center ${isUrgent ? 'animate-pulse' : ''}`} style={{
-          color: isUrgent ? 'hsl(0, 80%, 65%)' : 'hsl(0, 0%, 85%)'
-        }}>
-          {showCountdown ? `${Math.max(0, dailyChallengeTimeLeft)}s` : `${timer}s`}
+        <div className="text-xl retro-pixel-text text-center" style={{ color: 'hsl(0, 0%, 85%)' }}>
+          {timer}s
         </div>
       </div>
 
